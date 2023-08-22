@@ -23,11 +23,10 @@ def output_hook(
 
 
 def activation_magnitude_prune_scores(
-    model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
+    model: t.nn.Module, factorized: bool, train_data: DataLoader[PromptPairBatch]
 ) -> Dict[Edge, float]:
     """Prune scores are the mean activation magnitude of each edge."""
-    edges = graph_edges(model)
+    edges = graph_edges(model, factorized)
     act_dict: Dict[Edge, t.Tensor] = {}
     handles = []
     try:

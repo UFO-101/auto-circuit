@@ -21,6 +21,7 @@ class BaselineWeights(Enum):
 
 def parameter_integrated_grads_prune_scores(
     model: t.nn.Module,
+    factorized: bool,
     train_data: DataLoader[PromptPairBatch],
     baseline_weights: BaselineWeights,
     samples: int = 50,
@@ -28,9 +29,10 @@ def parameter_integrated_grads_prune_scores(
     """Gradients of weights wrt to network output, integrated between some baseline
     weights and the actual weights."""
 
-    edges: OrderedSet[Edge] = graph_edges(model)
-    weights = OrderedSet(chain(*[[e.src.weight, e.dest.weight] for e in edges]))
-    print("weights", weights)
+    edges: OrderedSet[Edge] = graph_edges(model, factorized)
+    weights = set(chain(*[[e.src.weight, e.dest.weight] for e in edges]))
+    weights = list(filter(lambda w: w is not None, weights))
+
     normal_state_dict = {}
     for name, param in model.state_dict().items():
         if name in weights:
@@ -78,28 +80,15 @@ def parameter_integrated_grads_prune_scores(
 
     prune_scores = {}
     for edge in edges:
-        try:
-            src_ig = integrated_grads[edge.src.weight].abs()
-            src_ig = src_ig[edge.src.weight_t_idx]
-            dest_ig = integrated_grads[edge.dest.weight].abs()
-            dest_ig = dest_ig[edge.dest.weight_t_idx]
-        except Exception as E:
-            print(f"Error on edge {edge}")
-            print(
-                "edge.src.weight",
-                edge.src.weight,
-                model.state_dict()[edge.src.weight].shape,
-                "edge.src.weight_t_idx",
-                edge.src.weight_t_idx,
-            )
-            print(
-                "edge.dest.weight",
-                edge.dest.weight,
-                model.state_dict()[edge.dest.weight].shape,
-                "edge.dest.weight_t_idx",
-                edge.dest.weight_t_idx,
-            )
-            raise E
-        prune_scores[edge] = (src_ig.sum().item() + dest_ig.sum().item()) / 2
+        if factorized:
+            src_ig = integrated_grads[edge.src.weight][edge.src.weight_t_idx]
+            dest_ig = integrated_grads[edge.dest.weight][edge.dest.weight_t_idx]
+            prune_scores[edge] = (
+                src_ig.abs().sum().item() + dest_ig.abs().sum().item()
+            ) / 2
+        else:
+            if edge.src.weight is not None:
+                src_ig = integrated_grads[edge.src.weight][edge.src.weight_t_idx]
+                prune_scores[edge] = src_ig.abs().sum().item()
 
     return prune_scores

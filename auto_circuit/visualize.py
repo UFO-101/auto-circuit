@@ -1,16 +1,18 @@
-from typing import Dict, List, Tuple
+from typing import Dict
 
 import plotly.graph_objects as go
 
-from auto_circuit.types import ExperimentType
+from auto_circuit.types import EdgeCounts, ExperimentType
 
 
 def kl_vs_edges_plot(
-    data: List[Tuple[str, Dict[int, float]]], experiment_type: ExperimentType
+    data: Dict[str, Dict[int, float]],
+    experiment_type: ExperimentType,
+    edge_counts: EdgeCounts,
 ) -> go.Figure:
     fig = go.Figure()
 
-    for label, d in data:
+    for label, d in data.items():
         x = list(d.keys())
         y = list(d.values())
         x = [max(0.2, x_i) for x_i in x]
@@ -21,7 +23,7 @@ def kl_vs_edges_plot(
         title=f"KL Div vs. Edges: {experiment_type.input_type} input, patching \
             {experiment_type.patch_type} edges",
         xaxis_title="Edges",
-        xaxis_type="log",
+        xaxis_type="log" if edge_counts == EdgeCounts.LOGARITHMIC else "linear",
         yaxis_title="KL Divergence",
         yaxis_type="log",
         template="plotly",

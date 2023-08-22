@@ -52,7 +52,6 @@ def load_datasets_from_json(
     with open(path, "r") as f:
         data = json.load(f)
     prepend = tokenizer.bos_token if prepend_bos else ""
-    print("bos token:", tokenizer.bos_token)
     clean_prompts = [prepend + d["clean"] for d in data["prompts"][:length_limit]]
     corrupt_prompts = [prepend + d["corrupt"] for d in data["prompts"][:length_limit]]
     clean_prompts = tokenizer(

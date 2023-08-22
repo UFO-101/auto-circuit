@@ -10,10 +10,11 @@ from auto_circuit.utils import graph_edges
 
 def random_prune_scores(
     model: t.nn.Module,
+    factorized: bool,
     train_data: DataLoader[PromptPairBatch],
 ) -> Dict[Edge, float]:
     """Prune scores are the mean activation magnitude of each edge."""
-    edges = graph_edges(model)
+    edges = graph_edges(model, factorized)
     prune_scores = {}
     for edge in edges:
         prune_scores[edge] = t.rand(1).item()

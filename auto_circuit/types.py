@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import torch as t
 
@@ -20,6 +20,9 @@ class ActType(Enum):
 class EdgeCounts(Enum):
     ALL = 1
     LOGARITHMIC = 2
+
+
+TestEdges = EdgeCounts | List[int | float]
 
 
 @dataclass(frozen=True)
@@ -46,7 +49,7 @@ class EdgeSrc:
     name: str
     module: t.nn.Module
     _t_idx: HashableTensorIndex
-    weight: str
+    weight: Optional[str]
     _weight_t_idx: HashableTensorIndex
 
     @property
@@ -62,9 +65,8 @@ class EdgeSrc:
 class EdgeDest:
     name: str
     module: t.nn.Module
-    kwarg: Optional[str]
     _t_idx: HashableTensorIndex
-    weight: str
+    weight: Optional[str]
     _weight_t_idx: HashableTensorIndex
 
     @property

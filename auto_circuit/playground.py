@@ -1,12 +1,14 @@
 #%%
 import os
 import random
+from functools import partial
+from typing import Callable, Dict, List
 
 import numpy as np
 import pygraphviz as pgv
 import torch as t
 import torch.backends.mps
-import transformer_lens
+import transformer_lens as tl
 
 import auto_circuit
 import auto_circuit.data
@@ -19,6 +21,7 @@ from auto_circuit.prune_functions.parameter_integrated_gradients import (
     BaselineWeights,
     parameter_integrated_grads_prune_scores,
 )
+from auto_circuit.prune_functions.random_edges import random_prune_scores
 from auto_circuit.run_experiments import (
     get_test_edge_counts,
     measure_kl_div,
@@ -40,24 +43,39 @@ device = (
     if True and torch.backends.mps.is_available()
     else "cpu"
 )
-model = transformer_lens.HookedTransformer.from_pretrained("gpt2-small", device=device)
-# cfg = transformer_lens.HookedTransformerConfig(
-#     d_vocab=20, n_layers=2, d_model=4, n_ctx=64, n_heads=2, d_head=2, act_fn="gelu"
-# )
-# model = transformer_lens.HookedTransformer(cfg, model.tokenizer)
-# model.init_weights()
+toy_model = False
+if toy_model:
+    cfg = tl.HookedTransformerConfig(
+        d_vocab=20,
+        n_layers=3,
+        d_model=4,
+        n_ctx=64,
+        n_heads=2,
+        d_head=2,
+        act_fn="gelu",
+        tokenizer_name="gpt2",
+        device=device,
+    )
+    model = tl.HookedTransformer(cfg)
+    model.init_weights()
+else:
+    model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
 
 model.cfg.use_attn_result = True
 model.cfg.use_split_qkv_input = True
 model.cfg.use_hook_mlp_in = True
 # model = t.compile(model)
 
-#%%
 repo_root = "/Users/josephmiller/Documents/auto-circuit"
 data_file = "datasets/indirect_object_identification.json"
 data_path = f"{repo_root}/{data_file}"
 
+#%%
+# ---------- Config ----------
 experiment_type = ExperimentType(input_type=ActType.CLEAN, patch_type=ActType.CORRUPT)
+factorized = True
+pig_baseline, pig_samples = BaselineWeights.ZERO, 50
+edge_counts = EdgeCounts.LOGARITHMIC
 
 train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     model.tokenizer,
@@ -68,31 +86,35 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     train_test_split=[0.75, 0.25],
     length_limit=32,
 )
-pig_prune_scores = parameter_integrated_grads_prune_scores(
-    model, train_loader, BaselineWeights.ZERO, samples=50
-)
-act_mag_prune_scores = activation_magnitude_prune_scores(model, train_loader)
+# ----------------------------
 #%%
-test_edge_counts = get_test_edge_counts(model, EdgeCounts.LOGARITHMIC, True)
-pig_pruned_outs = run_pruned(
-    model, test_loader, experiment_type, test_edge_counts, pig_prune_scores
+
+prune_funcs: Dict[str, Callable] = {
+    f"PIG ({pig_baseline.name.lower()} Base, {pig_samples} iter)": partial(
+        parameter_integrated_grads_prune_scores,
+        baseline_weights=pig_baseline,
+        samples=pig_samples,
+    ),
+    "Act Mag": activation_magnitude_prune_scores,
+    "Random": random_prune_scores,
+}
+prune_scores_dict = dict(
+    [(n, f(model, factorized, train_loader)) for n, f in prune_funcs.items()]
 )
-act_mag_pruned_outs = run_pruned(
-    model, test_loader, experiment_type, test_edge_counts, act_mag_prune_scores
-)
-pig_kl_vs_edges_clean, pig_kl_vs_edges_corrupt = measure_kl_div(
-    model, test_loader, pig_pruned_outs
-)
-act_mag_kl_vs_edges_clean, act_mag_kl_vs_edges_corrupt = measure_kl_div(
-    model, test_loader, act_mag_pruned_outs
-)
-kl_divs = [
-    ("pig clean", pig_kl_vs_edges_clean),
-    ("pig corrupt", pig_kl_vs_edges_corrupt),
-    ("act mag clean", act_mag_kl_vs_edges_clean),
-    ("act mag corrupt", act_mag_kl_vs_edges_corrupt),
-]
-kl_vs_edges_plot(kl_divs, experiment_type).show()
+#%%
+test_edge_counts = get_test_edge_counts(model, factorized, edge_counts, True)
+pruned_outs_dict: Dict[str, Dict[int, List[t.Tensor]]] = {}
+for prune_func_str in prune_scores_dict.keys():
+    prune_scores = prune_scores_dict[prune_func_str]
+    pruned_outs_dict[prune_func_str] = run_pruned(
+        model, factorized, test_loader, experiment_type, test_edge_counts, prune_scores
+    )
+kl_divs: Dict[str, Dict[int, float]] = {}
+for prune_func_str, pruned_outs in pruned_outs_dict.items():
+    kl_clean, kl_corrupt = measure_kl_div(model, test_loader, pruned_outs)
+    kl_divs[prune_func_str + " clean"] = kl_clean
+    kl_divs[prune_func_str + " corr"] = kl_corrupt
+kl_vs_edges_plot(kl_divs, experiment_type, edge_counts).show()
 
 #%%
 def parse_name(n: str) -> str:
@@ -100,9 +122,15 @@ def parse_name(n: str) -> str:
     # return n.split(".")[0] if n.startswith("A") else n
 
 
-edges = auto_circuit.utils.graph_edges(model)
+edges = auto_circuit.utils.graph_edges(model, factorized)
 G = pgv.AGraph(strict=False, directed=True)
 for edge in edges:
-    G.add_edge(parse_name(edge.src.name), parse_name(edge.dest.name))
+    # G.add_edge(parse_name(edge.src.name), parse_name(edge.dest.name))
+    G.add_edge(
+        edge.src.name + f"\n{str(edge.src.weight)}[{edge.src.weight_t_idx}]",
+        edge.dest.name + f"\n{str(edge.dest.weight)}[{edge.dest.weight_t_idx}]",
+    )
 G.layout(prog="dot")  # neato
 G.draw("graphviz.png")
+
+# %%

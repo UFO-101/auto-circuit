@@ -48,18 +48,20 @@ def setup_data() -> Dict[str, Any]:
 
 def test_get_test_edge_counts(setup_data: Dict[str, Any]):
     model = setup_data["model"]
-    n_model_edges = len(graph_edges(model))
+    factorized = True
+    n_model_edges = len(graph_edges(model, factorized))
 
     none_and_all = [0.0, 0.5, 1.0]
-    edge_counts = get_test_edge_counts(model, none_and_all, False)
+    edge_counts = get_test_edge_counts(model, factorized, none_and_all, False)
     assert edge_counts == [0, n_model_edges // 2, n_model_edges]
 
-    edge_counts = get_test_edge_counts(model, EdgeCounts.ALL, False)
+    edge_counts = get_test_edge_counts(model, factorized, EdgeCounts.ALL, False)
     assert edge_counts == list(range(n_model_edges + 1))
 
 
 def test_kl_vs_edges(setup_data: Dict[str, Any]):
     model, device = setup_data["model"], setup_data["device"]
+    factorized = True
     data_file = "datasets/indirect_object_identification.json"
     data_path = os.path.join(os.getcwd(), data_file)
 
@@ -82,12 +84,12 @@ def test_kl_vs_edges(setup_data: Dict[str, Any]):
         clean_out = model(test_input.clean)[:, -1]
         corrupt_out = model(test_input.corrupt)[:, -1]
 
-    prune_scores = random_prune_scores(model, train_loader)
-    test_edge_counts = get_test_edge_counts(model, [0.0, 5, 1.0], False)
+    prune_scores = random_prune_scores(model, factorized, train_loader)
+    test_edge_counts = get_test_edge_counts(model, factorized, [0.0, 5, 1.0], False)
     pruned_outs = run_pruned(
-        model, test_loader, experiment_type, test_edge_counts, prune_scores
+        model, factorized, test_loader, experiment_type, test_edge_counts, prune_scores
     )
     assert t.allclose(clean_out, pruned_outs[0][0], atol=1e-3)
     assert not t.allclose(corrupt_out, pruned_outs[5][0], atol=1e-3)
-    edges = graph_edges(model)
+    edges = graph_edges(model, factorized)
     assert t.allclose(corrupt_out, pruned_outs[len(edges)][0], atol=1e-3)
