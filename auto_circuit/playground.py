@@ -114,6 +114,7 @@ for prune_func_str, pruned_outs in pruned_outs_dict.items():
     kl_clean, kl_corrupt = measure_kl_div(model, test_loader, pruned_outs)
     kl_divs[prune_func_str + " clean"] = kl_clean
     kl_divs[prune_func_str + " corr"] = kl_corrupt
+#%%
 kl_vs_edges_plot(kl_divs, experiment_type, edge_counts).show()
 
 #%%
@@ -125,6 +126,7 @@ def parse_name(n: str) -> str:
 edges = auto_circuit.utils.graph_edges(model, factorized)
 G = pgv.AGraph(strict=False, directed=True)
 for edge in edges:
+    print("edge", edge, "src.name", edge.src.name, "dest.name", edge.dest.name)
     # G.add_edge(parse_name(edge.src.name), parse_name(edge.dest.name))
     G.add_edge(
         edge.src.name + f"\n{str(edge.src.weight)}[{edge.src.weight_t_idx}]",

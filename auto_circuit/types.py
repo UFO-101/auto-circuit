@@ -49,7 +49,7 @@ class EdgeSrc:
     name: str
     module: t.nn.Module
     _t_idx: HashableTensorIndex
-    weight: Optional[str]
+    weight: str
     _weight_t_idx: HashableTensorIndex
 
     @property

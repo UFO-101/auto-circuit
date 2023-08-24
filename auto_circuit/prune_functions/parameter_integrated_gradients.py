@@ -31,32 +31,28 @@ def parameter_integrated_grads_prune_scores(
 
     edges: OrderedSet[Edge] = graph_edges(model, factorized)
     weights = set(chain(*[[e.src.weight, e.dest.weight] for e in edges]))
-    weights = list(filter(lambda w: w is not None, weights))
+    weights = list(filter(lambda x: x is not None, weights))
 
-    normal_state_dict = {}
+    normal_state = {}
     for name, param in model.state_dict().items():
         if name in weights:
             assert isinstance(param, t.Tensor)
-            normal_state_dict[name] = param.clone()
+            normal_state[name] = param.clone()
 
-    baseline_state_dict = {}
+    base_state = {}
     if baseline_weights == BaselineWeights.ZERO:
-        baseline_state_dict = dict(
-            [(name, t.zeros_like(param)) for name, param in normal_state_dict.items()]
-        )
+        base_state = dict([(n, t.zeros_like(p)) for n, p in normal_state.items()])
     else:
         raise NotImplementedError
 
-    integrated_grads = dict(
-        [(name, t.zeros_like(param)) for name, param in normal_state_dict.items()]
-    )
+    ig = dict([(n, t.zeros_like(p)) for n, p in normal_state.items()])
     for idx in range(samples):
-        interpolated_state_dict = {}
+        lerp_state = {}
         for name in weights:
-            interpolated_state_dict[name] = baseline_state_dict[name] + (
-                normal_state_dict[name] - baseline_state_dict[name]
+            lerp_state[name] = base_state[name] + (
+                normal_state[name] - base_state[name]
             ) * idx / (samples - 1)
-            model.load_state_dict(interpolated_state_dict, strict=False)
+            model.load_state_dict(lerp_state, strict=False)
 
         model.zero_grad()
         for batch in train_data:
@@ -67,28 +63,25 @@ def parameter_integrated_grads_prune_scores(
         for name, param in model.named_parameters():
             if name in weights:
                 assert isinstance(param.grad, t.Tensor)
-                integrated_grads[name] += param.grad / samples
+                ig[name] += param.grad / samples
 
-    weight_diffs = dict(
-        [
-            (name, normal_param - baseline_state_dict[name])
-            for name, normal_param in normal_state_dict.items()
-        ]
-    )
-    for name, ig in integrated_grads.items():
-        integrated_grads[name] = ig * weight_diffs[name]
+    weight_diffs = {}
+    for name, normal_param in normal_state.items():
+        weight_diffs[name] = normal_param - base_state[name]
+
+    for name, val in ig.items():
+        ig[name] = val * weight_diffs[name]
 
     prune_scores = {}
     for edge in edges:
         if factorized:
-            src_ig = integrated_grads[edge.src.weight][edge.src.weight_t_idx]
-            dest_ig = integrated_grads[edge.dest.weight][edge.dest.weight_t_idx]
+            src_ig = ig[edge.src.weight][edge.src.weight_t_idx]
+            dest_ig = ig[edge.dest.weight][edge.dest.weight_t_idx]
             prune_scores[edge] = (
                 src_ig.abs().sum().item() + dest_ig.abs().sum().item()
             ) / 2
         else:
-            if edge.src.weight is not None:
-                src_ig = integrated_grads[edge.src.weight][edge.src.weight_t_idx]
-                prune_scores[edge] = src_ig.abs().sum().item()
+            src_ig = ig[edge.src.weight][edge.src.weight_t_idx]
+            prune_scores[edge] = src_ig.abs().sum().item()
 
     return prune_scores

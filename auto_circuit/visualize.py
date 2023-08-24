@@ -15,8 +15,8 @@ def kl_vs_edges_plot(
     for label, d in data.items():
         x = list(d.keys())
         y = list(d.values())
-        x = [max(0.2, x_i) for x_i in x]
-        y = [max(2e-3, y_i) for y_i in y]
+        x = [max(0.5, x_i) for x_i in x]
+        y = [max(2e-5, y_i) for y_i in y]
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=label))
 
     fig.update_layout(
