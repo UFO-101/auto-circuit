@@ -43,6 +43,7 @@ device = (
     if True and torch.backends.mps.is_available()
     else "cpu"
 )
+print("device", device)
 toy_model = False
 if toy_model:
     cfg = tl.HookedTransformerConfig(
@@ -66,16 +67,17 @@ model.cfg.use_split_qkv_input = True
 model.cfg.use_hook_mlp_in = True
 # model = t.compile(model)
 
-repo_root = "/Users/josephmiller/Documents/auto-circuit"
+# repo_root = "/Users/josephmiller/Documents/auto-circuit"
+repo_root = "/home/dev/auto-circuit"
 data_file = "datasets/indirect_object_identification.json"
 data_path = f"{repo_root}/{data_file}"
 
 #%%
 # ---------- Config ----------
 experiment_type = ExperimentType(input_type=ActType.CLEAN, patch_type=ActType.CORRUPT)
-factorized = True
+factorized = False
 pig_baseline, pig_samples = BaselineWeights.ZERO, 50
-edge_counts = EdgeCounts.LOGARITHMIC
+edge_counts = EdgeCounts.ALL
 
 train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     model.tokenizer,

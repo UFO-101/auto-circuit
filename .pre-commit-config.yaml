@@ -23,12 +23,16 @@ repos:
       - id: codespell
         additional_dependencies:
           - tomli
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.320
-    hooks:
-    - id: pyright
   - repo: local
     hooks:
+    - id: pyright
+      name: pyright
+      stages: [commit]
+      types: [python]
+      entry: pyright
+      language: system
+      pass_filenames: false
+      always_run: true
     - id: pytest
       name: pytest
       stages: [commit]

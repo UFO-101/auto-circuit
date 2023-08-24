@@ -8,9 +8,15 @@ packages = [{include = "auto_circuit"}]
 
 [tool.poetry.dependencies]
 python = "~3.10"
-torch = "^2.0.1"
+# This needs to be commented/uncommented until Poetry is fixed.
+# Poetry can use system packages using 'virtualenvs.options.system-site-packages' in
+# poetry.toml. This is useful because PyTorch is already installed on my devbox and
+# installing with Poetry doesn't work. But it doesn't currently detect that torch is
+# already installed and tries to install it anyway. TransformerLens has torch as dep.
+# See: https://github.com/python-poetry/poetry/pull/8359
+# torch = "^2.0.1"
+# transformer-lens = "^1.4.0"
 einops = "^0.6.1"
-transformer-lens = "^1.4.0"
 pygraphviz = "^1.11"
 ordered-set = "^4.1.0"
 plotly = "^5.15.0"
@@ -21,6 +27,7 @@ ipykernel = "^6.25.0"
 ipywidgets = "^8.1.0"
 jupyter = "^1.0.0"
 pytest = "^7.4.0"
+pyright = "^1.1.324"
 
 [build-system]
 requires = ["poetry-core"]
@@ -31,8 +38,6 @@ build-backend = "poetry.core.masonry.api"
 select = ["F", "E", "W", "I001"]
 
 [tool.pyright]
-venvPath = "."
-venv = ".venv"
-
+ignore = ["datasets/ioi_generator.py"]
 reportMissingParameterType = true
 reportUnknownParameterType = true
