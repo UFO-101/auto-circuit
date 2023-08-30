@@ -1,4 +1,3 @@
-import math
 from collections import defaultdict
 from functools import partial
 from typing import Dict, List, Optional, Tuple
@@ -6,18 +5,17 @@ from typing import Dict, List, Optional, Tuple
 import torch as t
 from einops import repeat
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import (
     ActType,
     Edge,
-    EdgeCounts,
     EdgeSrc,
     ExperimentType,
-    TestEdges,
 )
-from auto_circuit.utils import edge_acts, graph_edges
+from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.graph_utils import edge_acts, graph_edges
+from auto_circuit.utils.misc import percent_gpu_mem_used
 
 
 def update_current_acts_hook(
@@ -48,33 +46,6 @@ def path_patch_hook(
     return current_in + (patch_src_out - src_out)
 
 
-def get_test_edge_counts(
-    model: t.nn.Module,
-    factorized: bool,
-    test_counts: TestEdges,
-    include_all_edges: bool,
-) -> List[int]:
-    edges = graph_edges(model, factorized)
-    n_edges = len(edges)
-
-    if test_counts == EdgeCounts.ALL:
-        counts_list = [n for n in range(n_edges + 1)]
-    elif test_counts == EdgeCounts.LOGARITHMIC:
-        counts_list = [
-            n
-            for n in range(n_edges + 1)
-            if n % 10 ** math.floor(math.log10(max(n, 1))) == 0
-        ]
-    elif isinstance(test_counts, List):
-        counts_list = [n if type(n) == int else int(n_edges * n) for n in test_counts]
-    else:
-        raise NotImplementedError(f"Unknown test_counts: {test_counts}")
-
-    if include_all_edges and n_edges not in counts_list:
-        counts_list.append(n_edges)
-    return counts_list
-
-
 def run_pruned(
     model: t.nn.Module,
     factorized: bool,
@@ -82,6 +53,7 @@ def run_pruned(
     experiment_type: ExperimentType,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
+    include_zero_edges: bool = True,
 ) -> Dict[int, List[t.Tensor]]:
     edges = graph_edges(model, factorized)
     if experiment_type.patch_type == ActType.CLEAN:
@@ -99,7 +71,10 @@ def run_pruned(
         prune_scores = dict(sorted(prune_scores.items(), key=lambda item: item[1]))
 
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
-    for batch_idx, batch in enumerate(test_loader):
+    for batch_idx, batch in (
+        batch_pbar := tqdm(enumerate(test_loader), total=len(test_loader))
+    ):
+        batch_pbar.set_description_str(f"Pruning Batch {batch_idx}")
 
         if experiment_type.input_type == ActType.CLEAN:
             batch_input = batch.clean
@@ -108,21 +83,26 @@ def run_pruned(
         else:
             raise NotImplementedError
 
+        if include_zero_edges:
+            with t.inference_mode():
+                pruned_outs[0].append(model(batch_input)[:, -1])
+
         handles = []
-        with t.inference_mode():
-            pruned_outs[0].append(model(batch_input)[:, -1])
         src_outs: Dict[EdgeSrc, t.Tensor] = {}
         patch_src_outs: Optional[Dict[EdgeSrc, t.Tensor]] = patch_acts[batch_idx]
 
         try:
-            for edge_idx, (edge, _) in tqdm(enumerate(list(prune_scores.items()))):
+            edge_pbar = enumerate(list(prune_scores.items()))
+            # edge_pbar = tqdm(enumerate(list(prune_scores.items())))
+            for edge_idx, (edge, _) in edge_pbar:
+                # edge_pbar.set_description_str(f"Pruning {edge}")
                 n_edges = edge_idx + 1
-                get_prev_src_out_hook = partial(
+                prev_src_out_hook = partial(
                     update_current_acts_hook,
                     edge_src=edge.src,
                     src_outs=src_outs,
                 )
-                handle_1 = edge.src.module.register_forward_hook(get_prev_src_out_hook)
+                hndl_1 = edge.src.module(model).register_forward_hook(prev_src_out_hook)
                 patch_hook = partial(
                     path_patch_hook,
                     edge=edge,
@@ -131,13 +111,15 @@ def run_pruned(
                     if patch_src_outs is None
                     else patch_src_outs[edge.src],
                 )
-                handle_2 = edge.dest.module.register_forward_pre_hook(patch_hook)
-                handles.extend([handle_1, handle_2])
+                hndl_2 = edge.dest.module(model).register_forward_pre_hook(patch_hook)
+                handles.extend([hndl_1, hndl_2])
                 if n_edges in test_edge_counts:
                     with t.inference_mode():
-                        pruned_outs[n_edges].append(model(batch_input)[:, -1])
+                        model_output = model(batch_input)
+                    pruned_outs[n_edges].append(model_output[:, -1])
         finally:
             [handle.remove() for handle in handles]
+    del patch_acts
     return pruned_outs
 
 

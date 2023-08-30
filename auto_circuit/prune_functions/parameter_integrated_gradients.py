@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
-from auto_circuit.utils import graph_edges
+from auto_circuit.utils.graph_utils import graph_edges
 
 
 class BaselineWeights(Enum):

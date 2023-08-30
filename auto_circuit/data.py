@@ -15,6 +15,7 @@ class PromptPair:
 
 @dataclass(frozen=True)
 class PromptPairBatch:
+    key: int
     clean: t.Tensor
     corrupt: t.Tensor
 
@@ -22,7 +23,8 @@ class PromptPairBatch:
 def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
     clean = t.stack([p.clean for p in batch])
     corrupt = t.stack([p.corrupt for p in batch])
-    return PromptPairBatch(clean, corrupt)
+    key = hash((str(clean.tolist()), str(corrupt.tolist())))
+    return PromptPairBatch(key, clean, corrupt)
 
 
 class PromptDataset(Dataset):
@@ -65,7 +67,7 @@ def load_datasets_from_json(
     dataset = PromptDataset(clean_prompts, corrupt_prompts)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
+        train_set, batch_size=batch_size, shuffle=False, collate_fn=collate_fn
     )
     test_loader = torch.utils.data.DataLoader(
         test_set, batch_size=batch_size, shuffle=False, collate_fn=collate_fn

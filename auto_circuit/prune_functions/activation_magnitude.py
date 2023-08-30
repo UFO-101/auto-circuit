@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
-from auto_circuit.utils import graph_edges
+from auto_circuit.utils.graph_utils import graph_edges
 
 
 def output_hook(
@@ -31,7 +31,7 @@ def activation_magnitude_prune_scores(
     handles = []
     try:
         for edge in edges:
-            handle = edge.src.module.register_forward_hook(
+            handle = edge.src.module(model).register_forward_hook(
                 partial(output_hook, edge=edge, act_dict=act_dict)
             )
             handles.append(handle)

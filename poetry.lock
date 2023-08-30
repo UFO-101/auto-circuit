@@ -2203,6 +2203,30 @@ files = [
 ]
 
 [[package]]
+name = "tqdm"
+version = "4.68"
+description = "Fast, Extensible Progress Meter"
+optional = false
+python-versions = ">=3.7"
+files = []
+develop = false
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
+
+[package.source]
+type = "git"
+url = "https://github.com/UFO-101/tqdm.git"
+reference = "HEAD"
+resolved_reference = "e8a0a28f033f14fee6ff6d9a65fe79364f6b8afc"
+
+[[package]]
 name = "traitlets"
 version = "5.9.0"
 description = "Traitlets Python configuration system"
@@ -2346,4 +2370,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "c8df1eb3bf5f42b8667e8d7c258fa929bd73de746636124992f76d412a571197"
+content-hash = "80c5643d67369cf9de7e654551683f69698fd2cff7c621eaa9b6060024b4c8f5"

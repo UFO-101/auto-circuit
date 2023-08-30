@@ -9,9 +9,9 @@ import transformer_lens
 
 from auto_circuit.data import load_datasets_from_json
 from auto_circuit.prune_functions.random_edges import random_prune_scores
-from auto_circuit.run_experiments import get_test_edge_counts, run_pruned
+from auto_circuit.run_experiments import run_pruned
 from auto_circuit.types import ActType, EdgeCounts, ExperimentType
-from auto_circuit.utils import graph_edges
+from auto_circuit.utils.graph_utils import edge_counts_util, graph_edges
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -52,10 +52,10 @@ def test_get_test_edge_counts(setup_data: Dict[str, Any]):
     n_model_edges = len(graph_edges(model, factorized))
 
     none_and_all = [0.0, 0.5, 1.0]
-    edge_counts = get_test_edge_counts(model, factorized, none_and_all, False)
+    edge_counts = edge_counts_util(model, factorized, none_and_all)
     assert edge_counts == [0, n_model_edges // 2, n_model_edges]
 
-    edge_counts = get_test_edge_counts(model, factorized, EdgeCounts.ALL, False)
+    edge_counts = edge_counts_util(model, factorized, EdgeCounts.ALL)
     assert edge_counts == list(range(n_model_edges + 1))
 
 
@@ -85,7 +85,7 @@ def test_kl_vs_edges(setup_data: Dict[str, Any]):
         corrupt_out = model(test_input.corrupt)[:, -1]
 
     prune_scores = random_prune_scores(model, factorized, train_loader)
-    test_edge_counts = get_test_edge_counts(model, factorized, [0.0, 5, 1.0], False)
+    test_edge_counts = edge_counts_util(model, factorized, [0.0, 5, 1.0])
     pruned_outs = run_pruned(
         model, factorized, test_loader, experiment_type, test_edge_counts, prune_scores
     )

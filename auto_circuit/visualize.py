@@ -9,6 +9,7 @@ def kl_vs_edges_plot(
     data: Dict[str, Dict[int, float]],
     experiment_type: ExperimentType,
     edge_counts: EdgeCounts,
+    factorized: bool,
 ) -> go.Figure:
     fig = go.Figure()
 
@@ -20,8 +21,11 @@ def kl_vs_edges_plot(
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=label))
 
     fig.update_layout(
-        title=f"KL Div vs. Edges: {experiment_type.input_type} input, patching \
-            {experiment_type.patch_type} edges",
+        title=(
+            f"Task Pruning: {experiment_type.input_type} input, patching"
+            f" {experiment_type.patch_type} edges"
+            f" ({'factorized' if factorized else 'unfactorized'} model)"
+        ),
         xaxis_title="Edges",
         xaxis_type="log" if edge_counts == EdgeCounts.LOGARITHMIC else "linear",
         yaxis_title="KL Divergence",

@@ -4,6 +4,8 @@ from typing import List, Optional, Tuple
 
 import torch as t
 
+from auto_circuit.utils.misc import module_by_name
+
 
 class ActType(Enum):
     """Type of activation. Used to determine network inputs and patch values."""
@@ -47,7 +49,7 @@ def tensor_index_to_slice(t_idx: HashableTensorIndex) -> TensorIndex:
 @dataclass(frozen=True)
 class EdgeSrc:
     name: str
-    module: t.nn.Module
+    module_name: str
     _t_idx: HashableTensorIndex
     weight: str
     _weight_t_idx: HashableTensorIndex
@@ -60,11 +62,14 @@ class EdgeSrc:
     def weight_t_idx(self) -> TensorIndex:
         return tensor_index_to_slice(self._weight_t_idx)
 
+    def module(self, model: t.nn.Module) -> t.nn.Module:
+        return module_by_name(model, self.module_name)
+
 
 @dataclass(frozen=True)
 class EdgeDest:
     name: str
-    module: t.nn.Module
+    module_name: str
     _t_idx: HashableTensorIndex
     weight: Optional[str]
     _weight_t_idx: HashableTensorIndex
@@ -76,6 +81,9 @@ class EdgeDest:
     @property
     def weight_t_idx(self) -> TensorIndex:
         return tensor_index_to_slice(self._weight_t_idx)
+
+    def module(self, model: t.nn.Module) -> t.nn.Module:
+        return module_by_name(model, self.module_name)
 
 
 @dataclass(frozen=True)

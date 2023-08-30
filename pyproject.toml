@@ -20,6 +20,7 @@ einops = "^0.6.1"
 pygraphviz = "^1.11"
 ordered-set = "^4.1.0"
 plotly = "^5.15.0"
+tqdm = {git = "https://github.com/UFO-101/tqdm.git"}
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.3"
