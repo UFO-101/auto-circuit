@@ -7,25 +7,23 @@ from functools import partial
 from typing import Callable, Dict
 
 import numpy as np
-import pygraphviz as pgv
 import torch as t
 import torch.backends.mps
 import transformer_lens as tl
 
 import auto_circuit
 import auto_circuit.data
-from auto_circuit.prune_functions.activation_magnitude import activation_magnitude_prune_scores
-from auto_circuit.prune_functions.random_edges import random_prune_scores
 import auto_circuit.run_experiments
 import auto_circuit.utils.graph_utils
 from auto_circuit.prune_functions.ACDC import acdc_edge_counts, acdc_prune_scores
+from auto_circuit.prune_functions.activation_magnitude import (
+    activation_magnitude_prune_scores,
+)
 from auto_circuit.prune_functions.parameter_integrated_gradients import (
     BaselineWeights,
     parameter_integrated_grads_prune_scores,
 )
-from auto_circuit.prune_functions.subnetwork_probing import (
-    subnetwork_probing_prune_scores,
-)
+from auto_circuit.prune_functions.random_edges import random_prune_scores
 from auto_circuit.run_experiments import (
     measure_kl_div,
     run_pruned,
@@ -158,21 +156,5 @@ for prune_func_str, prune_scores in (
 kl_vs_edges_plot(kl_divs, experiment_type, edge_counts, factorized).show()
 
 #%%
-def parse_name(n: str) -> str:
-    return n[:-2] if n.startswith("A") and len(n) > 4 else n
-    # return n.split(".")[0] if n.startswith("A") else n
-
-
-edges = auto_circuit.utils.graph_utils.graph_edges(model, factorized)
-G = pgv.AGraph(strict=False, directed=True)
-for edge in edges:
-    print("edge", edge, "src.name", edge.src.name, "dest.name", edge.dest.name)
-    # G.add_edge(parse_name(edge.src.name), parse_name(edge.dest.name))
-    G.add_edge(
-        edge.src.name + f"\n{str(edge.src.weight)}[{edge.src.weight_t_idx}]",
-        edge.dest.name + f"\n{str(edge.dest.weight)}[{edge.dest.weight_t_idx}]",
-    )
-G.layout(prog="dot")  # neato
-G.draw("graphviz.png")
 
 # %%

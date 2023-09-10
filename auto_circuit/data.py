@@ -53,17 +53,25 @@ def load_datasets_from_json(
     dictionaries with keys "clean_prompt" and "corrupt_prompt"."""
     with open(path, "r") as f:
         data = json.load(f)
-    prepend = tokenizer.bos_token if prepend_bos else ""
-    clean_prompts = [prepend + d["clean"] for d in data["prompts"][:length_limit]]
-    corrupt_prompts = [prepend + d["corrupt"] for d in data["prompts"][:length_limit]]
-    clean_prompts = tokenizer(
-        clean_prompts, padding=True, truncation=True, return_tensors="pt"
-    )
-    corrupt_prompts = tokenizer(
-        corrupt_prompts, padding=True, truncation=True, return_tensors="pt"
-    )
-    clean_prompts = clean_prompts["input_ids"].to(device)
-    corrupt_prompts = corrupt_prompts["input_ids"].to(device)
+    clean_prompts = [d["clean"] for d in data["prompts"][:length_limit]]
+    corrupt_prompts = [d["corrupt"] for d in data["prompts"][:length_limit]]
+    if tokenizer is None:
+        clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
+        corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
+    else:
+        if prepend_bos:
+            clean_prompts = [tokenizer.bos_token + prompt for prompt in clean_prompts]
+            corrupt_prompts = [
+                tokenizer.bos_token + prompt for prompt in corrupt_prompts
+            ]
+        clean_prompts = tokenizer(
+            clean_prompts, padding=True, truncation=True, return_tensors="pt"
+        )
+        corrupt_prompts = tokenizer(
+            corrupt_prompts, padding=True, truncation=True, return_tensors="pt"
+        )
+        clean_prompts = clean_prompts["input_ids"].to(device)
+        corrupt_prompts = corrupt_prompts["input_ids"].to(device)
     dataset = PromptDataset(clean_prompts, corrupt_prompts)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
     train_loader = torch.utils.data.DataLoader(

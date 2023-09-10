@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
 from auto_circuit.utils.graph_utils import graph_edges
+from auto_circuit.utils.misc import remove_hooks
 
 
 def output_hook(
@@ -17,9 +18,9 @@ def output_hook(
     act_dict: Dict[Edge, t.Tensor],
 ) -> None:
     if edge not in act_dict:
-        act_dict[edge] = output[edge.src.t_idx]
+        act_dict[edge] = output[edge.src.out_idx]
     else:
-        act_dict[edge] += output[edge.src.t_idx]
+        act_dict[edge] += output[edge.src.out_idx]
 
 
 def activation_magnitude_prune_scores(
@@ -28,8 +29,7 @@ def activation_magnitude_prune_scores(
     """Prune scores are the mean activation magnitude of each edge."""
     edges = graph_edges(model, factorized)
     act_dict: Dict[Edge, t.Tensor] = {}
-    handles = []
-    try:
+    with remove_hooks() as handles:
         for edge in edges:
             handle = edge.src.module(model).register_forward_hook(
                 partial(output_hook, edge=edge, act_dict=act_dict)
@@ -37,8 +37,6 @@ def activation_magnitude_prune_scores(
             handles.append(handle)
         for batch in train_data:
             model(batch.clean)
-    finally:
-        [handle.remove() for handle in handles]
 
     prune_scores = {}
     for edge, act in act_dict.items():

@@ -1,4 +1,3 @@
-#%%
 import os
 from typing import Any, Dict
 
@@ -60,6 +59,7 @@ def test_get_test_edge_counts(setup_data: Dict[str, Any]):
 
 
 def test_kl_vs_edges(setup_data: Dict[str, Any]):
+    """Test that experiments satisfy basic requirements with a real model."""
     model, device = setup_data["model"], setup_data["device"]
     factorized = True
     data_file = "datasets/indirect_object_identification.json"

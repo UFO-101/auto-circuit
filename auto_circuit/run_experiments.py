@@ -3,66 +3,75 @@ from functools import partial
 from typing import Dict, List, Optional, Tuple
 
 import torch as t
-from einops import repeat
 from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import (
     ActType,
     Edge,
-    EdgeSrc,
     ExperimentType,
+    SrcNode,
+    TensorIndex,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
-from auto_circuit.utils.graph_utils import edge_acts, graph_edges
-from auto_circuit.utils.misc import percent_gpu_mem_used
+from auto_circuit.utils.graph_utils import (
+    draw_graph,
+    get_src_outs,
+    graph_edges,
+    graph_src_nodes,
+)
+from auto_circuit.utils.misc import remove_hooks
 
 
 def update_current_acts_hook(
     model: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     output: t.Tensor,
-    edge_src: EdgeSrc,
-    src_outs: Dict[EdgeSrc, t.Tensor],
+    edge_src: SrcNode,
+    src_outs: Dict[SrcNode, t.Tensor],
 ):
-    src_outs[edge_src] = output[edge_src.t_idx]
+    src_outs[edge_src] = output[edge_src.out_idx]
 
 
 def path_patch_hook(
     module: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     edge: Edge,
-    src_outs: Dict[EdgeSrc, t.Tensor],  # Dictionary is updated by other hook
+    src_outs: Dict[SrcNode, t.Tensor],  # Dictionary is updated by other hook
     patch_src_out: Optional[t.Tensor],  # None represents zero ablation
 ) -> t.Tensor:
     src_out = src_outs[edge.src]
     patch_src_out = t.zeros_like(src_out) if patch_src_out is None else patch_src_out
     assert len(input) == 1
-    current_in = input[0]
-    if current_in.ndim != src_out.ndim:  # Split by head
-        head_dim = current_in.shape[-2]
-        src_out = repeat(src_out, "b p r -> b p h r", h=head_dim)
-        patch_src_out = repeat(patch_src_out, "b p r -> b p h r", h=head_dim)
-    return current_in + (patch_src_out - src_out)
+    current_in = input[0].clone()
+    current_in[edge.dest.in_idx] += patch_src_out - src_out
+    return current_in
 
 
 def run_pruned(
     model: t.nn.Module,
     factorized: bool,
-    test_loader: DataLoader[PromptPairBatch],
+    data_loader: DataLoader[PromptPairBatch],
     experiment_type: ExperimentType,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
     include_zero_edges: bool = True,
+    output_slice: TensorIndex = (slice(None), -1),
+    render_graph: bool = False,
 ) -> Dict[int, List[t.Tensor]]:
-    edges = graph_edges(model, factorized)
+    graph_edges(model, factorized)
+    src_nodes = graph_src_nodes(model, factorized)
     if experiment_type.patch_type == ActType.CLEAN:
-        patch_acts = [edge_acts(model, edges, batch.clean) for batch in test_loader]
+        patch_acts = [
+            get_src_outs(model, src_nodes, batch.clean) for batch in data_loader
+        ]
     elif experiment_type.patch_type == ActType.CORRUPT:
-        patch_acts = [edge_acts(model, edges, batch.corrupt) for batch in test_loader]
+        patch_acts = [
+            get_src_outs(model, src_nodes, batch.corrupt) for batch in data_loader
+        ]
     else:
         assert experiment_type.patch_type == ActType.ZERO
-        patch_acts = [None for _ in test_loader]
+        patch_acts = [None for _ in data_loader]
 
     # Sort edges by prune score
     if experiment_type.sort_prune_scores_high_to_low:
@@ -72,7 +81,7 @@ def run_pruned(
 
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
     for batch_idx, batch in (
-        batch_pbar := tqdm(enumerate(test_loader), total=len(test_loader))
+        batch_pbar := tqdm(enumerate(data_loader), total=len(data_loader))
     ):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}")
 
@@ -85,13 +94,12 @@ def run_pruned(
 
         if include_zero_edges:
             with t.inference_mode():
-                pruned_outs[0].append(model(batch_input)[:, -1])
+                pruned_outs[0].append(model(batch_input)[output_slice])
 
-        handles = []
-        src_outs: Dict[EdgeSrc, t.Tensor] = {}
-        patch_src_outs: Optional[Dict[EdgeSrc, t.Tensor]] = patch_acts[batch_idx]
+        src_outs: Dict[SrcNode, t.Tensor] = {}
+        patch_src_outs: Optional[Dict[SrcNode, t.Tensor]] = patch_acts[batch_idx]
 
-        try:
+        with remove_hooks() as handles:
             edge_pbar = enumerate(list(prune_scores.items()))
             # edge_pbar = tqdm(enumerate(list(prune_scores.items())))
             for edge_idx, (edge, _) in edge_pbar:
@@ -101,7 +109,7 @@ def run_pruned(
                     update_current_acts_hook,
                     edge_src=edge.src,
                     src_outs=src_outs,
-                )
+                )  # TODO: Registering duplicate hooks!!!!!
                 hndl_1 = edge.src.module(model).register_forward_hook(prev_src_out_hook)
                 patch_hook = partial(
                     path_patch_hook,
@@ -116,9 +124,15 @@ def run_pruned(
                 if n_edges in test_edge_counts:
                     with t.inference_mode():
                         model_output = model(batch_input)
-                    pruned_outs[n_edges].append(model_output[:, -1])
-        finally:
-            [handle.remove() for handle in handles]
+                    pruned_outs[n_edges].append(model_output[output_slice])
+            if render_graph:
+                draw_graph(
+                    model,
+                    factorized,
+                    batch_input,
+                    list(prune_scores.keys()),
+                    patch_src_outs,
+                )
     del patch_acts
     return pruned_outs
 

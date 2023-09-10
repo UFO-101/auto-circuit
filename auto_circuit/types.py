@@ -47,52 +47,55 @@ def tensor_index_to_slice(t_idx: HashableTensorIndex) -> TensorIndex:
 
 
 @dataclass(frozen=True)
-class EdgeSrc:
+class Node:
     name: str
     module_name: str
-    _t_idx: HashableTensorIndex
-    weight: str
-    _weight_t_idx: HashableTensorIndex
+    weight: Optional[str] = None
+    _weight_t_idx: HashableTensorIndex = None
 
-    @property
-    def t_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._t_idx)
+    def module(self, model: t.nn.Module) -> t.nn.Module:
+        return module_by_name(model, self.module_name)
 
     @property
     def weight_t_idx(self) -> TensorIndex:
         return tensor_index_to_slice(self._weight_t_idx)
 
-    def module(self, model: t.nn.Module) -> t.nn.Module:
-        return module_by_name(model, self.module_name)
+    def __repr__(self) -> str:
+        return self.name
+
+    def __str__(self) -> str:
+        return self.name
 
 
 @dataclass(frozen=True)
-class EdgeDest:
-    name: str
-    module_name: str
-    _t_idx: HashableTensorIndex
-    weight: Optional[str]
-    _weight_t_idx: HashableTensorIndex
+class SrcNode(Node):
+    _out_idx: HashableTensorIndex = None
 
     @property
-    def t_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._t_idx)
+    def out_idx(self) -> TensorIndex:
+        return tensor_index_to_slice(self._out_idx)
+
+
+@dataclass(frozen=True)
+class DestNode(Node):
+    _in_idx: HashableTensorIndex = None
 
     @property
-    def weight_t_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._weight_t_idx)
-
-    def module(self, model: t.nn.Module) -> t.nn.Module:
-        return module_by_name(model, self.module_name)
+    def in_idx(self) -> TensorIndex:
+        return tensor_index_to_slice(self._in_idx)
 
 
 @dataclass(frozen=True)
 class Edge:
-    src: EdgeSrc
-    dest: EdgeDest
+    src: SrcNode
+    dest: DestNode
 
-    def __repr__(self) -> str:
+    @property
+    def name(self) -> str:
         return f"{self.src.name}->{self.dest.name}"
 
+    def __repr__(self) -> str:
+        return self.name
+
     def __str__(self) -> str:
-        return self.__repr__()
+        return self.name

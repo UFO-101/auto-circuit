@@ -42,3 +42,6 @@ select = ["F", "E", "W", "I001"]
 ignore = ["datasets/ioi_generator.py"]
 reportMissingParameterType = true
 reportUnknownParameterType = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
