@@ -8,5 +8,5 @@ tqdm = partial(
     bar_format="{desc}{bar}{r_bar}",
     leave=None,
     colour="#03CF0A",
-    delay=2,
+    delay=0,
 )

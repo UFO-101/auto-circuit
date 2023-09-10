@@ -100,10 +100,9 @@ def run_pruned(
         patch_src_outs: Optional[Dict[SrcNode, t.Tensor]] = patch_acts[batch_idx]
 
         with remove_hooks() as handles:
-            edge_pbar = enumerate(list(prune_scores.items()))
-            # edge_pbar = tqdm(enumerate(list(prune_scores.items())))
-            for edge_idx, (edge, _) in edge_pbar:
-                # edge_pbar.set_description_str(f"Pruning {edge}")
+            edge_pbar = tqdm(list(prune_scores.items()))
+            for edge_idx, (edge, _) in enumerate(edge_pbar):
+                edge_pbar.set_description_str(f"Pruning {edge}")
                 n_edges = edge_idx + 1
                 prev_src_out_hook = partial(
                     update_current_acts_hook,

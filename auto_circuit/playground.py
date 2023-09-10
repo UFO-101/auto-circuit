@@ -48,7 +48,7 @@ device = (
     else "cpu"
 )
 print("device", device)
-toy_model = True
+toy_model = False
 if toy_model:
     cfg = tl.HookedTransformerConfig(
         d_vocab=50257,
@@ -82,7 +82,7 @@ print(percent_gpu_mem_used())
 experiment_type = ExperimentType(input_type=ActType.CLEAN, patch_type=ActType.CORRUPT)
 factorized = True
 pig_baseline, pig_samples = BaselineWeights.ZERO, 50
-edge_counts = EdgeCounts.ALL
+edge_counts = EdgeCounts.LOGARITHMIC
 acdc_tao_range, acdc_tao_step = (1e-6, 2e-5), 2e-6
 
 train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
@@ -104,7 +104,7 @@ prune_funcs: Dict[str, Callable] = {
     ),
     "Act Mag": activation_magnitude_prune_scores,
     "Random": random_prune_scores,
-    f"ACDC (\u03C4={acdc_tao_range}, step={acdc_tao_step})": partial(
+    f"ACDC (\u03C4={acdc_tao_range})": partial(
         acdc_prune_scores, tao_range=acdc_tao_range, tao_step=acdc_tao_step
     ),
     # "Subnetwork Probing": partial(

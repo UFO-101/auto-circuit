@@ -31,7 +31,7 @@ def acdc_prune_scores(
     edges = OrderedSet(reversed(list(edges)))
     exp_type = ExperimentType(ActType.CLEAN, ActType.CORRUPT)
     tao_values = t.arange(tao_range[0], tao_range[1] + tao_step, tao_step)
-    prune_scores = {}
+    prune_scores = dict([(edge, float("inf")) for edge in edges])
     for tao in (pbar_tao := tqdm(tao_values)):
         tao = tao.item()
         pbar_tao.set_description_str("ACDC \u03C4={:.7f}".format(tao))
@@ -49,11 +49,9 @@ def acdc_prune_scores(
             kl_div_clean = kl_divs_clean[edge_count]
             if kl_div_clean - prev_kl_div < tao:
                 prev_kl_div = kl_div_clean
-                if edge not in prune_scores:
-                    prune_scores[edge] = tao
+                prune_scores[edge] = min(tao, prune_scores[edge])
             else:
                 del edges_to_prune[edge]
-
     return prune_scores
 
 
@@ -73,6 +71,4 @@ def acdc_edge_counts(
     for _, count in prune_scores_count.items():
         prev_count = edge_counts[-1] if edge_counts else 0
         edge_counts += [prev_count + count]
-    print("ACDC edge_counts", edge_counts)
-
     return edge_counts_util(model, factorized, edge_counts)
