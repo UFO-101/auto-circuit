@@ -7,8 +7,8 @@ import torch.backends.mps
 import transformer_lens
 
 from auto_circuit.data import load_datasets_from_json
+from auto_circuit.prune import run_pruned
 from auto_circuit.prune_functions.random_edges import random_prune_scores
-from auto_circuit.run_experiments import run_pruned
 from auto_circuit.types import ActType, EdgeCounts, ExperimentType
 from auto_circuit.utils.graph_utils import edge_counts_util, graph_edges
 

@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
-from auto_circuit.utils.graph_utils import graph_edges
 from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.graph_utils import graph_edges
 
 
 class BaselineWeights(Enum):
@@ -47,7 +47,7 @@ def parameter_integrated_grads_prune_scores(
         raise NotImplementedError
 
     ig = dict([(n, t.zeros_like(p)) for n, p in normal_state.items()])
-    for idx in (pbar:=tqdm(range(samples))):
+    for idx in (pbar := tqdm(range(samples))):
         pbar.set_description_str(f"PIG Sample {idx+1}/{samples}")
         lerp_state = {}
         for name in weights:

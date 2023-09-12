@@ -1,9 +1,7 @@
 import math
-from collections import defaultdict
 from functools import partial
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
-import pygraphviz as pgv
 import torch as t
 import transformer_lens
 from ordered_set import OrderedSet
@@ -15,9 +13,13 @@ from auto_circuit.types import DestNode, Edge, EdgeCounts, SrcNode, TestEdges
 from auto_circuit.utils.misc import remove_hooks
 
 
-def graph_edges(model: t.nn.Module, factorized: bool) -> OrderedSet[Edge]:
+def graph_edges(
+    model: t.nn.Module, factorized: bool, reverse_topo_sort: bool = False
+) -> OrderedSet[Edge]:
     """Get the edges of the computation graph of the model."""
     if not factorized:
+        if reverse_topo_sort:
+            raise NotImplementedError()
         if isinstance(model, MicroModel):
             return mm_utils.simple_graph_edges(model)
         elif isinstance(model, transformer_lens.HookedTransformer):
@@ -39,11 +41,18 @@ def graph_edges(model: t.nn.Module, factorized: bool) -> OrderedSet[Edge]:
             raise NotImplementedError(model)
 
         edges = []
-        for src_layer, layer_srcs in enumerate(src_lyrs):
-            for edge in layer_srcs:
-                for layer_dests in dest_lyrs[src_layer:]:
-                    for dest in layer_dests:
-                        edges.append(Edge(src=edge, dest=dest))
+        if reverse_topo_sort is False:
+            for src_layer, layer_srcs in enumerate(src_lyrs):
+                for src in layer_srcs:
+                    for layer_dests in dest_lyrs[src_layer:]:
+                        for dest in layer_dests:
+                            edges.append(Edge(src=src, dest=dest))
+        else:
+            for dest_layer, layer_dests in list(enumerate(dest_lyrs))[::-1]:
+                for dest in layer_dests[::-1]:
+                    for layer_srcs in src_lyrs[dest_layer::-1]:
+                        for src in layer_srcs[::-1]:
+                            edges.append(Edge(dest=dest, src=src))
         return OrderedSet(edges)
 
 
@@ -83,14 +92,14 @@ def edge_counts_util(
     return counts_list
 
 
-def get_act_hook(
-    module: t.nn.Module,
+def src_out_hook(
+    model: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     output: t.Tensor,
-    node: SrcNode,
-    act_dict: Dict[SrcNode, t.Tensor],
-) -> None:
-    act_dict[node] = output[node.out_idx]
+    edge_src: SrcNode,
+    src_outs: Dict[SrcNode, t.Tensor],
+):
+    src_outs[edge_src] = output[edge_src.out_idx]
 
 
 def get_src_outs(
@@ -99,7 +108,7 @@ def get_src_outs(
     node_outs: Dict[SrcNode, t.Tensor] = {}
     with remove_hooks() as handles:
         for node in nodes:
-            hook_fn = partial(get_act_hook, node=node, act_dict=node_outs)
+            hook_fn = partial(src_out_hook, edge_src=node, src_outs=node_outs)
             handles.append(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
             model(input)
@@ -126,44 +135,3 @@ def get_dest_ins(
         with t.inference_mode():
             model(input)
     return node_inputs
-
-
-def parse_name(n: str) -> str:
-    return n[:-2] if n.startswith("A") and len(n) > 4 else n
-    # return n.split(".")[0] if n.startswith("A") else n
-
-
-def draw_graph(
-    model: t.nn.Module,
-    factorized: bool,
-    input: t.Tensor,
-    patched_edges: Optional[List[Edge]] = None,
-    patch_src_outs: Optional[Dict[SrcNode, t.Tensor]] = None,
-) -> None:
-    edges = graph_edges(model, factorized)
-    src_nodes = graph_src_nodes(model, factorized)
-    dest_nodes = graph_dest_nodes(model, factorized)
-    G = pgv.AGraph(strict=False, directed=True)
-
-    src_outs: Dict[SrcNode, t.Tensor] = get_src_outs(model, src_nodes, input)
-    dest_ins: Dict[DestNode, t.Tensor] = get_dest_ins(model, dest_nodes, input)
-    node_ins: Dict[str, t.Tensor] = dict([(k.name, v) for k, v in dest_ins.items()])
-    node_ins = defaultdict(lambda: t.tensor([0.0]), node_ins)
-
-    for edge in edges:
-        patched_edge = False
-        if patched_edges is not None and edge in patched_edges:
-            assert patch_src_outs is not None and edge.src in patch_src_outs
-            patched_edge = True
-            edge_act = patch_src_outs[edge.src]
-        else:
-            edge_act = src_outs[edge.src]
-        G.add_edge(
-            edge.src.name + f"\n{str(node_ins[edge.src.name].tolist())}",
-            edge.dest.name + f"\n{str(node_ins[edge.dest.name].tolist())}",
-            label=str(edge_act.tolist()),
-            color="red" if patched_edge else "black",
-        )
-
-    G.layout(prog="dot")  # neato
-    G.draw("graphviz.png")

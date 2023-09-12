@@ -17,11 +17,11 @@ class Block(t.nn.Module):
         self.head_outputs = t.nn.Identity()
 
     def forward(self, x: t.Tensor) -> t.Tensor:  # shape: (batch, resid)
-        x = einops.repeat(x, "b -> b h", h=2)
+        x = einops.repeat(x, "b r -> b h r", h=2)
         x = self.head_inputs(x)
-        x = einops.einsum(self.weights, x, "h, b h -> b h")
+        x = einops.einsum(self.weights, x, "h r, b h r -> b h r")
         x = self.head_outputs(x)
-        return einops.einsum(x, "b h -> b")
+        return einops.einsum(x, "b h r -> b r")
 
 
 class MicroModel(t.nn.Module):
@@ -32,7 +32,7 @@ class MicroModel(t.nn.Module):
         self.input = t.nn.Identity()
         self.n_layers = n_layers
         self.blocks, self.resids = t.nn.ModuleList(), t.nn.ModuleList()
-        self.weights = t.tensor([1.0, 2.0])
+        self.weights = t.tensor([[1.0, 2.0], [3.0, 4.0]])
         for _ in range(n_layers):
             self.blocks.append(Block(weights=self.weights))
             self.resids.append(t.nn.Identity())

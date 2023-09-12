@@ -13,8 +13,12 @@ import transformer_lens as tl
 
 import auto_circuit
 import auto_circuit.data
-import auto_circuit.run_experiments
+import auto_circuit.prune
 import auto_circuit.utils.graph_utils
+from auto_circuit.prune import (
+    measure_kl_div,
+    run_pruned,
+)
 from auto_circuit.prune_functions.ACDC import acdc_edge_counts, acdc_prune_scores
 from auto_circuit.prune_functions.activation_magnitude import (
     activation_magnitude_prune_scores,
@@ -24,10 +28,6 @@ from auto_circuit.prune_functions.parameter_integrated_gradients import (
     parameter_integrated_grads_prune_scores,
 )
 from auto_circuit.prune_functions.random_edges import random_prune_scores
-from auto_circuit.run_experiments import (
-    measure_kl_div,
-    run_pruned,
-)
 from auto_circuit.types import ActType, Edge, EdgeCounts, ExperimentType
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util

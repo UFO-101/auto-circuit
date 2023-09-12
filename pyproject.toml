@@ -14,8 +14,9 @@ python = "~3.10"
 # installing with Poetry doesn't work. But it doesn't currently detect that torch is
 # already installed and tries to install it anyway. TransformerLens has torch as dep.
 # See: https://github.com/python-poetry/poetry/pull/8359
-# torch = "^2.0.1"
-# transformer-lens = "^1.4.0"
+# ToDo: Poetry is now fixed, so check this now works.
+torch = "^2.0.1"
+transformer-lens = "^1.4.0"
 einops = "^0.6.1"
 pygraphviz = "^1.11"
 ordered-set = "^4.1.0"
