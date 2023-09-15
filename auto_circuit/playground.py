@@ -19,7 +19,7 @@ from auto_circuit.prune import (
     measure_kl_div,
     run_pruned,
 )
-from auto_circuit.prune_functions.ACDC import acdc_edge_counts, acdc_prune_scores
+from auto_circuit.prune_functions.ACDC import acdc_edge_counts
 from auto_circuit.prune_functions.activation_magnitude import (
     activation_magnitude_prune_scores,
 )
@@ -83,7 +83,8 @@ experiment_type = ExperimentType(input_type=ActType.CLEAN, patch_type=ActType.CO
 factorized = True
 pig_baseline, pig_samples = BaselineWeights.ZERO, 50
 edge_counts = EdgeCounts.LOGARITHMIC
-acdc_tao_range, acdc_tao_step = (1e-6, 2e-5), 2e-6
+# acdc_tao_range, acdc_tao_step = (1e-6, 2e-5), 2e-6
+acdc_tao_range, acdc_tao_step = (1e-8, 1e-8), 1e-8
 
 train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     model.tokenizer,
@@ -104,9 +105,9 @@ prune_funcs: Dict[str, Callable] = {
     ),
     "Act Mag": activation_magnitude_prune_scores,
     "Random": random_prune_scores,
-    f"ACDC (\u03C4={acdc_tao_range})": partial(
-        acdc_prune_scores, tao_range=acdc_tao_range, tao_step=acdc_tao_step
-    ),
+    # f"ACDC (\u03C4={acdc_tao_range})": partial(
+    #     acdc_prune_scores, tao_range=acdc_tao_range, tao_step=acdc_tao_step
+    # ),
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores, learning_rate=1e-2, epochs=200, max_lambda=30
     # ),
@@ -119,14 +120,18 @@ for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
 # SAVE PRUNE SCORES DICT
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
-with open(f"../.prune_scores_cache/prune_scores_dict-{dt_string}.pkl", "wb") as f:
+file_postfix = "(ACDC-factorized-gpt2-1-tao)"
+with open(
+    f"{repo_root}/.prune_scores_cache/prune_scores_dict-{dt_string}-{file_postfix}.pkl",
+    "wb",
+) as f:
     pickle.dump(prune_scores_dict, f)
 #%%
 # LOAD PRUNE SCORES DICT
 date = "28-08-2023_23-38-19"
-prune_scores_file_name = f"../.prune_scores_cache/prune_scores_dict-{date}.pkl"
+pth = f"{repo_root}/.prune_scores_cache/prune_scores_dict-{date}-{file_postfix}.pkl"
 if date is not None:
-    with open(prune_scores_file_name, "rb") as f:
+    with open(pth, "rb") as f:
         prune_scores_dict = pickle.load(f)
 
 #%%
@@ -139,7 +144,7 @@ for prune_func_str, prune_scores in (
     prune_func_pbar.set_description_str(f"Pruning with {prune_func_str} scores")
     print("BEFORE prune_func_str", prune_func_str, percent_gpu_mem_used())
     test_edge = (
-        acdc_edge_counts(model, factorized, prune_scores)
+        acdc_edge_counts(model, factorized, experiment_type, prune_scores)
         if prune_func_str.startswith("ACDC")
         else test_edge_counts
     )

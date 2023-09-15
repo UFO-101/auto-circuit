@@ -1,14 +1,14 @@
 from contextlib import contextmanager
 from functools import reduce
-from typing import Iterator, List
+from typing import Iterator, Set
 
 import torch as t
 from torch.utils.hooks import RemovableHandle
 
 
 @contextmanager
-def remove_hooks() -> Iterator[List[RemovableHandle]]:
-    handles: List[RemovableHandle] = []
+def remove_hooks() -> Iterator[Set[RemovableHandle]]:
+    handles: Set[RemovableHandle] = set()
     try:
         yield handles
     finally:

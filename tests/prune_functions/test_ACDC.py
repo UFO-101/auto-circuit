@@ -1,56 +1,77 @@
 #%%
-import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 import torch as t
+from ordered_set import OrderedSet
+from torch.utils.data import DataLoader
 
-from auto_circuit.data import load_datasets_from_json
+from auto_circuit.data import PromptPairBatch
 from auto_circuit.model_utils.micro_model_utils import MicroModel
-from auto_circuit.prune_functions.ACDC import acdc_prune_scores
-
-os.environ["TOKENIZERS_PARALLELISM"] = "False"
-
-
-@pytest.fixture
-def setup_data() -> Dict[str, Any]:
-    device = "cpu"
-    model = MicroModel(n_layers=2)
-    return {"model": model, "device": device}
+from auto_circuit.prune_functions.ACDC import acdc_edge_counts, acdc_prune_scores
+from auto_circuit.types import ActType, Edge, ExperimentType, TensorIndex
+from auto_circuit.utils.graph_utils import graph_edges
 
 
-def test_acdc(setup_data: Dict[str, Any]):
-    model, device = setup_data["model"], setup_data["device"]
+@pytest.mark.parametrize(
+    "model, dataloader, output_slice",
+    [
+        ("micro_model", "micro_dataloader", slice(None)),
+        ("mini_tl_transformer", "mini_tl_dataloader", (slice(None), -1)),
+    ],
+)
+def test_acdc(
+    model: t.nn.Module,
+    dataloader: DataLoader[PromptPairBatch],
+    output_slice: TensorIndex,
+    request: Any,
+    show_graphs: bool = False,  # Useful for debugging
+):
+    fixture_model = request.getfixturevalue(model)
+    fixture_dataloader = request.getfixturevalue(dataloader)
     factorized = True
-    data_file = "datasets/micro_model_inputs.json"
-    data_path = os.path.join(os.getcwd(), data_file)
-
-    train_loader, _ = load_datasets_from_json(
-        None,
-        data_path,
-        device=device,
-        prepend_bos=True,
-        batch_size=1,
-        train_test_split=[1, 1],
-        length_limit=2,
+    acdc_prune_scores(
+        fixture_model,
+        factorized,
+        fixture_dataloader,
+        (1e-4, 1e-4),
+        1e-4,
+        output_slice,
+        test_mode=True,
+        show_graphs=show_graphs,
     )
-    test_input = next(iter(train_loader))
 
-    with t.inference_mode():
-        clean_out = model(test_input.clean)
-        corrupt_out = model(test_input.corrupt)
 
-    assert t.allclose(clean_out, t.tensor([[25.0, 49.0]]))
-    assert t.allclose(corrupt_out, t.tensor([[-25.0, -49.0]]))
-    prune_scores = acdc_prune_scores(
-        model, factorized, train_loader, (1e-4, 1e-4), 0.1, slice(None)
+# import ipytest
+# ipytest.autoconfig()
+# ipytest.run("-q", "-s")
+
+#%%
+
+
+@pytest.mark.parametrize("decrease_prune_scores", [True, False])
+def test_acdc_edge_counts(micro_model: MicroModel, decrease_prune_scores: bool):
+    model = micro_model
+    edges: OrderedSet[Edge] = graph_edges(model, True)
+    experiment_type = ExperimentType(
+        ActType.CLEAN, ActType.CORRUPT, decrease_prune_scores
     )
-    # draw_graph(model, factorized, test_input.clean, edge_label_override=prune_scores)
-    print("prune_scores", prune_scores)
 
+    counts: List[int] = acdc_edge_counts(model, True, experiment_type, {})
+    assert counts == []
 
-# data = setup_data()
-# test_acdc(data)
+    prune_scores: Dict[Edge, float] = {edges[0]: 0.0}
+    counts: List[int] = acdc_edge_counts(model, True, experiment_type, prune_scores)
+    assert counts == [1]
 
+    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 1.0}
+    counts: List[int] = acdc_edge_counts(model, True, experiment_type, prune_scores)
+    assert counts == [2]
 
-# %%
+    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 1.0, edges[2]: 2.0}
+    counts: List[int] = acdc_edge_counts(model, True, experiment_type, prune_scores)
+    assert counts == [1, 3] if decrease_prune_scores else [2, 3]
+
+    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 2.0, edges[2]: 2.0}
+    counts: List[int] = acdc_edge_counts(model, True, experiment_type, prune_scores)
+    assert counts == [2, 3] if decrease_prune_scores else [1, 3]

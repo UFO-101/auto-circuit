@@ -18,14 +18,16 @@ def graph_edges(
 ) -> OrderedSet[Edge]:
     """Get the edges of the computation graph of the model."""
     if not factorized:
-        if reverse_topo_sort:
-            raise NotImplementedError()
         if isinstance(model, MicroModel):
-            return mm_utils.simple_graph_edges(model)
+            edge_set: OrderedSet[Edge] = mm_utils.simple_graph_edges(model)
         elif isinstance(model, transformer_lens.HookedTransformer):
-            return tl_utils.simple_graph_edges(model)
+            edge_set: OrderedSet[Edge] = tl_utils.simple_graph_edges(model)
         else:
             raise NotImplementedError(model)
+
+        if reverse_topo_sort:
+            edge_set = OrderedSet([edge for edge in edge_set][::-1])
+        return edge_set
     else:
         if isinstance(model, MicroModel):
             src_lyrs: List[OrderedSet[SrcNode]] = mm_utils.fctrzd_graph_src_lyrs(model)
@@ -109,7 +111,7 @@ def get_src_outs(
     with remove_hooks() as handles:
         for node in nodes:
             hook_fn = partial(src_out_hook, edge_src=node, src_outs=node_outs)
-            handles.append(node.module(model).register_forward_hook(hook_fn))
+            handles.add(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
             model(input)
     return node_outs
@@ -131,7 +133,7 @@ def get_dest_ins(
     with remove_hooks() as handles:
         for node in nodes:
             hook_fn = partial(input_hook, node=node, input_dict=node_inputs)
-            handles.append(node.module(model).register_forward_pre_hook(hook_fn))
+            handles.add(node.module(model).register_forward_pre_hook(hook_fn))
         with t.inference_mode():
             model(input)
     return node_inputs

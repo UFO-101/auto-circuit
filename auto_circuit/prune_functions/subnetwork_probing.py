@@ -19,6 +19,8 @@ from auto_circuit.utils.misc import set_module_by_name
 # Constants are copied from the paper's code
 mask_p, left, right, temp = 0.9, -0.1, 1.1, 2 / 3
 
+SP = "Subnetwork Probing"
+
 
 class MaskedModule(t.nn.Module):
     """A module that applies a mask to its output."""
@@ -78,12 +80,11 @@ def subnetwork_probing_prune_scores(
     ]
     optim = t.optim.Adam(mask_params, lr=learning_rate)  # type: ignore
     loss_history, kl_div_history, regularize_history = [], [], []
-    # for epoch in (epoch_pbar:=tqdm(range(epochs))):
-    for epoch in tqdm(range(epochs)):
-        # epoch_pbar.set_description_str(f"Subnetwork Probing Epoch {epoch}")
+    for epoch in (epoch_pbar := tqdm(range(epochs))):
+        epoch_pbar.set_description_str(f"{SP} Epoch {epoch}", refresh=False)
         lmbd = min(1, max(0, ((epoch - (0.25 * epochs)) / (0.5 * epochs)))) * max_lambda
         for batch_idx, batch in (batch_pbar := tqdm(enumerate(train_data))):
-            batch_pbar.set_description_str(f"Subnetwork Probing Batch {batch_idx}")
+            batch_pbar.set_description_str(f"{SP} Batch {batch_idx}", refresh=False)
             masked_logprobs = log_softmax(model(batch.clean), dim=-1)
             kl_div_term = kl_div(
                 masked_logprobs,

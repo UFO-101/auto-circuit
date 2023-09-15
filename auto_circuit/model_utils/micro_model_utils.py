@@ -49,7 +49,7 @@ class MicroModel(t.nn.Module):
 def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
     """Get the source part of each edge in the factorized graph, grouped by layer."""
     layers = []
-    layers.append(OrderedSet([SrcNode(name="Input", module_name="input")]))
+    layers.append(OrderedSet([SrcNode(name="Input", module_name="input", layer=0)]))
     for layer_idx in range(model.n_layers):
         mul_set = OrderedSet([])
         for elem in [0, 1]:
@@ -57,6 +57,7 @@ def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
                 SrcNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
+                    layer=layer_idx,
                     _out_idx=(None, elem),
                     weight="weights",
                     _weight_t_idx=elem,
@@ -75,11 +76,16 @@ def fctrzd_graph_dest_lyrs(model: MicroModel) -> List[OrderedSet[DestNode]]:
                 DestNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
+                    layer=layer_idx,
                     _in_idx=(None, elem),
                 )
             )
         layers.append(elem_set)
-    layers.append(OrderedSet([DestNode(name="Output", module_name="output")]))
+    layers.append(
+        OrderedSet(
+            [DestNode(name="Output", module_name="output", layer=model.n_layers + 1)]
+        )
+    )
     return layers
 
 
@@ -92,6 +98,7 @@ def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
                 SrcNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
+                    layer=layer_idx,
                     _out_idx=(None, elem),
                     weight="weights",
                     _weight_t_idx=elem,
@@ -101,6 +108,7 @@ def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
         resid = DestNode(
             name="Output" if last_block else f"Resid Layer {layer_idx}",
             module_name="output" if last_block else f"resids.{layer_idx}",
+            layer=layer_idx + 1,
         )
         for elem in elem_set:
             edges.append(Edge(src=elem, dest=resid))

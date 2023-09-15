@@ -31,7 +31,7 @@ TestEdges = EdgeCounts | List[int | float]
 class ExperimentType:
     input_type: ActType
     patch_type: ActType
-    sort_prune_scores_high_to_low: bool = True
+    decrease_prune_scores: bool = True
 
 
 HashableTensorIndex = Tuple[Optional[int], ...] | None | int
@@ -50,6 +50,7 @@ def tensor_index_to_slice(t_idx: HashableTensorIndex) -> TensorIndex:
 class Node:
     name: str
     module_name: str
+    layer: int
     weight: Optional[str] = None
     _weight_t_idx: HashableTensorIndex = None
 

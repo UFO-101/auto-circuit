@@ -16,6 +16,7 @@ def fctrzd_graph_src_lyrs(model: tl.HookedTransformer) -> List[OrderedSet[SrcNod
     resid_start = SrcNode(
         name="Resid Start",
         module_name="blocks.0.hook_resid_pre",
+        layer=0,
         weight="embed.W_E",
     )
     layers.append(OrderedSet([resid_start]))
@@ -25,6 +26,7 @@ def fctrzd_graph_src_lyrs(model: tl.HookedTransformer) -> List[OrderedSet[SrcNod
             attn_src = SrcNode(
                 name=f"A{block_idx}.{head_idx}",
                 module_name=f"blocks.{block_idx}.attn.hook_result",
+                layer=block_idx,
                 _out_idx=(None, None, head_idx),
                 weight=f"blocks.{block_idx}.attn.W_O",
                 _weight_t_idx=head_idx,
@@ -36,6 +38,7 @@ def fctrzd_graph_src_lyrs(model: tl.HookedTransformer) -> List[OrderedSet[SrcNod
                 SrcNode(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.mlp",
+                    layer=block_idx,
                     weight=f"blocks.{block_idx}.mlp.W_out",
                 )
             ]
@@ -58,6 +61,7 @@ def fctrzd_graph_dest_lyrs(model: tl.HookedTransformer) -> List[OrderedSet[DestN
                 attn_dest = DestNode(
                     name=f"A{block_idx}.{head_idx}.{letter}",
                     module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                    layer=block_idx,
                     _in_idx=(None, None, head_idx),
                     weight=f"blocks.{block_idx}.attn.W_{letter}",
                     _weight_t_idx=head_idx,
@@ -67,15 +71,17 @@ def fctrzd_graph_dest_lyrs(model: tl.HookedTransformer) -> List[OrderedSet[DestN
         mlp_dest = DestNode(
             name=f"MLP {block_idx}",
             module_name=f"blocks.{block_idx}.hook_mlp_in",
+            layer=block_idx,
             weight=f"blocks.{block_idx}.mlp.W_in",
         )
-        layers.append(set([mlp_dest]))
+        layers.append(OrderedSet([mlp_dest]))
     resid_end = DestNode(
         name="Resid End",
         module_name=f"blocks.{model.cfg.n_layers - 1}.hook_resid_post",
+        layer=model.cfg.n_layers - 1,
         weight="unembed.W_U",
     )
-    layers.append(set([resid_end]))
+    layers.append(OrderedSet([resid_end]))
     return layers
 
 
@@ -88,6 +94,7 @@ def simple_graph_edges(model: tl.HookedTransformer) -> OrderedSet[Edge]:
             attn_src = SrcNode(
                 name=f"A{block_idx}.{head_idx}",
                 module_name=f"blocks.{block_idx}.attn.hook_result",
+                layer=block_idx,
                 _out_idx=(None, None, head_idx),
                 weight=f"blocks.{block_idx}.attn.W_O",
                 _weight_t_idx=head_idx,
@@ -96,6 +103,7 @@ def simple_graph_edges(model: tl.HookedTransformer) -> OrderedSet[Edge]:
         resid_mid_dest = DestNode(
             name=f"Block {block_idx} Resid Mid",
             module_name=f"blocks.{block_idx}.hook_resid_mid",
+            layer=block_idx,
         )
         for attn_src in attn_srcs:
             edges.append(Edge(src=attn_src, dest=resid_mid_dest))
@@ -103,12 +111,14 @@ def simple_graph_edges(model: tl.HookedTransformer) -> OrderedSet[Edge]:
         mlp_src = SrcNode(
             name=f"MLP {block_idx}",
             module_name=f"blocks.{block_idx}.mlp",
+            layer=block_idx,
             weight=f"blocks.{block_idx}.mlp.W_out",
         )
         last_block = block_idx + 1 == model.cfg.n_layers
         resid_post_dest = DestNode(
             name="Resid Final" if last_block else f"Block {block_idx} Resid Post",
             module_name=f"blocks.{block_idx}.hook_resid_post",
+            layer=block_idx + 1,
         )
         edges.append(Edge(src=mlp_src, dest=resid_post_dest))
     return OrderedSet(edges)

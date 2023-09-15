@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import torch as t
 from torch.utils.data import DataLoader
@@ -13,6 +13,7 @@ from auto_circuit.types import (
     SrcNode,
     TensorIndex,
 )
+from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_src_outs,
     graph_edges,
@@ -51,17 +52,11 @@ def run_pruned(
     graph_edges(model, factorized)
     src_nodes = graph_src_nodes(model, factorized)
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
+    rvrse = experiment_type.decrease_prune_scores
+    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=rvrse))
 
-    def sort_fn(v: Tuple[Edge, float]) -> float:
-        return -v[1] if experiment_type.sort_prune_scores_high_to_low else v[1]
-
-    prune_scores = dict(sorted(prune_scores.items(), key=sort_fn))
-
-    for batch_idx, batch in (
-        # batch_pbar := tqdm(enumerate(data_loader), total=len(data_loader))
-        batch_pbar := enumerate(data_loader)
-    ):
-        # batch_pbar.set_description_str(f"Pruning Batch {batch_idx}")
+    for batch_idx, batch in enumerate(batch_pbar := tqdm(data_loader)):
+        batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
         if experiment_type.input_type == ActType.CLEAN:
             batch_input = batch.clean
         elif experiment_type.input_type == ActType.CORRUPT:
@@ -75,6 +70,7 @@ def run_pruned(
 
         src_outs: Dict[SrcNode, t.Tensor] = {}
         patch_outs: Dict[SrcNode, t.Tensor]
+        hooked_srcs: Set[SrcNode] = set([])
         if experiment_type.patch_type == ActType.CLEAN:
             patch_outs = get_src_outs(model, src_nodes, batch.clean)
         elif experiment_type.patch_type == ActType.CORRUPT:
@@ -85,27 +81,27 @@ def run_pruned(
             patch_outs = dict([(n, t.zeros_like(out)) for n, out in patch_outs.items()])
 
         with remove_hooks() as handles:
-            edge_pbar = list(prune_scores.items())
-            for edge_idx, (edge, _) in enumerate(edge_pbar):
+            for edge_idx, edge in enumerate(edge_pbar := tqdm(prune_scores.keys())):
+                edge_pbar.set_description(f"Prune Edge {edge}", refresh=False)
                 n_edges = edge_idx + 1
-                # TODO: Registering duplicate hooks!!!!!
-                src_hook = partial(src_out_hook, edge_src=edge.src, src_outs=src_outs)
-                hndl_1 = edge.src.module(model).register_forward_hook(src_hook)
-                patch_hook = partial(
+                if edge.src not in hooked_srcs:
+                    src_hk = partial(src_out_hook, edge_src=edge.src, src_outs=src_outs)
+                    handles.add(edge.src.module(model).register_forward_hook(src_hk))
+                    hooked_srcs.add(edge.src)
+                patch_hk = partial(
                     path_patch_hook,
                     edge=edge,
                     src_outs=src_outs,
                     patch_src_out=patch_outs[edge.src],
                 )
-                hndl_2 = edge.dest.module(model).register_forward_pre_hook(patch_hook)
-                handles.extend([hndl_1, hndl_2])
+                handles.add(edge.dest.module(model).register_forward_pre_hook(patch_hk))
                 if n_edges in test_edge_counts:
                     with t.inference_mode():
                         model_output = model(batch_input)
                     pruned_outs[n_edges].append(model_output[output_idx])
             if render_graph:
                 d = dict([(e, patch_outs[e.src]) for e, _ in prune_scores.items()])
-                draw_graph(model, factorized, batch_input, edge_label_override=d)
+                draw_graph(model, factorized, batch_input, d, output_idx)
         del patch_outs, src_outs  # Free up memory
     return pruned_outs
 

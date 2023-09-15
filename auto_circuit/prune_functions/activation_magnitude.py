@@ -34,7 +34,7 @@ def activation_magnitude_prune_scores(
             handle = edge.src.module(model).register_forward_hook(
                 partial(output_hook, edge=edge, act_dict=act_dict)
             )
-            handles.append(handle)
+            handles.add(handle)
         for batch in train_data:
             model(batch.clean)
 

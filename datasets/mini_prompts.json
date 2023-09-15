@@ -1,0 +1,12 @@
+{
+  "prompts": [
+    {
+      "clean": "I like",
+      "corrupt": "I hate"
+    },
+    {
+      "clean": "I like",
+      "corrupt": "I hate"
+    }
+  ]
+}

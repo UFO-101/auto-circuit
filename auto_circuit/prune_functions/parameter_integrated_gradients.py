@@ -48,7 +48,7 @@ def parameter_integrated_grads_prune_scores(
 
     ig = dict([(n, t.zeros_like(p)) for n, p in normal_state.items()])
     for idx in (pbar := tqdm(range(samples))):
-        pbar.set_description_str(f"PIG Sample {idx+1}/{samples}")
+        pbar.set_description_str(f"PIG Sample {idx+1}/{samples}", refresh=False)
         lerp_state = {}
         for name in weights:
             lerp_state[name] = base_state[name] + (
