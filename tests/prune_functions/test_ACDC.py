@@ -42,15 +42,15 @@ def test_acdc(
     )
 
 
-# import ipytest
-# ipytest.autoconfig()
-# ipytest.run("-q", "-s")
+import ipytest
 
+ipytest.run("-q", "-s")
 #%%
 
 
 @pytest.mark.parametrize("decrease_prune_scores", [True, False])
 def test_acdc_edge_counts(micro_model: MicroModel, decrease_prune_scores: bool):
+    print("HI")
     model = micro_model
     edges: OrderedSet[Edge] = graph_edges(model, True)
     experiment_type = ExperimentType(

@@ -64,6 +64,7 @@ def load_datasets_from_json(
             corrupt_prompts = [
                 tokenizer.bos_token + prompt for prompt in corrupt_prompts
             ]
+        tokenizer.padding_side = "left"
         clean_prompts = tokenizer(
             clean_prompts, padding=True, truncation=True, return_tensors="pt"
         )

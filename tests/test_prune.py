@@ -1,3 +1,4 @@
+#%%
 import os
 
 import torch as t
@@ -46,7 +47,7 @@ def test_pruning(
     prune_scores = {
         edge_dict["Block Layer 0 Elem 1->Output"]: 3.0,
         edge_dict["Block Layer 0 Elem 0->Block Layer 1 Elem 1"]: 2.0,
-        edge_dict["Input->Block Layer 0 Elem 0"]: 0,
+        edge_dict["Input->Block Layer 0 Elem 0"]: 1.0,
     }
 
     pruned_outs = run_pruned(
@@ -64,3 +65,7 @@ def test_pruning(
     assert t.allclose(pruned_outs[1][0], t.tensor([[19.0, 41.0]]), atol=1e-3)
     assert t.allclose(pruned_outs[2][0], t.tensor([[13.0, 25.0]]), atol=1e-3)
     assert t.allclose(pruned_outs[3][0], t.tensor([[9.0, 13.0]]), atol=1e-3)
+
+
+# import ipytest
+# ipytest.run("-q", "-s")

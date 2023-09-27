@@ -10,18 +10,39 @@ from torch.utils.data import DataLoader
 from transformer_lens import HookedTransformer
 
 from auto_circuit.data import PromptPairBatch
-from auto_circuit.prune import path_patch_hook, run_pruned
-from auto_circuit.types import ActType, Edge, ExperimentType, SrcNode, TensorIndex
+from auto_circuit.prune import run_pruned
+from auto_circuit.types import (
+    ActType,
+    Edge,
+    ExperimentType,
+    HashableTensorIndex,
+    SrcNode,
+    TensorIndex,
+)
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
+    PatchInput,
+    add_tensor_idx_to_combined_idx,
     edge_counts_util,
+    get_head_dim,
     get_src_outs,
     graph_edges,
     graph_src_nodes,
-    src_out_hook,
+    tensor_idx_to_combined_idx,
 )
-from auto_circuit.utils.misc import remove_hooks
+from auto_circuit.utils.misc import remove_hooks, set_module_by_name
 from auto_circuit.visualize import draw_graph
+
+
+def update_src_out_tensor(
+    module: t.nn.Module,
+    input: t.Tensor,
+    output: t.Tensor,
+    src: SrcNode,
+    src_outs_tensor: t.Tensor,
+    patch_slice: TensorIndex,
+):
+    src_outs_tensor[src.idx] = output[src.out_idx][patch_slice]
 
 
 def acdc_prune_scores(
@@ -31,6 +52,7 @@ def acdc_prune_scores(
     tao_range: Tuple[float, float] = (0.1, 0.9),
     tao_step: float = 0.1,
     output_idx: TensorIndex = (slice(None), -1),
+    patch_slice: TensorIndex = slice(None),
     test_mode: bool = False,
     show_graphs: bool = False,
 ) -> Dict[Edge, float]:
@@ -60,6 +82,10 @@ def acdc_prune_scores(
             clean_out = model(clean_batch)[output_idx]
             toks, short_embd, left_attn_mask, resids = None, None, None, []
             if isinstance(model, HookedTransformer):
+                assert (
+                    model.tokenizer is not None
+                    and model.tokenizer.padding_side == "left"
+                )
                 _, toks, short_embd, left_attn_mask = model.input_to_embed(clean_batch)
                 _, cache = model.run_with_cache(clean_batch)
                 n_layers = range(model.cfg.n_layers)
@@ -70,27 +96,94 @@ def acdc_prune_scores(
         patch_outs: Dict[SrcNode, t.Tensor] = get_src_outs(
             model, src_nodes, corrupt_batch
         )
+        patch_outs = dict(
+            sorted(patch_outs.items(), key=lambda x: x[0].idx, reverse=False)
+        )
+        assert [src.idx for src in patch_outs.keys()] == list(range(len(patch_outs)))
+        patch_outs_tensor = t.stack(
+            [out[patch_slice] for out in patch_outs.values()]
+        ).detach()  # [src, batch, resid]
+
         src_outs: Dict[SrcNode, t.Tensor] = get_src_outs(model, src_nodes, clean_batch)
+        src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx, reverse=False))
+        assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
+        src_outs_tensor = t.stack(
+            [out[patch_slice] for out in src_outs.values()]
+        ).detach()
 
         prev_kl_div = 0.0
         removed_edges: OrderedSet[Edge] = OrderedSet([])
         hooked_srcs: Set[SrcNode] = set([])
+
+        patched_heads: Dict[str, List[HashableTensorIndex]] = {}
+        # with t.profiler.profile(
+        #     schedule=t.profiler.schedule(wait=488, warmup=2, active=10),
+        #     activities=[
+        #         t.profiler.ProfilerActivity.CPU,
+        #         t.profiler.ProfilerActivity.CUDA,
+        #     ],
+        #     on_trace_ready=t.profiler.tensorboard_trace_handler('./log/ACDC-4-improved-patch-module'),
+        #     record_shapes=True,
+        #     profile_memory=True,
+        #     with_stack=True
+        # ) as prof, remove_hooks() as handles:
         with remove_hooks() as handles:
-            for edge in (pbar_edge := tqdm(edges)):
-                desc = f"ACDC, Removed: {len(removed_edges)}, Current Edge='{edge}'"
+            for edge_idx, edge in enumerate((pbar_edge := tqdm(edges))):
+                desc = f"Remvd: {len(removed_edges)}, Left: {edge_idx + 1 - len(removed_edges)}, Current Edge='{edge}'"
                 pbar_edge.set_description_str(desc, refresh=False)
 
                 new_hks = set([])
                 if edge.src not in hooked_srcs:
-                    src_hk = partial(src_out_hook, edge_src=edge.src, src_outs=src_outs)
+                    # src_hk = partial(src_out_hook, edge_src=edge.src, src_outs=src_outs)
+                    src_hk = partial(
+                        update_src_out_tensor,
+                        src=edge.src,
+                        src_outs_tensor=src_outs_tensor,
+                        patch_slice=patch_slice,
+                    )
                     new_hks.add(edge.src.module(model).register_forward_hook(src_hk))
-                patch_hk = partial(
-                    path_patch_hook,
-                    edge=edge,
-                    src_outs=src_outs,
-                    patch_src_out=patch_outs[edge.src],
-                )
-                new_hks.add(edge.dest.module(model).register_forward_pre_hook(patch_hk))
+                if isinstance((dest_mod := edge.dest.module(model)), PatchInput):
+                    if edge.dest._in_idx in patched_heads[edge.dest.module_name]:
+                        if edge.dest.in_idx == slice(None):
+                            dest_mod.srcs_to_patch[edge.src.idx] = 1.0
+                        else:
+                            dest_mod.srcs_to_patch[-1, edge.src.idx] = 1.0
+                    else:
+                        assert edge.dest.in_idx != slice(None)
+                        new_srcs_to_patch = t.zeros(
+                            1, src_outs_tensor.shape[0], device=clean_batch.device
+                        )
+                        new_srcs_to_patch[-1, edge.src.idx] = 1.0
+                        dest_mod.srcs_to_patch = t.cat(
+                            (dest_mod.srcs_to_patch, new_srcs_to_patch), dim=0
+                        )
+                        dest_mod.patch_idx = add_tensor_idx_to_combined_idx(
+                            edge.dest.in_idx, dest_mod.patch_idx
+                        )
+                        patched_heads[edge.dest.module_name].append(edge.dest._in_idx)  # type: ignore
+                else:
+                    if edge.dest.in_idx == slice(None):
+                        srcs_to_patch = t.zeros(
+                            src_outs_tensor.shape[0], device=clean_batch.device
+                        )
+                        srcs_to_patch[edge.src.idx] = 1.0
+                    else:
+                        srcs_to_patch = t.zeros(
+                            1, src_outs_tensor.shape[0], device=clean_batch.device
+                        )
+                        srcs_to_patch[-1, edge.src.idx] = 1.0
+
+                    patch_mod = PatchInput(
+                        module=dest_mod,
+                        patch_idx=tensor_idx_to_combined_idx(edge.dest.in_idx),
+                        srcs_to_patch=srcs_to_patch,
+                        src_outs=src_outs_tensor,
+                        patch_outs=patch_outs_tensor,
+                        head_dim=get_head_dim(edge.dest),
+                        patch_slice=patch_slice,
+                    )
+                    set_module_by_name(model, edge.dest.module_name, patch_mod)
+                    patched_heads[edge.dest.module_name] = [edge.dest._in_idx]
 
                 with t.inference_mode():
                     if isinstance(model, HookedTransformer):
@@ -143,6 +236,12 @@ def acdc_prune_scores(
                     prev_kl_div = mean_kl_div
                 else:
                     [hk.remove() for hk in new_hks]
+                    # del edge.dest.module(model).patches[edge]
+                    if edge.dest.in_idx == slice(None):
+                        edge.dest.module(model).srcs_to_patch[edge.src.idx] = 0.0
+                    else:
+                        edge.dest.module(model).srcs_to_patch[-1, edge.src.idx] = 0.0
+                # prof.step()
     return prune_scores
 
 

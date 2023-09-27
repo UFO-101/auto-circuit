@@ -50,7 +50,8 @@ def tensor_index_to_slice(t_idx: HashableTensorIndex) -> TensorIndex:
 class Node:
     name: str
     module_name: str
-    layer: int
+    layer: int  # Layer of the model (eg. which block in a transformer)
+    idx: int  # Index of the node across all nodes of same type in all layers
     weight: Optional[str] = None
     _weight_t_idx: HashableTensorIndex = None
 

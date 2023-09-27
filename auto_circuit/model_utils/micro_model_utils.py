@@ -1,3 +1,4 @@
+from itertools import count
 from typing import List
 
 import einops
@@ -49,7 +50,12 @@ class MicroModel(t.nn.Module):
 def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
     """Get the source part of each edge in the factorized graph, grouped by layer."""
     layers = []
-    layers.append(OrderedSet([SrcNode(name="Input", module_name="input", layer=0)]))
+    idxs = count()
+    layers.append(
+        OrderedSet(
+            [SrcNode(name="Input", module_name="input", layer=0, idx=next(idxs))]
+        )
+    )
     for layer_idx in range(model.n_layers):
         mul_set = OrderedSet([])
         for elem in [0, 1]:
@@ -58,6 +64,7 @@ def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
                     layer=layer_idx,
+                    idx=next(idxs),
                     _out_idx=(None, elem),
                     weight="weights",
                     _weight_t_idx=elem,
@@ -69,6 +76,7 @@ def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
 
 def fctrzd_graph_dest_lyrs(model: MicroModel) -> List[OrderedSet[DestNode]]:
     layers = []
+    idxs = count()
     for layer_idx in range(model.n_layers):
         elem_set = OrderedSet([])
         for elem in [0, 1]:
@@ -77,13 +85,21 @@ def fctrzd_graph_dest_lyrs(model: MicroModel) -> List[OrderedSet[DestNode]]:
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
                     layer=layer_idx,
+                    idx=next(idxs),
                     _in_idx=(None, elem),
                 )
             )
         layers.append(elem_set)
     layers.append(
         OrderedSet(
-            [DestNode(name="Output", module_name="output", layer=model.n_layers + 1)]
+            [
+                DestNode(
+                    name="Output",
+                    module_name="output",
+                    layer=model.n_layers + 1,
+                    idx=next(idxs),
+                )
+            ]
         )
     )
     return layers
@@ -91,6 +107,7 @@ def fctrzd_graph_dest_lyrs(model: MicroModel) -> List[OrderedSet[DestNode]]:
 
 def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
     edges = []
+    src_idxs, dest_idxs = count(), count()
     for layer_idx in range(model.n_layers):
         elem_set = []
         for elem in [0, 1]:
@@ -99,6 +116,7 @@ def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
                     layer=layer_idx,
+                    idx=next(src_idxs),
                     _out_idx=(None, elem),
                     weight="weights",
                     _weight_t_idx=elem,
@@ -109,6 +127,7 @@ def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
             name="Output" if last_block else f"Resid Layer {layer_idx}",
             module_name="output" if last_block else f"resids.{layer_idx}",
             layer=layer_idx + 1,
+            idx=next(dest_idxs),
         )
         for elem in elem_set:
             edges.append(Edge(src=elem, dest=resid))
