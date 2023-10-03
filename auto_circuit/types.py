@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 import torch as t
 
 from auto_circuit.utils.misc import module_by_name
+from auto_circuit.utils.patch_wrapper import PatchWrapper
 
 
 class ActType(Enum):
@@ -34,33 +35,21 @@ class ExperimentType:
     decrease_prune_scores: bool = True
 
 
-HashableTensorIndex = Tuple[Optional[int], ...] | None | int
-TensorIndex = Tuple[int | slice, ...] | int | slice
-
-
-def tensor_index_to_slice(t_idx: HashableTensorIndex) -> TensorIndex:
-    if t_idx is None:
-        return slice(None)
-    elif isinstance(t_idx, int):
-        return t_idx
-    return tuple([slice(None) if idx is None else idx for idx in t_idx])
-
-
 @dataclass(frozen=True)
 class Node:
     name: str
     module_name: str
-    layer: int  # Layer of the model (eg. which block in a transformer)
-    idx: int  # Index of the node across all nodes of same type in all layers
+    layer: int  # Layer of the model (transformer blocks count as 2 layers)
+    idx: int = 0  # Index of the node across all src/dest nodes in all layers
+    head_idx: Optional[int] = None
+    head_dim: Optional[int] = None
     weight: Optional[str] = None
-    _weight_t_idx: HashableTensorIndex = None
+    weight_head_dim: Optional[int] = None
 
-    def module(self, model: t.nn.Module) -> t.nn.Module:
-        return module_by_name(model, self.module_name)
-
-    @property
-    def weight_t_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._weight_t_idx)
+    def module(self, model: t.nn.Module) -> PatchWrapper:
+        patch_wrapper = module_by_name(model, self.module_name)
+        assert isinstance(patch_wrapper, PatchWrapper)
+        return patch_wrapper
 
     def __repr__(self) -> str:
         return self.name
@@ -69,22 +58,12 @@ class Node:
         return self.name
 
 
-@dataclass(frozen=True)
 class SrcNode(Node):
-    _out_idx: HashableTensorIndex = None
-
-    @property
-    def out_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._out_idx)
+    """A node that is the source of an edge."""
 
 
-@dataclass(frozen=True)
 class DestNode(Node):
-    _in_idx: HashableTensorIndex = None
-
-    @property
-    def in_idx(self) -> TensorIndex:
-        return tensor_index_to_slice(self._in_idx)
+    """A node that is the destination of an edge."""
 
 
 @dataclass(frozen=True)
@@ -95,6 +74,14 @@ class Edge:
     @property
     def name(self) -> str:
         return f"{self.src.name}->{self.dest.name}"
+
+    @property
+    def patch_idx(self) -> Tuple[int, ...]:
+        dest_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
+        return tuple(dest_idx + [self.src.idx])
+
+    def patch_mask(self, model: t.nn.Module) -> t.nn.Parameter:
+        return self.dest.module(model).patch_mask
 
     def __repr__(self) -> str:
         return self.name

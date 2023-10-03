@@ -1,11 +1,13 @@
+#%%
 import math
+from collections import defaultdict
+from contextlib import contextmanager
 from functools import partial
-from typing import Any, Dict, List, Set, Tuple
+from itertools import product
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
-import einops
 import torch as t
-import transformer_lens
-from ordered_set import OrderedSet
+from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
 import auto_circuit.model_utils.micro_model_utils as mm_utils
 import auto_circuit.model_utils.transformer_lens_utils as tl_utils
@@ -14,76 +16,156 @@ from auto_circuit.types import (
     DestNode,
     Edge,
     EdgeCounts,
+    Node,
     SrcNode,
-    TensorIndex,
     TestEdges,
 )
-from auto_circuit.utils.misc import remove_hooks
+from auto_circuit.utils.misc import module_by_name, remove_hooks, set_module_by_name
+from auto_circuit.utils.patch_wrapper import MaskFn, PatchWrapper
+
+#%%
 
 
-def graph_edges(
-    model: t.nn.Module, factorized: bool, reverse_topo_sort: bool = False
-) -> OrderedSet[Edge]:
+def prepare_model(model: t.nn.Module, factorized: bool, device: str) -> None:
+    srcs, nodes = graph_edges(model, factorized)
+    make_model_patchable(model, srcs, nodes, device)
+
+
+def make_model_patchable(
+    model: t.nn.Module, src_nodes: Set[SrcNode], nodes: Set[Node], device: str
+):
+    node_dict: Dict[str, Set[Node]] = defaultdict(set)
+    [node_dict[node.module_name].add(node) for node in nodes]
+    wrappers, src_wrappers, dest_wrappers = set(), set(), set()
+
+    for module_name, module_nodes in node_dict.items():
+        module = module_by_name(model, module_name)
+        src_idxs = None
+        a_node = next(iter(module_nodes))
+        head_dim = a_node.head_dim
+        assert all([node.head_dim == head_dim for node in module_nodes])
+
+        if is_src := any([type(node) == SrcNode for node in module_nodes]):
+            if len(module_nodes) == 1:
+                src_idxs = slice(a_node.idx, a_node.idx + 1)
+            else:
+                idxs = [node.idx for node in module_nodes]
+                src_idxs = slice(min(idxs), max(idxs) + 1)
+                assert src_idxs.stop - src_idxs.start == len(idxs)
+
+        patch_mask, prev_src_count = None, None
+        if is_dest := any([type(node) == DestNode for node in module_nodes]):
+            module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
+            prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
+            if module_dest_count > 1:
+                patch_mask = t.zeros((module_dest_count, prev_src_count), device=device)
+            else:
+                patch_mask = t.zeros((prev_src_count,), device=device)
+        wrapper = PatchWrapper(
+            module=module,
+            head_dim=head_dim,
+            is_src=is_src,
+            src_idxs=src_idxs,
+            is_dest=is_dest,
+            patch_mask=patch_mask,
+            prev_src_count=prev_src_count,
+        )
+        set_module_by_name(model, module_name, wrapper)
+        wrappers.add(wrapper)
+        src_wrappers.add(wrapper) if is_src else None
+        dest_wrappers.add(wrapper) if is_dest else None
+
+    setattr(model, "wrappers", wrappers)
+    setattr(model, "src_wrappers", src_wrappers)
+    setattr(model, "dest_wrappers", dest_wrappers)
+
+
+@contextmanager
+def patch_mode(
+    model: t.nn.Module,
+    curr_src_outs: t.Tensor,
+    patch_src_outs: t.Tensor,
+    reset_mask: bool = False,
+):
+    for wrapper in model.wrappers:  # type: ignore
+        wrapper.patch_mode = True
+        wrapper.curr_src_outs = curr_src_outs
+        if wrapper.is_dest:
+            wrapper.patch_src_outs = patch_src_outs
+            t.nn.init.constant_(wrapper.patch_mask, 0.0) if reset_mask else None
+    try:
+        yield
+    finally:
+        for wrapper in model.wrappers:  # type: ignore
+            wrapper.patch_mode = False
+            wrapper.curr_src_outs = None
+            if wrapper.is_dest:
+                wrapper.patch_src_outs = None
+                t.nn.init.constant_(wrapper.patch_mask, 0.0) if reset_mask else None
+        del curr_src_outs, patch_src_outs
+
+
+@contextmanager
+def train_mask_mode(
+    model: t.nn.Module, init_const: Optional[float] = None
+) -> Iterator[Set[t.nn.Parameter]]:
+    model.eval()
+    parameters: Set[t.nn.Parameter] = set()
+    for wrapper in model.dest_wrappers:  # type: ignore
+        t.nn.init.constant_(wrapper.patch_mask, init_const) if init_const else None
+        parameters.add(wrapper.patch_mask)
+        wrapper.train()
+    try:
+        yield parameters
+    finally:
+        for wrapper in model.dest_wrappers:  # type: ignore
+            wrapper.eval()
+
+
+@contextmanager
+def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn):
+    for wrapper in model.dest_wrappers:  # type: ignore
+        wrapper.mask_fn = mask_fn
+    try:
+        yield
+    finally:
+        for wrapper in model.dest_wrappers:  # type: ignore
+            wrapper.mask_fn = None
+
+
+def graph_edges(model: t.nn.Module, factorized: bool) -> Tuple[Set[SrcNode], Set[Node]]:
     """Get the edges of the computation graph of the model."""
     if not factorized:
         if isinstance(model, MicroModel):
-            edge_set: OrderedSet[Edge] = mm_utils.simple_graph_edges(model)
-        elif isinstance(model, transformer_lens.HookedTransformer):
-            edge_set: OrderedSet[Edge] = tl_utils.simple_graph_edges(model)
+            srcs, dests = mm_utils.simple_graph_nodes(model)
+        elif isinstance(model, HookedTransformer):
+            srcs, dests = tl_utils.simple_graph_nodes(model)
         else:
             raise NotImplementedError(model)
-
-        if reverse_topo_sort:
-            edge_set = OrderedSet([edge for edge in edge_set][::-1])
-        return edge_set
+        edges = [Edge(*e) for e in product(srcs, dests) if e[0].layer + 1 == e[1].layer]
     else:
         if isinstance(model, MicroModel):
-            src_lyrs: List[OrderedSet[SrcNode]] = mm_utils.fctrzd_graph_src_lyrs(model)
-            dest_lyrs: List[OrderedSet[DestNode]] = mm_utils.fctrzd_graph_dest_lyrs(
-                model
-            )
-        elif isinstance(model, transformer_lens.HookedTransformer):
-            src_lyrs: List[OrderedSet[SrcNode]] = tl_utils.fctrzd_graph_src_lyrs(model)
-            dest_lyrs: List[OrderedSet[DestNode]] = tl_utils.fctrzd_graph_dest_lyrs(
-                model
-            )
+            srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
+            dests: Set[DestNode] = mm_utils.factorized_dest_nodes(model)
+        elif isinstance(model, HookedTransformer):
+            srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
+            dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
         else:
             raise NotImplementedError(model)
-
-        edges = []
-        if reverse_topo_sort is False:
-            for src_layer, layer_srcs in enumerate(src_lyrs):
-                for src in layer_srcs:
-                    for layer_dests in dest_lyrs[src_layer:]:
-                        for dest in layer_dests:
-                            edges.append(Edge(src=src, dest=dest))
-        else:
-            for dest_layer, layer_dests in list(enumerate(dest_lyrs))[::-1]:
-                for dest in layer_dests[::-1]:
-                    for layer_srcs in src_lyrs[dest_layer::-1]:
-                        for src in layer_srcs[::-1]:
-                            edges.append(Edge(dest=dest, src=src))
-        return OrderedSet(edges)
-
-
-def graph_src_nodes(model: t.nn.Module, factorized: bool) -> Set[SrcNode]:
-    """Get the src nodes of the computational graph of the model."""
-    edges = graph_edges(model, factorized)
-    return set([edge.src for edge in edges])
-
-
-def graph_dest_nodes(model: t.nn.Module, factorized: bool) -> Set[DestNode]:
-    """Get the dest nodes of the computational graph of the model."""
-    edges = graph_edges(model, factorized)
-    return set([edge.dest for edge in edges])
+        edges = [Edge(*e) for e in product(srcs, dests) if e[0].layer < e[1].layer]
+    nodes: Set[Node] = set(srcs | dests)
+    setattr(model, "nodes", nodes)
+    setattr(model, "srcs", srcs)
+    setattr(model, "dests", dests)
+    setattr(model, "edges", set(edges))
+    return srcs, nodes
 
 
 def edge_counts_util(
     model: t.nn.Module,
-    factorized: bool,
     test_counts: TestEdges,
 ) -> List[int]:
-    edges = graph_edges(model, factorized)
+    edges: Set[Edge] = model.edges  # type: ignore
     n_edges = len(edges)
 
     if test_counts == EdgeCounts.ALL:
@@ -105,235 +187,66 @@ def edge_counts_util(
 def src_out_hook(
     model: t.nn.Module,
     input: Tuple[t.Tensor, ...],
-    output: t.Tensor,
-    edge_src: SrcNode,
+    out: t.Tensor,
+    src: SrcNode,
     src_outs: Dict[SrcNode, t.Tensor],
 ):
-    src_outs[edge_src] = output[edge_src.out_idx]
+    out = out if src.head_dim is None else out.split(1, dim=src.head_dim)[src.head_idx]
+    src_outs[src] = out if src.head_dim is None else out.squeeze(src.head_dim)
 
 
-def get_src_outs(
-    model: t.nn.Module, nodes: Set[SrcNode], input: t.Tensor
+def get_sorted_src_outs(
+    model: t.nn.Module,
+    input: t.Tensor,
+    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[SrcNode, t.Tensor]:
-    node_outs: Dict[SrcNode, t.Tensor] = {}
+    src_outs: Dict[SrcNode, t.Tensor] = {}
     with remove_hooks() as handles:
-        for node in nodes:
-            hook_fn = partial(src_out_hook, edge_src=node, src_outs=node_outs)
+        for node in model.srcs:  # type: ignore
+            hook_fn = partial(src_out_hook, src=node, src_outs=src_outs)
             handles.add(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
-            model(input)
-    return node_outs
-
-
-# class PatchInput(t.nn.Module):
-#     def __init__(
-#         self,
-#         module: t.nn.Module,
-#         patches: Dict[Edge, t.Tensor],
-#         src_outs: Dict[SrcNode, t.Tensor],
-#     ):
-#         super().__init__()
-#         self.module: t.nn.Module = module
-#         self.patches: Dict[Edge, t.Tensor] = patches
-#         self.src_outs: Dict[SrcNode, t.Tensor] = src_outs
-
-#     def forward(self, *args: Any, **kwargs: Any) -> t.Tensor:
-#         arg_0 = args[0].clone().detach()
-#         for edge, patch in self.patches.items():
-#             arg_0[edge.dest.in_idx] = (
-#                 arg_0[edge.dest.in_idx] + patch - self.src_outs[edge.src]
-#             )
-
-#         new_args = (arg_0, *args[1:])
-#         return self.module(*new_args, **kwargs)
-
-CombinedIndex = Tuple[slice | List[int], ...] | slice | List[int]
-
-
-def get_head_dim(dest: DestNode) -> int | None:
-    if type(dest.in_idx) == slice:
-        assert dest.in_idx == slice(None)
-        return None
-    elif type(dest.in_idx) == int:
-        return 0
-    else:
-        assert type(dest.in_idx) == tuple
-        for i, idx in enumerate(dest.in_idx):
-            if type(idx) == slice:
-                assert idx == slice(None)
+            if isinstance(model, HookedTransformer) and kv_cache is not None:
+                model(input, past_kv_cache=kv_cache)
             else:
-                assert type(idx) == int
-                return i
+                model(input)
+    src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
+    assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
+    return src_outs
 
 
-def tensor_idx_to_combined_idx(t_idx: TensorIndex) -> CombinedIndex:
-    if type(t_idx) == int:
-        return [t_idx]
-    elif type(t_idx) == slice:
-        assert t_idx == slice(None)
-        return t_idx
-    else:
-        assert type(t_idx) == tuple
-        combined = []
-        for idx in tuple(t_idx):
-            new_idx = tensor_idx_to_combined_idx(idx)
-            combined.append(new_idx)
-        return tuple(combined)
-
-
-def add_tensor_idx_to_combined_idx(
-    t_idx: TensorIndex, combined_idx: CombinedIndex
-) -> CombinedIndex:
-    if type(combined_idx) == List[int]:
-        assert type(t_idx) == int
-        combined_idx.append(t_idx)
-    elif type(combined_idx) == slice:
-        assert t_idx == slice(None)
-    else:
-        assert type(combined_idx) == tuple and type(t_idx) == tuple
-        for c_idx, idx in zip(combined_idx, t_idx):
-            if type(c_idx) == slice:
-                assert c_idx == slice(None) and idx == slice(None)
-            else:
-                c_idx.append(idx)  # type: ignore
-    return combined_idx
-
-
-TotalIndex = Tuple[slice | int | List[int], ...] | slice | int | List[int]
-
-
-def combine_non_tuple(c_idx: CombinedIndex, patch_slice: TensorIndex) -> TotalIndex:
-    assert type(c_idx) != tuple and type(patch_slice) != tuple
-    if c_idx == slice(None):
-        return patch_slice
-    else:
-        assert type(c_idx) == slice
-        return c_idx
-
-
-def patch_idx_and_patch_slice(c_idx: CombinedIndex, patch_slice: TensorIndex) -> TotalIndex:
-    if type(c_idx) != tuple and type(patch_slice) != tuple:
-        return combine_non_tuple(c_idx, patch_slice)
-    elif type(c_idx) == tuple and type(patch_slice) != tuple:
-        first_elem = combine_non_tuple(c_idx[0], patch_slice)
-        return (first_elem, *c_idx[1:])  # type: ignore
-    elif type(c_idx) != tuple and type(patch_slice) == tuple:
-        first_elem = combine_non_tuple(c_idx, patch_slice[0])
-        return (first_elem, *patch_slice[1:])  # type: ignore
-    else:
-        assert type(c_idx) == tuple and type(patch_slice) == tuple
-        new_idx = []
-        for i in range(max(len(c_idx), len(patch_slice))):
-            if i > len(c_idx) - 1:
-                new_idx.append(patch_slice[i])
-            elif i > len(patch_slice) - 1:
-                new_idx.append(c_idx[i])
-            else:
-                new_idx.append(patch_idx_and_patch_slice(c_idx[i], patch_slice[i]))
-        return tuple(new_idx)
-
-
-class PatchInput(t.nn.Module):
-    def __init__(
-        self,
-        module: t.nn.Module,
-        # srcs_to_patch: Dict[HashableTensorIndex, t.Tensor],  # Dict[head_idx, [src]]
-        patch_idx: CombinedIndex,
-        srcs_to_patch: t.Tensor,  # [src] [dest_heads, src]
-        src_outs: t.Tensor,  # [src, batch, resid] [src, batch, tok, resid]
-        patch_outs: t.Tensor,  # [src, batch, resid] [src, batch, tok, resid]
-        head_dim: int | None,
-        patch_slice: TensorIndex,
-    ):
-        super().__init__()
-        self.module: t.nn.Module = module
-        # self.srcs_to_patch: Dict[HashableTensorIndex, t.Tensor] = srcs_to_patch
-        self.patch_idx: CombinedIndex = patch_idx
-        self.srcs_to_patch: t.Tensor = srcs_to_patch
-        self.src_outs: t.Tensor = src_outs  # Gets update by src_out_hook
-        self.patch_outs: t.Tensor = patch_outs  # Fixed
-        self.head_dim: int | None = head_dim
-        self.patch_slice: TensorIndex = patch_slice
-        # if self.patch_slice != slice(None) and self.head_dim is not None:
-        #     if type(self.patch_slice == int):
-        #         self.head_dim -= 1
-        #     else:
-        #         assert type(self.patch_slice) == tuple
-        #         if len(self.patch_slice) < self.head_dim:
-        #             self.head_dim -= 1
-
-    def forward(self, *args: Any, **kwargs: Any) -> Any:
-
-        # for patch_idx, patch in self.srcs_to_patch.items():
-        #     arg_0[tensor_index_to_slice(patch_idx)][self.output_idx] += einops.einsum(
-        #         patch,
-        #         self.patch_outs - self.src_outs,
-        #         "src, src batch resid -> batch resid",
-        #     )
-        arg_0 = args[
-            0
-        ].clone()  # [batch, resid] [batch, tok, resid] [batch, all_heads, resid] [batch, tok, all_heads, resid]
-        total_idx = patch_idx_and_patch_slice(self.patch_idx, self.patch_slice)
-
-        diff = (
-            self.patch_outs - self.src_outs
-        )  # [src, batch, resid] [src, batch, tok, resid]
-        if self.head_dim is None:
-            assert self.patch_idx == slice(None)
-            arg_0[self.patch_slice] += einops.einsum(
-                self.srcs_to_patch, diff, "src, src ... -> ..."
-            )
-        else:
-            assert self.patch_idx != slice(None)
-            if self.head_dim == 0:
-                assert type(self.patch_idx) == List
-                arg_0[total_idx] += einops.einsum(
-                    self.srcs_to_patch, diff, "dest_idx src, src ... -> dest_idx ..."
-                )
-            elif self.head_dim == 1:
-                assert type(self.patch_idx) == tuple
-                arg_0[total_idx] += einops.einsum(
-                    self.srcs_to_patch,
-                    diff,
-                    "dest_idx src, src dim1 ... -> dim1 dest_idx ...",
-                )
-            elif self.head_dim == 2:
-                assert type(self.patch_idx) == tuple
-                arg_0[total_idx] += einops.einsum(
-                    self.srcs_to_patch,
-                    diff,
-                    "dest_idx src, src dim1 dim2 ... -> dim1 dim2 dest_idx ...",
-                )
-            else:
-                raise NotImplementedError("head_dim > 2 not implemented")
-            # args[0][total_idx] = arg_0
-
-        new_args = (arg_0, *args[1:])
-        return self.module(*new_args, **kwargs)
-        # return self.module(*args, **kwargs)
-
-
-def input_hook(
-    module: t.nn.Module,
+def dest_in_hook(
+    model: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     output: t.Tensor,
-    node: DestNode,
-    input_dict: Dict[DestNode, t.Tensor],
-) -> None:
-    if isinstance(module, PatchInput):
-        input_dict[node] = output[node.in_idx]
-    else:
-        input_dict[node] = input[0][node.in_idx]
+    dest: DestNode,
+    dest_ins: Dict[DestNode, t.Tensor],
+):
+    in_0 = input[0] if type(input) == tuple else input
+    assert type(in_0) == t.Tensor
+    in_0 = (
+        in_0
+        if dest.head_dim is None
+        else in_0.split(1, dim=dest.head_dim)[dest.head_idx]
+    )
+    dest_ins[dest] = in_0 if dest.head_dim is None else in_0.squeeze(dest.head_dim)
 
 
-def get_dest_ins(
-    model: t.nn.Module, nodes: Set[DestNode], input: t.Tensor
+def get_sorted_dest_ins(
+    model: t.nn.Module,
+    input: t.Tensor,
+    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[DestNode, t.Tensor]:
-    node_inputs: Dict[DestNode, t.Tensor] = {}
+    dest_ins: Dict[DestNode, t.Tensor] = {}
     with remove_hooks() as handles:
-        for node in nodes:
-            hook_fn = partial(input_hook, node=node, input_dict=node_inputs)
-            handles.add(node.module(model).register_forward_hook(hook_fn))
+        for node in model.dests:  # type: ignore
+            hook_fn = partial(dest_in_hook, dest=node, dest_ins=dest_ins)
+            handles.add(node.module(model).module.register_forward_hook(hook_fn))
         with t.inference_mode():
-            model(input)
-    return node_inputs
+            if isinstance(model, HookedTransformer) and kv_cache is not None:
+                model(input, past_kv_cache=kv_cache)
+            else:
+                model(input)
+    dest_ins = dict(sorted(dest_ins.items(), key=lambda x: x[0].idx))
+    assert [dest.idx for dest in dest_ins.keys()] == list(range(len(dest_ins)))
+    return dest_ins

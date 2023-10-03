@@ -1,13 +1,13 @@
 from collections import defaultdict
 from copy import deepcopy
-from functools import partial
+from itertools import product
 from random import random
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 import torch as t
 from ordered_set import OrderedSet
 from torch.utils.data import DataLoader
-from transformer_lens import HookedTransformer
+from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.prune import run_pruned
@@ -15,44 +15,22 @@ from auto_circuit.types import (
     ActType,
     Edge,
     ExperimentType,
-    HashableTensorIndex,
     SrcNode,
-    TensorIndex,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    PatchInput,
-    add_tensor_idx_to_combined_idx,
     edge_counts_util,
-    get_head_dim,
-    get_src_outs,
-    graph_edges,
-    graph_src_nodes,
-    tensor_idx_to_combined_idx,
+    get_sorted_src_outs,
+    patch_mode,
 )
-from auto_circuit.utils.misc import remove_hooks, set_module_by_name
 from auto_circuit.visualize import draw_graph
-
-
-def update_src_out_tensor(
-    module: t.nn.Module,
-    input: t.Tensor,
-    output: t.Tensor,
-    src: SrcNode,
-    src_outs_tensor: t.Tensor,
-    patch_slice: TensorIndex,
-):
-    src_outs_tensor[src.idx] = output[src.out_idx][patch_slice]
 
 
 def acdc_prune_scores(
     model: t.nn.Module,
-    factorized: bool,
     train_data: DataLoader[PromptPairBatch],
-    tao_range: Tuple[float, float] = (0.1, 0.9),
-    tao_step: float = 0.1,
-    output_idx: TensorIndex = (slice(None), -1),
-    patch_slice: TensorIndex = slice(None),
+    tao_exps: List[int] = list(range(-5, -1)),
+    output_dim: int = 1,
     test_mode: bool = False,
     show_graphs: bool = False,
 ) -> Dict[Edge, float]:
@@ -67,132 +45,73 @@ def acdc_prune_scores(
 
     Note: only the first batch of train_data is used."""
     test_model = deepcopy(model) if test_mode else None
-    edges: OrderedSet[Edge] = graph_edges(model, factorized, reverse_topo_sort=True)
-    src_nodes = graph_src_nodes(model, factorized)
+    output_idx = tuple([slice(None)] * output_dim + [-1])
+    edges: Set[Edge] = model.edges  # type: ignore
+    edges: List[Edge] = list(sorted(edges, key=lambda x: x.dest.layer, reverse=True))
 
-    tao_values = t.arange(tao_range[0], tao_range[1] + tao_step, tao_step)
     prune_scores = dict([(edge, float("inf")) for edge in edges])
-    for tao in (pbar_tao := tqdm(tao_values)):
-        tao = tao.item()
+    for tao in (
+        pbar_tao := tqdm([a * 10**b for a, b in product([1, 3, 5, 7, 9], tao_exps)])
+    ):
         pbar_tao.set_description_str("ACDC \u03C4={:.7f}".format(tao), refresh=True)
 
         train_batch = next(iter(train_data))
         clean_batch, corrupt_batch = train_batch.clean, train_batch.corrupt
+
+        patch_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, corrupt_batch)
+        src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, clean_batch)
+
         with t.inference_mode():
             clean_out = model(clean_batch)[output_idx]
-            toks, short_embd, left_attn_mask, resids = None, None, None, []
+            kv_cache, toks, short_embd, attn_mask, resids = None, None, None, None, []
             if isinstance(model, HookedTransformer):
-                assert (
-                    model.tokenizer is not None
-                    and model.tokenizer.padding_side == "left"
+                print("train_batch.diverge_idx:", train_batch.diverge_idx)
+                common_prefix_batch = clean_batch[:, : train_batch.diverge_idx]
+                kv_cache = HookedTransformerKeyValueCache.init_cache(
+                    model.cfg, model.cfg.device, common_prefix_batch.shape[0]
                 )
-                _, toks, short_embd, left_attn_mask = model.input_to_embed(clean_batch)
-                _, cache = model.run_with_cache(clean_batch)
+                model(common_prefix_batch, past_kv_cache=kv_cache)
+                kv_cache.freeze()
+                clean_batch = clean_batch[:, train_batch.diverge_idx :]
+                corrupt_batch = corrupt_batch[:, train_batch.diverge_idx :]
+
+                assert model.tokenizer is not None
+                assert model.tokenizer.padding_side == "left"
+                _, toks, short_embd, attn_mask = model.input_to_embed(
+                    clean_batch, past_kv_cache=kv_cache
+                )
+                _, cache = model.run_with_cache(clean_batch, past_kv_cache=kv_cache)
                 n_layers = range(model.cfg.n_layers)
                 resids = [cache[f"blocks.{i}.hook_resid_pre"].clone() for i in n_layers]
                 del cache
+                patch_outs = get_sorted_src_outs(model, corrupt_batch, kv_cache)
+                src_outs = get_sorted_src_outs(model, clean_batch, kv_cache=kv_cache)
+
         clean_logprobs = t.nn.functional.log_softmax(clean_out, dim=-1)
 
-        patch_outs: Dict[SrcNode, t.Tensor] = get_src_outs(
-            model, src_nodes, corrupt_batch
-        )
-        patch_outs = dict(
-            sorted(patch_outs.items(), key=lambda x: x[0].idx, reverse=False)
-        )
-        assert [src.idx for src in patch_outs.keys()] == list(range(len(patch_outs)))
-        patch_outs_tensor = t.stack(
-            [out[patch_slice] for out in patch_outs.values()]
-        ).detach()  # [src, batch, resid]
-
-        src_outs: Dict[SrcNode, t.Tensor] = get_src_outs(model, src_nodes, clean_batch)
-        src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx, reverse=False))
-        assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
-        src_outs_tensor = t.stack(
-            [out[patch_slice] for out in src_outs.values()]
-        ).detach()
+        patch_outs_tensor = t.stack(list(patch_outs.values())).detach()
+        src_outs_tensor = t.stack(list(src_outs.values())).detach()
 
         prev_kl_div = 0.0
         removed_edges: OrderedSet[Edge] = OrderedSet([])
-        hooked_srcs: Set[SrcNode] = set([])
 
-        patched_heads: Dict[str, List[HashableTensorIndex]] = {}
-        # with t.profiler.profile(
-        #     schedule=t.profiler.schedule(wait=488, warmup=2, active=10),
-        #     activities=[
-        #         t.profiler.ProfilerActivity.CPU,
-        #         t.profiler.ProfilerActivity.CUDA,
-        #     ],
-        #     on_trace_ready=t.profiler.tensorboard_trace_handler('./log/ACDC-4-improved-patch-module'),
-        #     record_shapes=True,
-        #     profile_memory=True,
-        #     with_stack=True
-        # ) as prof, remove_hooks() as handles:
-        with remove_hooks() as handles:
+        with patch_mode(model, src_outs_tensor, patch_outs_tensor, reset_mask=True):
             for edge_idx, edge in enumerate((pbar_edge := tqdm(edges))):
-                desc = f"Remvd: {len(removed_edges)}, Left: {edge_idx + 1 - len(removed_edges)}, Current Edge='{edge}'"
+                rmvd, left = len(removed_edges), edge_idx + 1 - len(removed_edges)
+                desc = f"Removed: {rmvd}, Left: {left}, Current:'{edge}'"
                 pbar_edge.set_description_str(desc, refresh=False)
 
-                new_hks = set([])
-                if edge.src not in hooked_srcs:
-                    # src_hk = partial(src_out_hook, edge_src=edge.src, src_outs=src_outs)
-                    src_hk = partial(
-                        update_src_out_tensor,
-                        src=edge.src,
-                        src_outs_tensor=src_outs_tensor,
-                        patch_slice=patch_slice,
-                    )
-                    new_hks.add(edge.src.module(model).register_forward_hook(src_hk))
-                if isinstance((dest_mod := edge.dest.module(model)), PatchInput):
-                    if edge.dest._in_idx in patched_heads[edge.dest.module_name]:
-                        if edge.dest.in_idx == slice(None):
-                            dest_mod.srcs_to_patch[edge.src.idx] = 1.0
-                        else:
-                            dest_mod.srcs_to_patch[-1, edge.src.idx] = 1.0
-                    else:
-                        assert edge.dest.in_idx != slice(None)
-                        new_srcs_to_patch = t.zeros(
-                            1, src_outs_tensor.shape[0], device=clean_batch.device
-                        )
-                        new_srcs_to_patch[-1, edge.src.idx] = 1.0
-                        dest_mod.srcs_to_patch = t.cat(
-                            (dest_mod.srcs_to_patch, new_srcs_to_patch), dim=0
-                        )
-                        dest_mod.patch_idx = add_tensor_idx_to_combined_idx(
-                            edge.dest.in_idx, dest_mod.patch_idx
-                        )
-                        patched_heads[edge.dest.module_name].append(edge.dest._in_idx)  # type: ignore
-                else:
-                    if edge.dest.in_idx == slice(None):
-                        srcs_to_patch = t.zeros(
-                            src_outs_tensor.shape[0], device=clean_batch.device
-                        )
-                        srcs_to_patch[edge.src.idx] = 1.0
-                    else:
-                        srcs_to_patch = t.zeros(
-                            1, src_outs_tensor.shape[0], device=clean_batch.device
-                        )
-                        srcs_to_patch[-1, edge.src.idx] = 1.0
-
-                    patch_mod = PatchInput(
-                        module=dest_mod,
-                        patch_idx=tensor_idx_to_combined_idx(edge.dest.in_idx),
-                        srcs_to_patch=srcs_to_patch,
-                        src_outs=src_outs_tensor,
-                        patch_outs=patch_outs_tensor,
-                        head_dim=get_head_dim(edge.dest),
-                        patch_slice=patch_slice,
-                    )
-                    set_module_by_name(model, edge.dest.module_name, patch_mod)
-                    patched_heads[edge.dest.module_name] = [edge.dest._in_idx]
-
+                edge.patch_mask(model).data[edge.patch_idx] = 1
                 with t.inference_mode():
                     if isinstance(model, HookedTransformer):
+                        start_layer = int(edge.dest.module_name.split(".")[1])
                         out = model(
-                            resids[edge.dest.layer],
-                            start_at_layer=edge.dest.layer,
+                            resids[start_layer],
+                            past_kv_cache=kv_cache,
+                            start_at_layer=start_layer,
                             tokens=toks,
                             shortformer_pos_embed=short_embd,
-                            left_attention_mask=left_attn_mask,
+                            attention_mask=attn_mask,
                         )[output_idx]
                     else:
                         out = model(clean_batch)[output_idx]
@@ -205,19 +124,18 @@ def acdc_prune_scores(
                     print("ACDC model, with out=", out) if render else None
                     d = dict([(e, patch_outs[e.src]) for e in (removed_edges | {edge})])
                     if render:
-                        draw_graph(model, factorized, clean_batch, d, output_idx)
+                        draw_graph(model, clean_batch, d, output_dim, kv_cache)
 
                     n_edges = len(removed_edges) + 1
                     print("Test mode: running pruned model") if render else None
                     test_out = run_pruned(
-                        test_model,
-                        factorized,
-                        train_data,
-                        ExperimentType(ActType.CLEAN, ActType.CORRUPT),
-                        [n_edges],
-                        dict([(e, 1.0) for e in (removed_edges | {edge})]),
+                        model=test_model,
+                        data_loader=train_data,
+                        experiment_type=ExperimentType(ActType.CLEAN, ActType.CORRUPT),
+                        test_edge_counts=[n_edges],
+                        prune_scores=dict([(e, 1.0) for e in (removed_edges | {edge})]),
                         include_zero_edges=False,
-                        output_idx=output_idx,
+                        output_dim=output_dim,
                         render_graph=render,
                     )[n_edges][0]
                     test_out_logprobs = t.nn.functional.log_softmax(test_out, dim=-1)
@@ -230,24 +148,15 @@ def acdc_prune_scores(
                 mean_kl_div = kl_div.mean().item()
                 if mean_kl_div - prev_kl_div < tao:
                     removed_edges.add(edge)
-                    hooked_srcs.add(edge.src)
                     prune_scores[edge] = min(tao, prune_scores[edge])
-                    handles |= new_hks
                     prev_kl_div = mean_kl_div
                 else:
-                    [hk.remove() for hk in new_hks]
-                    # del edge.dest.module(model).patches[edge]
-                    if edge.dest.in_idx == slice(None):
-                        edge.dest.module(model).srcs_to_patch[edge.src.idx] = 0.0
-                    else:
-                        edge.dest.module(model).srcs_to_patch[-1, edge.src.idx] = 0.0
-                # prof.step()
+                    edge.patch_mask(model).data[edge.patch_idx] = 0
     return prune_scores
 
 
 def acdc_edge_counts(
     model: t.nn.Module,
-    factorized: bool,
     experiment_type: ExperimentType,
     prune_scores: Dict[Edge, float],
 ) -> List[int]:
@@ -263,4 +172,4 @@ def acdc_edge_counts(
     for _, count in tao_counts.items():
         prev_count = edge_counts[-1] if edge_counts else 0
         edge_counts.append(prev_count + count)
-    return edge_counts_util(model, factorized, edge_counts)
+    return edge_counts_util(model, edge_counts)

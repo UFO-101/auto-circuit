@@ -1,4 +1,5 @@
 import json
+import random
 from typing import Any, List, Sequence, Tuple
 
 import torch as t
@@ -16,6 +17,7 @@ class PromptPair:
 @dataclass(frozen=True)
 class PromptPairBatch:
     key: int
+    diverge_idx: int
     clean: t.Tensor
     corrupt: t.Tensor
 
@@ -24,7 +26,10 @@ def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
     clean = t.stack([p.clean for p in batch])
     corrupt = t.stack([p.corrupt for p in batch])
     key = hash((str(clean.tolist()), str(corrupt.tolist())))
-    return PromptPairBatch(key, clean, corrupt)
+
+    diverge_idxs = (~(clean == corrupt)).int().argmax(dim=1)
+    diverge_idx: int = int(diverge_idxs.min().item())
+    return PromptPairBatch(key, diverge_idx, clean, corrupt)
 
 
 class PromptDataset(Dataset):
@@ -48,13 +53,15 @@ def load_datasets_from_json(
     batch_size: int = 32,
     train_test_split: Sequence[int | float] = [0.9, 0.1],
     length_limit: int = 100,
+    random_subet: bool = True,
 ) -> Tuple[DataLoader[PromptPairBatch], DataLoader[PromptPairBatch]]:
     """Load a dataset from a json file. The file should specify a list of
     dictionaries with keys "clean_prompt" and "corrupt_prompt"."""
     with open(path, "r") as f:
         data = json.load(f)
-    clean_prompts = [d["clean"] for d in data["prompts"][:length_limit]]
-    corrupt_prompts = [d["corrupt"] for d in data["prompts"][:length_limit]]
+    random.shuffle(data["prompts"]) if random_subet else None
+    clean_prompts = [d["clean"] for d in data["prompts"]][:length_limit]
+    corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:length_limit]
     if tokenizer is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
@@ -73,6 +80,7 @@ def load_datasets_from_json(
         )
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
+
     dataset = PromptDataset(clean_prompts, corrupt_prompts)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
     train_loader = torch.utils.data.DataLoader(

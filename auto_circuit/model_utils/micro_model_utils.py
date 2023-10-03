@@ -1,11 +1,10 @@
 from itertools import count
-from typing import List
+from typing import Set, Tuple
 
 import einops
 import torch as t
-from ordered_set import OrderedSet
 
-from auto_circuit.types import DestNode, Edge, SrcNode
+from auto_circuit.types import DestNode, SrcNode
 
 
 class Block(t.nn.Module):
@@ -47,88 +46,83 @@ class MicroModel(t.nn.Module):
         return self.output(x)
 
 
-def fctrzd_graph_src_lyrs(model: MicroModel) -> List[OrderedSet[SrcNode]]:
+def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
     """Get the source part of each edge in the factorized graph, grouped by layer."""
-    layers = []
-    idxs = count()
-    layers.append(
-        OrderedSet(
-            [SrcNode(name="Input", module_name="input", layer=0, idx=next(idxs))]
-        )
+    nodes = set()
+    layers, idxs = count(), count()
+    nodes.add(
+        SrcNode(name="Input", module_name="input", layer=next(layers), idx=next(idxs))
     )
     for layer_idx in range(model.n_layers):
-        mul_set = OrderedSet([])
+        layer = next(layers)
         for elem in [0, 1]:
-            mul_set.add(
+            nodes.add(
                 SrcNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
-                    layer=layer_idx,
+                    layer=layer,
                     idx=next(idxs),
-                    _out_idx=(None, elem),
+                    head_idx=elem,
+                    head_dim=1,
                     weight="weights",
-                    _weight_t_idx=elem,
+                    weight_head_dim=0,
                 )
             )
-        layers.append(mul_set)
-    return layers
+    return nodes
 
 
-def fctrzd_graph_dest_lyrs(model: MicroModel) -> List[OrderedSet[DestNode]]:
-    layers = []
-    idxs = count()
+def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
+    nodes = set()
+    layers, idxs = count(1), count()
     for layer_idx in range(model.n_layers):
-        elem_set = OrderedSet([])
+        layer = next(layers)
         for elem in [0, 1]:
-            elem_set.add(
+            nodes.add(
                 DestNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
-                    layer=layer_idx,
+                    layer=layer,
                     idx=next(idxs),
-                    _in_idx=(None, elem),
+                    head_idx=elem,
+                    head_dim=1,
                 )
             )
-        layers.append(elem_set)
-    layers.append(
-        OrderedSet(
-            [
-                DestNode(
-                    name="Output",
-                    module_name="output",
-                    layer=model.n_layers + 1,
-                    idx=next(idxs),
-                )
-            ]
+    nodes.add(
+        DestNode(
+            name="Output",
+            module_name="output",
+            layer=next(layers),
+            idx=next(idxs),
         )
     )
-    return layers
+    return nodes
 
 
-def simple_graph_edges(model: MicroModel) -> OrderedSet[Edge]:
-    edges = []
-    src_idxs, dest_idxs = count(), count()
+def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
+    src_nodes, dest_nodes = set(), set()
+    layers, src_idxs, dest_idxs = count(), count(), count()
     for layer_idx in range(model.n_layers):
-        elem_set = []
+        layer = next(layers)
         for elem in [0, 1]:
-            elem_set.append(
+            src_nodes.add(
                 SrcNode(
                     name=f"Block Layer {layer_idx} Elem {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
-                    layer=layer_idx,
+                    layer=layer,
                     idx=next(src_idxs),
-                    _out_idx=(None, elem),
+                    head_idx=elem,
+                    head_dim=1,
                     weight="weights",
-                    _weight_t_idx=elem,
+                    weight_head_dim=0,
                 )
             )
         last_block = layer_idx == model.n_layers - 1
-        resid = DestNode(
-            name="Output" if last_block else f"Resid Layer {layer_idx}",
-            module_name="output" if last_block else f"resids.{layer_idx}",
-            layer=layer_idx + 1,
-            idx=next(dest_idxs),
+        dest_nodes.add(
+            DestNode(
+                name="Output" if last_block else f"Resid Layer {layer_idx}",
+                module_name="output" if last_block else f"resids.{layer_idx}",
+                layer=next(layers),
+                idx=next(dest_idxs),
+            )
         )
-        for elem in elem_set:
-            edges.append(Edge(src=elem, dest=resid))
-    return OrderedSet(edges)
+    return src_nodes, dest_nodes

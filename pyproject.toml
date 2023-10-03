@@ -14,10 +14,10 @@ python = "~3.10"
 # installing with Poetry doesn't work. But it doesn't currently detect that torch is
 # already installed and tries to install it anyway. TransformerLens has torch as dep.
 # See: https://github.com/python-poetry/poetry/pull/8359
-# Todo: Fix is merged, so uncommented these on next poetry release.
+# Todo: Fix is merged, so delete this on next poetry release.
 torch = "^2.0.1"
 # Todo: Change this on next release of TransformerLens.
-transformer-lens = {git = "https://github.com/neelnanda-io/TransformerLens.git"}
+transformer-lens = {git = "https://github.com/UFO-101/TransformerLens.git@small-improvements"}
 einops = "^0.6.1"
 pygraphviz = "^1.11"
 ordered-set = "^4.1.0"
@@ -32,6 +32,7 @@ jupyter = "^1.0.0"
 pytest = "^7.4.0"
 pyright = "^1.1.326"
 ipytest = "^0.13.3"
+# torch-tb-profiler = "^0.4.1"
 
 [build-system]
 requires = ["poetry-core"]

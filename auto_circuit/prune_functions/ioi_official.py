@@ -1,13 +1,11 @@
 from dataclasses import dataclass
+from typing import Dict, List, Set
+
 import torch as t
-from typing import Dict
+from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
-from torch.utils.data import DataLoader
-
-from auto_circuit.utils.graph_utils import graph_edges
-
 
 IOI_CIRCUIT = {
     "name mover": [
@@ -47,17 +45,15 @@ IOI_CIRCUIT = {
     ],
 }
 
+
 @dataclass(frozen=True)
 class Conn:
     inp: str
     out: str
     qkv: tuple[str, ...]
 
-def ioi_true_edges_prune_scores(
-    model: t.nn.Module,
-    factorized: bool,
-    train_data: DataLoader[PromptPairBatch],
-) -> Dict[Edge, float]:
+
+def ioi_true_edges(model: t.nn.Module) -> Set[Edge]:
     special_connections: set[Conn] = {
         Conn("INPUT", "previous token", ("q", "k", "v")),
         Conn("INPUT", "duplicate token", ("q", "k", "v")),
@@ -82,24 +78,30 @@ def ioi_true_edges_prune_scores(
             edge_src_names = ["Resid Start"]
         else:
             for (layer, head) in IOI_CIRCUIT[conn.inp]:
-                edge_src_names.append(f"A.{layer}.{head}")
+                edge_src_names.append(f"A{layer}.{head}")
         edge_dest_names = []
         if conn.out == "OUTPUT":
             edge_dest_names = ["Resid End"]
         else:
             for (layer, head) in IOI_CIRCUIT[conn.out]:
-                edge_dest_names.append(f"A.{layer}.{head}")
-        
+                for qkv in conn.qkv:
+                    edge_dest_names.append(f"A{layer}.{head}.{qkv.upper()}")
+
         for src_name in edge_src_names:
             for dest_name in edge_dest_names:
                 edges_present.append(f"{src_name}->{dest_name}")
 
-
-    edges = graph_edges(model, factorized)
-    prune_scores = {}
+    edges: Set[Edge] = model.edges  # type: ignore
+    true_edges: Set[Edge] = set()
     for edge in edges:
         if edge.name in edges_present:
-            prune_scores[edge] = 1.0
-        else:
-            prune_scores[edge] = 0.0
-    return prune_scores
+            true_edges.add(edge)
+    return true_edges
+
+
+def ioi_true_edges_prune_scores(
+    model: t.nn.Module,
+    train_data: DataLoader[PromptPairBatch],
+) -> Dict[Edge, float]:
+    true_edges: Set[Edge] = ioi_true_edges(model)
+    return dict([(edge, 1.0) for edge in true_edges])

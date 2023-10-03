@@ -1,10 +1,11 @@
 from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set, Tuple
 
 import plotly.graph_objects as go
 import pygraphviz as pgv
 import torch as t
 from IPython.display import display
+from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.types import (
     DestNode,
@@ -12,14 +13,10 @@ from auto_circuit.types import (
     EdgeCounts,
     ExperimentType,
     SrcNode,
-    TensorIndex,
 )
 from auto_circuit.utils.graph_utils import (
-    get_dest_ins,
-    get_src_outs,
-    graph_dest_nodes,
-    graph_edges,
-    graph_src_nodes,
+    get_sorted_dest_ins,
+    get_sorted_src_outs,
 )
 
 
@@ -36,7 +33,8 @@ def kl_vs_edges_plot(
         y = list(d.values())
         x = [max(0.5, x_i) for x_i in x]
         y = [max(2e-5, y_i) for y_i in y]
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=label))
+        mode = "lines+markers" if len(d) > 1 else "markers"
+        fig.add_trace(go.Scatter(x=x, y=y, mode=mode, name=label))
 
     fig.update_layout(
         title=(
@@ -53,12 +51,33 @@ def kl_vs_edges_plot(
     return fig
 
 
+def roc_plot(data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure:
+    fig = go.Figure()
+
+    for label, points in data.items():
+        points = sorted(points, key=lambda x: x[0])
+        x, y = zip(*points)
+        fig.add_trace(
+            go.Scatter(x=x, y=y, mode="lines", name=label, line=dict(shape="hv"))
+        )
+
+    fig.update_yaxes(scaleanchor="x", scaleratio=1)
+    fig.update_xaxes(constrain="domain")
+    fig.update_layout(
+        title="ROC Curve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        template="plotly",
+    )
+    return fig
+
+
 def head(n: str) -> str:
     return n[:-2] if n.startswith("A") and len(n) > 4 else n
     # return n.split(".")[0] if n.startswith("A") else n
 
 
-def t_fmt(x: Any, idx: Optional[TensorIndex] = None) -> str:
+def t_fmt(x: Any, idx: Any = None) -> str:
     if type(x) == t.Tensor and (arr := x[idx].squeeze()).ndim == 1:
         return "[" + ",\n".join([f"{v:.3f}".rstrip("0") for v in arr.tolist()]) + "]"
     return str(x[idx]).lstrip("tensor(").rstrip(")") if type(x) == t.Tensor else str(x)
@@ -66,20 +85,19 @@ def t_fmt(x: Any, idx: Optional[TensorIndex] = None) -> str:
 
 def draw_graph(
     model: t.nn.Module,
-    factorized: bool,
     input: t.Tensor,
     edge_label_override: Dict[Edge, Any] = {},
-    output_idx: TensorIndex = (slice(None), -1),
+    output_dim: int = 1,
+    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
     display_ipython: bool = True,
     file_path: Optional[str] = None,
 ) -> None:
-    edges = graph_edges(model, factorized)
-    src_nodes = graph_src_nodes(model, factorized)
-    dest_nodes = graph_dest_nodes(model, factorized)
+    edges: Set[Edge] = model.edges  # type: ignore
+    output_idx = tuple([slice(None)] * output_dim + [-1])
     G = pgv.AGraph(strict=False, directed=True)
 
-    src_outs: Dict[SrcNode, t.Tensor] = get_src_outs(model, src_nodes, input)
-    dest_ins: Dict[DestNode, t.Tensor] = get_dest_ins(model, dest_nodes, input)
+    src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input, kv_cache)
+    dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input, kv_cache)
     node_ins: Dict[str, t.Tensor] = dict(
         [(head(k.name), v) for k, v in dest_ins.items()]
     )

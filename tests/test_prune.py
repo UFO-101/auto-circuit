@@ -1,8 +1,8 @@
 #%%
 import os
+from typing import Set
 
 import torch as t
-from ordered_set import OrderedSet
 from torch.utils.data import DataLoader
 
 from auto_circuit.data import (
@@ -11,7 +11,10 @@ from auto_circuit.data import (
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.prune import run_pruned
 from auto_circuit.types import ActType, Edge, ExperimentType
-from auto_circuit.utils.graph_utils import graph_edges
+from auto_circuit.utils.graph_utils import prepare_model
+
+# from tests.conftest import micro_model, micro_dataloader
+# from tests.conftest import micro_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -26,8 +29,8 @@ def test_pruning(
 
     To visualize, set render_graph=True in run_pruned."""
     model = micro_model
+    prepare_model(model, factorized=True, device="cpu")
     test_loader = micro_dataloader
-    factorized = True
 
     experiment_type = ExperimentType(
         input_type=ActType.CLEAN, patch_type=ActType.CORRUPT
@@ -41,7 +44,7 @@ def test_pruning(
     assert t.allclose(clean_out, t.tensor([[25.0, 49.0]]))
     assert t.allclose(corrupt_out, t.tensor([[-25.0, -49.0]]))
 
-    edges: OrderedSet[Edge] = graph_edges(model, factorized)
+    edges: Set[Edge] = model.edges  # type: ignore
     edge_dict = dict([(edge.name, edge) for edge in edges])
 
     prune_scores = {
@@ -51,14 +54,13 @@ def test_pruning(
     }
 
     pruned_outs = run_pruned(
-        model,
-        factorized,
-        test_loader,
-        experiment_type,
-        [1, 2, 3],
-        prune_scores,
-        True,
-        output_idx=slice(None),
+        model=model,
+        data_loader=test_loader,
+        experiment_type=experiment_type,
+        test_edge_counts=[1, 2, 3],
+        prune_scores=prune_scores,
+        include_zero_edges=True,
+        output_dim=0,
         render_graph=show_graphs,
     )
     assert t.allclose(pruned_outs[0][0], clean_out, atol=1e-3)
@@ -67,5 +69,6 @@ def test_pruning(
     assert t.allclose(pruned_outs[3][0], t.tensor([[9.0, 13.0]]), atol=1e-3)
 
 
-# import ipytest
-# ipytest.run("-q", "-s")
+# micro_model = micro_model()
+# micro_dataloader = micro_dataloader()
+# test_pruning(micro_model, micro_dataloader, show_graphs=True)
