@@ -1,4 +1,3 @@
-from collections import defaultdict
 from copy import deepcopy
 from itertools import product
 from random import random
@@ -19,7 +18,6 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    edge_counts_util,
     get_sorted_src_outs,
     patch_mode,
 )
@@ -134,7 +132,6 @@ def acdc_prune_scores(
                         experiment_type=ExperimentType(ActType.CLEAN, ActType.CORRUPT),
                         test_edge_counts=[n_edges],
                         prune_scores=dict([(e, 1.0) for e in (removed_edges | {edge})]),
-                        include_zero_edges=False,
                         output_dim=output_dim,
                         render_graph=render,
                     )[n_edges][0]
@@ -153,23 +150,3 @@ def acdc_prune_scores(
                 else:
                     edge.patch_mask(model).data[edge.patch_idx] = 0
     return prune_scores
-
-
-def acdc_edge_counts(
-    model: t.nn.Module,
-    experiment_type: ExperimentType,
-    prune_scores: Dict[Edge, float],
-) -> List[int]:
-    # Group prune_scores by score
-    tao_counts: Dict[float, int] = defaultdict(int)
-    for _, score in prune_scores.items():
-        tao_counts[score] += 1
-    # Sort tao_counts by tao
-    reverse = experiment_type.decrease_prune_scores
-    tao_counts = dict(sorted(tao_counts.items(), key=lambda x: x[0], reverse=reverse))
-    # Create edge_counts
-    edge_counts = []
-    for _, count in tao_counts.items():
-        prev_count = edge_counts[-1] if edge_counts else 0
-        edge_counts.append(prev_count + count)
-    return edge_counts_util(model, edge_counts)

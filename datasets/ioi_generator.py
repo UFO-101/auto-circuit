@@ -123,10 +123,10 @@ NAMES = [
 ]
 
 ABC_TEMPLATES = [
-    "Then, [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to",
-    "Afterwards [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to",
-    "When [A], [B] and [C] arrived at the [PLACE], [B] and [C] gave a [OBJECT] to",
-    "Friends [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to",
+    "Then, [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to [A]",
+    "Afterwards [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to [A]",
+    "When [A], [B] and [C] arrived at the [PLACE], [B] and [C] gave a [OBJECT] to [A]",
+    "Friends [A], [B] and [C] went to the [PLACE]. [B] and [C] gave a [OBJECT] to [A]",
 ]
 
 BAC_TEMPLATES = [
@@ -135,8 +135,8 @@ BAC_TEMPLATES = [
 ]
 
 BABA_TEMPLATES = [
-    "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to",
-    "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to",
+    "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to [A]",
+    "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] were working at the [PLACE]. [B] decided to give a [OBJECT] to [A]",
     "Then, [B] and [A] were thinking about going to the [PLACE]. [B] wanted to give a [OBJECT] to [A]",
     "Then, [B] and [A] had a long argument, and afterwards [B] said to [A]",
@@ -153,8 +153,8 @@ BABA_TEMPLATES = [
 ]
 
 BABA_LONG_TEMPLATES = [
-    "Then in the morning, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to",
-    "Then in the morning, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to",
+    "Then in the morning, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to [A]",
+    "Then in the morning, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then in the morning, [B] and [A] were working at the [PLACE]. [B] decided to give a [OBJECT] to [A]",
     "Then in the morning, [B] and [A] were thinking about going to the [PLACE]. [B] wanted to give a [OBJECT] to [A]",
     "Then in the morning, [B] and [A] had a long argument, and afterwards [B] said to [A]",
@@ -171,8 +171,8 @@ BABA_LONG_TEMPLATES = [
 ]
 
 BABA_LATE_IOS = [
-    "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to",
-    "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to",
+    "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to [A]",
+    "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] were working at the [PLACE]. [B] decided to give a [OBJECT] to [A]",
     "Then, [B] and [A] were thinking about going to the [PLACE]. [B] wanted to give a [OBJECT] to [A]",
     "Then, [B] and [A] had a long argument and after that [B] said to [A]",
@@ -182,8 +182,8 @@ BABA_LATE_IOS = [
 ]
 
 BABA_EARLY_IOS = [
-    "Then [B] and [A] went to the [PLACE], and [B] gave a [OBJECT] to",
-    "Then [B] and [A] had a lot of fun at the [PLACE], and [B] gave a [OBJECT] to",
+    "Then [B] and [A] went to the [PLACE], and [B] gave a [OBJECT] to [A]",
+    "Then [B] and [A] had a lot of fun at the [PLACE], and [B] gave a [OBJECT] to [A]",
     "Then [B] and [A] were working at the [PLACE], and [B] decided to give a [OBJECT] to [A]",
     "Then [B] and [A] were thinking about going to the [PLACE], and [B] wanted to give a [OBJECT] to [A]",
     "Then [B] and [A] had a long argument, and after that [B] said to [A]",
@@ -769,7 +769,12 @@ print([prompt["text"] for prompt in abc_dataset.ioi_prompts])
 
 prompt_dicts = []
 for clean_prompt, corrupt_prompt in zip(ioi_dataset.ioi_prompts, abc_dataset.ioi_prompts):
-    prompt_dict = {"clean": clean_prompt["text"], "corrupt": corrupt_prompt["text"]}
+    prompt_dict = {
+        "clean": " ".join(clean_prompt["text"].split()[:-1]),
+        "corrupt": " ".join(corrupt_prompt["text"].split()[:-1]),
+        # We don't need the space but these are more common tokens (lower indices)
+        "answer": " " + clean_prompt["text"].split()[-1]
+    }
     prompt_dicts.append(prompt_dict)
 
 data_json = {"prompts": prompt_dicts}

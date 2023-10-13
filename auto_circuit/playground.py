@@ -14,16 +14,15 @@ import auto_circuit
 import auto_circuit.data
 import auto_circuit.prune
 import auto_circuit.utils.graph_utils
+from auto_circuit.metrics.answer_prob import measure_answer_prob
 from auto_circuit.metrics.kl_div import measure_kl_div
+from auto_circuit.metrics.official_circuits.ioi_official import (
+    ioi_true_edges,
+)
 from auto_circuit.metrics.ROC import measure_roc
 from auto_circuit.prune import run_pruned
-from auto_circuit.prune_functions.ACDC import acdc_edge_counts
 from auto_circuit.prune_functions.activation_magnitude import (
     activation_magnitude_prune_scores,
-)
-from auto_circuit.prune_functions.ioi_official import (
-    ioi_true_edges,
-    ioi_true_edges_prune_scores,
 )
 from auto_circuit.prune_functions.random_edges import random_prune_scores
 
@@ -79,10 +78,10 @@ print(percent_gpu_mem_used())
 
 #%%
 # ---------- Config ----------
-experiment_type = ExperimentType(input_type=ActType.CLEAN, patch_type=ActType.CORRUPT)
+experiment_type = ExperimentType(input_type=ActType.CORRUPT, patch_type=ActType.CLEAN)
 factorized = True
 # pig_baseline, pig_samples = BaselineWeights.ZERO, 50
-edge_counts = EdgeCounts.LOGARITHMIC
+default_edge_count_type = EdgeCounts.LOGARITHMIC
 one_tao = 6e-2
 acdc_tao_range, acdc_tao_step = (one_tao, one_tao), one_tao
 
@@ -96,6 +95,7 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     length_limit=64,
 )
 prepare_model(model, factorized=factorized, device=device)
+edges: Set[Edge] = model.edges  # type: ignore
 prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
 
 # ----------------------------
@@ -116,12 +116,12 @@ prune_funcs: Dict[str, Callable] = {
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores,
     #     learning_rate=0.1,
-    #     epochs=3000,
+    #     epochs=500,
     #     regularize_lambda=10,
     #     mask_fn="hard_concrete",
+    #     dropout_p=0.5,
     #     show_train_graph=True,
     # ),
-    "IOI Official": ioi_true_edges_prune_scores,
 }
 for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
     prune_score_pbar.set_description_str(f"Computing prune scores: {name}")
@@ -139,12 +139,13 @@ if save:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
     file_postfix = "(ACDC-factorized-gpt2-MEGA-RUN)"
-    file_name = f"prune_scores_dict-{dt_string}-{file_postfix}.pkl"
-    with open(f"{repo_root}/.prune_scores_cache/{file_name}", "wb") as f:
+    file_name = f"prune_scores_dict-{dt_string}-{file_postfix}"
+    with open(f"{repo_root}/.prune_scores_cache/{file_name}.pkl", "wb") as f:
         pickle.dump(prune_scores_dict, f)
 if load:
     ioi_acdc_pth = "IOI-ACDC-prune-scores"
-    ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-prune-scores"
+    # ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-prune-scores"
+    ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-Dropout-05-Epochs-800"
     for pth in [ioi_acdc_pth, ioi_sp_pth]:
         with open(f"{repo_root}/.prune_scores_cache/{pth}.pkl", "rb") as f:
             loaded_prune_scores = pickle.load(f)
@@ -158,25 +159,16 @@ if load:
                         prune_scores_dict[k] = v
 
 #%%
-test_edge_counts = edge_counts_util(model, edge_counts)
-# pruned_outs_dict: Dict[str, Dict[int, List[t.Tensor]]] = {}
 kl_divs: Dict[str, Dict[int, float]] = {}
 for prune_func_str, prune_scores in (
     prune_func_pbar := tqdm(prune_scores_dict.items())
 ):
     prune_func_pbar.set_description_str(f"Pruning with {prune_func_str} scores")
-    test_edge = (
-        acdc_edge_counts(model, experiment_type, prune_scores)
-        if prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
-        else test_edge_counts
-    )
+    group_edges = prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
+    edge_count_type = EdgeCounts.GROUPS if group_edges else default_edge_count_type
+    test_edge_counts = edge_counts_util(edges, edge_count_type, prune_scores)
     pruned_outs = run_pruned(
-        model,
-        test_loader,
-        experiment_type,
-        test_edge,
-        prune_scores,
-        include_zero_edges=~prune_func_str.startswith("IOI"),
+        model, test_loader, experiment_type, test_edge_counts, prune_scores
     )
     kl_clean, kl_corrupt = measure_kl_div(model, test_loader, pruned_outs)
     kl_divs[prune_func_str + " clean"] = kl_clean
@@ -184,22 +176,41 @@ for prune_func_str, prune_scores in (
     del pruned_outs
     t.cuda.empty_cache()
 
-kl_vs_edges_plot(kl_divs, experiment_type, edge_counts, factorized).show()
+kl_vs_edges_plot(
+    kl_divs, experiment_type, default_edge_count_type, "KL Divergence", factorized
+).show()
 #%%
-test_edge_counts = edge_counts_util(model, edge_counts)
 rocs: Dict[str, Set[Tuple[float, float]]] = {}
-for prune_func_str, prune_scores in (
-    prune_func_pbar := tqdm(prune_scores_dict.items())
-):
-    test_edge = (
-        acdc_edge_counts(model, experiment_type, prune_scores)
-        if prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
-        else test_edge_counts
-    )
-    rocs[prune_func_str] = measure_roc(
-        model, prune_scores, test_edge, ioi_true_edges(model)
-    )
+for func_str, prune_scores in prune_scores_dict.items():
+    group_edges = func_str.startswith("ACDC") or func_str.startswith("IOI")
+    correct_edges = ioi_true_edges(model)
+    rocs[func_str] = measure_roc(model, prune_scores, correct_edges, True, group_edges)
+roc_plot("IOI", rocs).show()
 
-roc_plot(rocs).show()
+#%%
+answer_probs: Dict[str, Dict[int, float]] = {}
+for prune_func_str, prune_scores in (func_pbar := tqdm(prune_scores_dict.items())):
+    func_pbar.set_description_str(f"Pruning with {prune_func_str} scores")
+    group_edges = prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
+    edge_counts_type = EdgeCounts.GROUPS if group_edges else default_edge_count_type
+    test_edge_counts = edge_counts_util(edges, edge_counts_type, prune_scores)
+    pruned_outs = run_pruned(
+        model,
+        test_loader,
+        experiment_type,
+        test_edge_counts,
+        prune_scores,
+    )
+    answer_probs[prune_func_str] = measure_answer_prob(model, test_loader, pruned_outs)
+    del pruned_outs
+
+kl_vs_edges_plot(
+    answer_probs,
+    experiment_type,
+    default_edge_count_type,
+    "Correct Token Prob",
+    factorized,
+    False,
+).show()
 
 #%%

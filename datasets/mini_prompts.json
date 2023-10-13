@@ -2,11 +2,13 @@
   "prompts": [
     {
       "clean": "I like",
-      "corrupt": "I hate"
+      "corrupt": "I hate",
+      "answer": " cheese"
     },
     {
       "clean": "I like",
-      "corrupt": "I hate"
+      "corrupt": "I hate",
+      "answer": " cheese"
     }
   ]
 }

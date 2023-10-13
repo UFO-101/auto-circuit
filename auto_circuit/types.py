@@ -23,6 +23,7 @@ class ActType(Enum):
 class EdgeCounts(Enum):
     ALL = 1
     LOGARITHMIC = 2
+    GROUPS = 3  # Group edges by score and add each edge in the group at the same time.
 
 
 TestEdges = EdgeCounts | List[int | float]
@@ -32,7 +33,6 @@ TestEdges = EdgeCounts | List[int | float]
 class ExperimentType:
     input_type: ActType
     patch_type: ActType
-    decrease_prune_scores: bool = True
 
 
 @dataclass(frozen=True)

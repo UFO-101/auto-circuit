@@ -37,6 +37,7 @@ class PatchWrapper(t.nn.Module):
             self.prev_src_count: Optional[int] = prev_src_count
             self.patch_src_outs: Optional[t.Tensor] = None
             self.mask_fn: MaskFn = None
+            self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
         self.patch_mode = False
 
         self.dims = " ".join([f"d{i}" for i in range(1, head_dim)]) if head_dim else ""
@@ -67,6 +68,7 @@ class PatchWrapper(t.nn.Module):
             else:
                 assert self.mask_fn is None
                 mask = self.patch_mask
+            mask = self.dropout_layer(mask)
             einsum_pre = f"{batch_str} {dest_str} src, src batch {self.dims} ..."
             einsum_post = f"batch {self.dims} {dest_str} ..."
             arg_0 += einsum(mask, diff, f"{einsum_pre} -> {einsum_post}")

@@ -39,6 +39,7 @@ def subnetwork_probing_prune_scores(
     epochs: int = 20,
     regularize_lambda: float = 10,
     mask_fn: MaskFn = "hard_concrete",
+    dropout_p: float = 0.0,
     init_val: float = -init_mask_val,
     show_train_graph: bool = False,
 ) -> Dict[Edge, float]:
@@ -57,14 +58,14 @@ def subnetwork_probing_prune_scores(
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     losses, kl_divs, regularizes = [], [], []
-    with train_mask_mode(model, init_val) as patch_masks, mask_fn_mode(model, mask_fn):
+    with train_mask_mode(model, init_val) as patch_masks, mask_fn_mode(
+        model, mask_fn, dropout_p
+    ):
         optim = t.optim.Adam(patch_masks, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
             desc = f"Loss: {losses[-1]:.3f}, KL: {kl_divs[-1]:.3f}" if epoch > 0 else ""
             epoch_pbar.set_description_str(f"{SP} Epoch {epoch} " + desc, refresh=False)
-            for batch_idx, batch in (batch_pbar := tqdm(enumerate(train_data))):
-                batch_pbar.set_description_str(f"{SP} Batch {batch_idx}", refresh=False)
-
+            for batch in train_data:
                 patch_src_outs = src_outs_dict[batch.key].clone().detach()
                 with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
                     masked_logprobs = log_softmax(

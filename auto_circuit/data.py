@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, Dataset
 class PromptPair:
     clean: t.Tensor
     corrupt: t.Tensor
+    answer: t.Tensor
 
 
 @dataclass(frozen=True)
@@ -20,29 +21,39 @@ class PromptPairBatch:
     diverge_idx: int
     clean: t.Tensor
     corrupt: t.Tensor
+    answers: t.Tensor
 
 
 def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
     clean = t.stack([p.clean for p in batch])
     corrupt = t.stack([p.corrupt for p in batch])
+    answers = t.stack([p.answer for p in batch])
     key = hash((str(clean.tolist()), str(corrupt.tolist())))
 
     diverge_idxs = (~(clean == corrupt)).int().argmax(dim=1)
     diverge_idx: int = int(diverge_idxs.min().item())
-    return PromptPairBatch(key, diverge_idx, clean, corrupt)
+    return PromptPairBatch(key, diverge_idx, clean, corrupt, answers)
 
 
 class PromptDataset(Dataset):
-    def __init__(self, clean_prompts: List[t.Tensor], corrupt_prompts: List[t.Tensor]):
+    def __init__(
+        self,
+        clean_prompts: List[t.Tensor],
+        corrupt_prompts: List[t.Tensor],
+        answers: List[t.Tensor],
+    ):
         self.clean_prompts = clean_prompts
         self.corrupt_prompts = corrupt_prompts
+        self.answers = answers
 
     def __len__(self) -> int:
         assert len(self.clean_prompts) == len(self.corrupt_prompts)
         return len(self.clean_prompts)
 
     def __getitem__(self, idx: int) -> PromptPair:
-        return PromptPair(self.clean_prompts[idx], self.corrupt_prompts[idx])
+        return PromptPair(
+            self.clean_prompts[idx], self.corrupt_prompts[idx], self.answers[idx]
+        )
 
 
 def load_datasets_from_json(
@@ -62,9 +73,11 @@ def load_datasets_from_json(
     random.shuffle(data["prompts"]) if random_subet else None
     clean_prompts = [d["clean"] for d in data["prompts"]][:length_limit]
     corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:length_limit]
+    answers = [d["answer"] for d in data["prompts"]][:length_limit]
     if tokenizer is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
+        answers = [t.tensor(a).to(device) for a in answers]
     else:
         if prepend_bos:
             clean_prompts = [tokenizer.bos_token + prompt for prompt in clean_prompts]
@@ -72,16 +85,14 @@ def load_datasets_from_json(
                 tokenizer.bos_token + prompt for prompt in corrupt_prompts
             ]
         tokenizer.padding_side = "left"
-        clean_prompts = tokenizer(
-            clean_prompts, padding=True, truncation=True, return_tensors="pt"
-        )
-        corrupt_prompts = tokenizer(
-            corrupt_prompts, padding=True, truncation=True, return_tensors="pt"
-        )
+        clean_prompts = tokenizer(clean_prompts, padding=True, return_tensors="pt")
+        corrupt_prompts = tokenizer(corrupt_prompts, padding=True, return_tensors="pt")
+        answers = tokenizer(answers, return_tensors="pt")
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
+        answers = answers["input_ids"].to(device)
 
-    dataset = PromptDataset(clean_prompts, corrupt_prompts)
+    dataset = PromptDataset(clean_prompts, corrupt_prompts, answers)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=batch_size, shuffle=False, collate_fn=collate_fn

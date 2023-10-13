@@ -22,14 +22,12 @@ def run_pruned(
     experiment_type: ExperimentType,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
-    include_zero_edges: bool = True,
     output_dim: int = 1,
     render_graph: bool = False,
 ) -> Dict[int, List[t.Tensor]]:
     output_idx = tuple([slice(None)] * output_dim + [-1])
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
-    rvrse = experiment_type.decrease_prune_scores
-    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=rvrse))
+    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=True))
 
     for batch_idx, batch in enumerate(batch_pbar := tqdm(data_loader)):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
@@ -40,7 +38,7 @@ def run_pruned(
         else:
             raise NotImplementedError
 
-        if include_zero_edges:
+        if 0 in test_edge_counts:
             with t.inference_mode():
                 pruned_outs[0].append(model(batch_input)[output_idx])
 
@@ -65,7 +63,7 @@ def run_pruned(
                 if n_edges in test_edge_counts:
                     with t.inference_mode():
                         model_output = model(batch_input)
-                    pruned_outs[n_edges].append(model_output[output_idx])
+                    pruned_outs[n_edges].append(model_output[output_idx].detach().clone())
             if render_graph:
                 d = dict([(e, patch_outs[e.src]) for e, _ in prune_scores.items()])
                 draw_graph(model, batch_input, d, output_dim)

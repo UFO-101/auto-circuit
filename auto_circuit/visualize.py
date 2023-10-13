@@ -24,7 +24,9 @@ def kl_vs_edges_plot(
     data: Dict[str, Dict[int, float]],
     experiment_type: ExperimentType,
     edge_counts: EdgeCounts,
+    y_axis_title: str,
     factorized: bool,
+    log_y_axis: bool = True,
 ) -> go.Figure:
     fig = go.Figure()
 
@@ -44,14 +46,14 @@ def kl_vs_edges_plot(
         ),
         xaxis_title="Edges",
         xaxis_type="log" if edge_counts == EdgeCounts.LOGARITHMIC else "linear",
-        yaxis_title="KL Divergence",
-        yaxis_type="log",
+        yaxis_title=y_axis_title,
+        yaxis_type="log" if log_y_axis else "linear",
         template="plotly",
     )
     return fig
 
 
-def roc_plot(data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure:
+def roc_plot(title: str, data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure:
     fig = go.Figure()
 
     for label, points in data.items():
@@ -64,7 +66,7 @@ def roc_plot(data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure:
     fig.update_yaxes(scaleanchor="x", scaleratio=1)
     fig.update_xaxes(constrain="domain")
     fig.update_layout(
-        title="ROC Curve",
+        title="ROC Curve: " + title,
         xaxis_title="False Positive Rate",
         yaxis_title="True Positive Rate",
         template="plotly",

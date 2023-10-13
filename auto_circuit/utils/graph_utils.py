@@ -1,9 +1,9 @@
 #%%
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from contextlib import contextmanager
 from functools import partial
-from itertools import product
+from itertools import accumulate, product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 import torch as t
@@ -123,14 +123,16 @@ def train_mask_mode(
 
 
 @contextmanager
-def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn):
+def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn, dropout_p: float = 0.0):
     for wrapper in model.dest_wrappers:  # type: ignore
         wrapper.mask_fn = mask_fn
+        wrapper.dropout_layer.p = dropout_p
     try:
         yield
     finally:
         for wrapper in model.dest_wrappers:  # type: ignore
             wrapper.mask_fn = None
+            wrapper.dropout_layer.p = 0.0
 
 
 def graph_edges(model: t.nn.Module, factorized: bool) -> Tuple[Set[SrcNode], Set[Node]]:
@@ -162,24 +164,32 @@ def graph_edges(model: t.nn.Module, factorized: bool) -> Tuple[Set[SrcNode], Set
 
 
 def edge_counts_util(
-    model: t.nn.Module,
+    edges: Set[Edge],
     test_counts: TestEdges,
+    prune_scores: Optional[Dict[Edge, float]] = None,
+    zero_edges: bool = True,
+    all_edges: bool = True,
 ) -> List[int]:
-    edges: Set[Edge] = model.edges  # type: ignore
     n_edges = len(edges)
 
     if test_counts == EdgeCounts.ALL:
         counts_list = [n for n in range(n_edges + 1)]
     elif test_counts == EdgeCounts.LOGARITHMIC:
-        counts_list = [
-            n
-            for n in range(n_edges + 1)
-            if n % 10 ** math.floor(math.log10(max(n, 1))) == 0
-        ]
+        counts_list = [n for n in range(1, n_edges) if n % (10 ** max(math.floor(math.log10(n)) - 1, 0)) == 0]
+    elif test_counts == EdgeCounts.GROUPS:
+        assert prune_scores is not None
+        score_counts = Counter(prune_scores.values())
+        sorted_counts = sorted(score_counts.items(), key=lambda x: x[0], reverse=True)
+        counts_list = list(accumulate([n for _, n in sorted_counts]))
     elif isinstance(test_counts, List):
         counts_list = [n if type(n) == int else int(n_edges * n) for n in test_counts]
     else:
         raise NotImplementedError(f"Unknown test_counts: {test_counts}")
+
+    if zero_edges and 0 not in counts_list:
+        counts_list = [0] + counts_list
+    if all_edges and n_edges not in counts_list:
+        counts_list.append(n_edges)
 
     return counts_list
 

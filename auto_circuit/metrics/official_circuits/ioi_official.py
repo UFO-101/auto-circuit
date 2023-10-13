@@ -73,13 +73,12 @@ def ioi_true_edges(model: t.nn.Module) -> Set[Edge]:
     }
     edges_present: List[str] = []
     for conn in special_connections:
-        edge_src_names = []
+        edge_src_names, edge_dest_names = [], []
         if conn.inp == "INPUT":
             edge_src_names = ["Resid Start"]
         else:
             for (layer, head) in IOI_CIRCUIT[conn.inp]:
                 edge_src_names.append(f"A{layer}.{head}")
-        edge_dest_names = []
         if conn.out == "OUTPUT":
             edge_dest_names = ["Resid End"]
         else:
@@ -97,11 +96,3 @@ def ioi_true_edges(model: t.nn.Module) -> Set[Edge]:
         if edge.name in edges_present:
             true_edges.add(edge)
     return true_edges
-
-
-def ioi_true_edges_prune_scores(
-    model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
-) -> Dict[Edge, float]:
-    true_edges: Set[Edge] = ioi_true_edges(model)
-    return dict([(edge, 1.0) for edge in true_edges])

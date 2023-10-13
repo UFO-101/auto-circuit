@@ -57,9 +57,8 @@ def test_pruning(
         model=model,
         data_loader=test_loader,
         experiment_type=experiment_type,
-        test_edge_counts=[1, 2, 3],
+        test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
-        include_zero_edges=True,
         output_dim=0,
         render_graph=show_graphs,
     )

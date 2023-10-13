@@ -1,25 +1,40 @@
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Set, Tuple
 
 import torch as t
 
-from auto_circuit.types import Edge
+from auto_circuit.types import Edge, EdgeCounts
+from auto_circuit.utils.graph_utils import edge_counts_util
+
+
+def is_head_node(edge: Edge) -> bool:
+    valid_starts = ["A", "R"]
+    return edge.src.name[0] in valid_starts and edge.dest.name[0] in valid_starts
 
 
 def measure_roc(
     model: t.nn.Module,
     prune_scores: Dict[Edge, float],
-    test_edge_counts: List[int],
     correct_edges: Set[Edge],
+    head_nodes_only: bool = False,
+    group_edges: bool = False,
 ) -> Set[Tuple[float, float]]:
     edges: Set[Edge] = model.edges  # type: ignore
+
+    # Filter edges that are not between attention heads
+    edges = set(filter(is_head_node, edges)) if head_nodes_only else edges
+    prune_scores = {edge: val for edge, val in prune_scores.items() if edge in edges}
+    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=True))
+
+    edge_counts_type = EdgeCounts.GROUPS if group_edges else EdgeCounts.LOGARITHMIC
+    test_edge_counts = edge_counts_util(edges, edge_counts_type, prune_scores)
+
     incorrect_edges = edges - correct_edges
     points: Set[Tuple[float, float]] = set()
     current_pred_edges: Set[Edge] = set()
-    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=True))
     for edge_idx, (edge, _) in enumerate(prune_scores.items()):
         current_pred_edges.add(edge)
         edge_count = edge_idx + 1
-        if edge_count in test_edge_counts:
+        if edge_count in test_edge_counts or edge_count == len(edges):
             true_positives = len(correct_edges & current_pred_edges)
             true_positive_rate = true_positives / len(correct_edges)
             false_positives = len(incorrect_edges & current_pred_edges)

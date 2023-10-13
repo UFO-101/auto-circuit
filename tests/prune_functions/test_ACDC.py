@@ -1,14 +1,12 @@
 #%%
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import torch as t
 from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
-from auto_circuit.model_utils.micro_model_utils import MicroModel
-from auto_circuit.prune_functions.ACDC import acdc_edge_counts, acdc_prune_scores
-from auto_circuit.types import ActType, Edge, ExperimentType
+from auto_circuit.prune_functions.ACDC import acdc_prune_scores
 from auto_circuit.utils.graph_utils import prepare_model
 
 
@@ -48,33 +46,3 @@ def test_acdc(
 # request = None
 # show_graphs = False
 # test_acdc(model, dataloader, output_dim, request, show_graphs)
-#%%
-
-
-@pytest.mark.parametrize("decrease_prune_scores", [True, False])
-def test_acdc_edge_counts(micro_model: MicroModel, decrease_prune_scores: bool):
-    model = micro_model
-    prepare_model(model, factorized=True, device="cpu")
-    edges: List[Edge] = list(model.edges)  # type: ignore
-    experiment_type = ExperimentType(
-        ActType.CLEAN, ActType.CORRUPT, decrease_prune_scores
-    )
-
-    counts: List[int] = acdc_edge_counts(model, experiment_type, {})
-    assert counts == []
-
-    prune_scores: Dict[Edge, float] = {edges[0]: 0.0}
-    counts: List[int] = acdc_edge_counts(model, experiment_type, prune_scores)
-    assert counts == [1]
-
-    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 1.0}
-    counts: List[int] = acdc_edge_counts(model, experiment_type, prune_scores)
-    assert counts == [2]
-
-    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 1.0, edges[2]: 2.0}
-    counts: List[int] = acdc_edge_counts(model, experiment_type, prune_scores)
-    assert counts == [1, 3] if decrease_prune_scores else [2, 3]
-
-    prune_scores: Dict[Edge, float] = {edges[0]: 1.0, edges[1]: 2.0, edges[2]: 2.0}
-    counts: List[int] = acdc_edge_counts(model, experiment_type, prune_scores)
-    assert counts == [2, 3] if decrease_prune_scores else [1, 3]
