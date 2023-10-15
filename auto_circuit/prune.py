@@ -63,7 +63,9 @@ def run_pruned(
                 if n_edges in test_edge_counts:
                     with t.inference_mode():
                         model_output = model(batch_input)
-                    pruned_outs[n_edges].append(model_output[output_idx].detach().clone())
+                    pruned_outs[n_edges].append(
+                        model_output[output_idx].detach().clone()
+                    )
             if render_graph:
                 d = dict([(e, patch_outs[e.src]) for e, _ in prune_scores.items()])
                 draw_graph(model, batch_input, d, output_dim)

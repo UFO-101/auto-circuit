@@ -65,6 +65,7 @@ def load_datasets_from_json(
     train_test_split: Sequence[int | float] = [0.9, 0.1],
     length_limit: int = 100,
     random_subet: bool = True,
+    pad: bool = True,
 ) -> Tuple[DataLoader[PromptPairBatch], DataLoader[PromptPairBatch]]:
     """Load a dataset from a json file. The file should specify a list of
     dictionaries with keys "clean_prompt" and "corrupt_prompt"."""
@@ -74,6 +75,8 @@ def load_datasets_from_json(
     clean_prompts = [d["clean"] for d in data["prompts"]][:length_limit]
     corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:length_limit]
     answers = [d["answer"] for d in data["prompts"]][:length_limit]
+    print("clean_prompts[0]:", clean_prompts[0])
+    print("corrupt_prompts[0]:", corrupt_prompts[0])
     if tokenizer is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
@@ -85,8 +88,8 @@ def load_datasets_from_json(
                 tokenizer.bos_token + prompt for prompt in corrupt_prompts
             ]
         tokenizer.padding_side = "left"
-        clean_prompts = tokenizer(clean_prompts, padding=True, return_tensors="pt")
-        corrupt_prompts = tokenizer(corrupt_prompts, padding=True, return_tensors="pt")
+        clean_prompts = tokenizer(clean_prompts, padding=pad, return_tensors="pt")
+        corrupt_prompts = tokenizer(corrupt_prompts, padding=pad, return_tensors="pt")
         answers = tokenizer(answers, return_tensors="pt")
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)

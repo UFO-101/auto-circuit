@@ -107,13 +107,14 @@ def patch_mode(
 
 @contextmanager
 def train_mask_mode(
-    model: t.nn.Module, init_const: Optional[float] = None
-) -> Iterator[Set[t.nn.Parameter]]:
+    model: t.nn.Module, init_const: float = 1.0
+) -> Iterator[List[t.nn.Parameter]]:
     model.eval()
-    parameters: Set[t.nn.Parameter] = set()
+    model.zero_grad()
+    parameters: List[t.nn.Parameter] = []
     for wrapper in model.dest_wrappers:  # type: ignore
-        t.nn.init.constant_(wrapper.patch_mask, init_const) if init_const else None
-        parameters.add(wrapper.patch_mask)
+        t.nn.init.constant_(wrapper.patch_mask, init_const)
+        parameters.append(wrapper.patch_mask)
         wrapper.train()
     try:
         yield parameters
@@ -175,7 +176,11 @@ def edge_counts_util(
     if test_counts == EdgeCounts.ALL:
         counts_list = [n for n in range(n_edges + 1)]
     elif test_counts == EdgeCounts.LOGARITHMIC:
-        counts_list = [n for n in range(1, n_edges) if n % (10 ** max(math.floor(math.log10(n)) - 1, 0)) == 0]
+        counts_list = [
+            n
+            for n in range(1, n_edges)
+            if n % (10 ** max(math.floor(math.log10(n)) - 1, 0)) == 0
+        ]
     elif test_counts == EdgeCounts.GROUPS:
         assert prune_scores is not None
         score_counts = Counter(prune_scores.values())

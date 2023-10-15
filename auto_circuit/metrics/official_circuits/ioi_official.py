@@ -1,10 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, List, Set
+from typing import List, Set
 
 import torch as t
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
 from auto_circuit.types import Edge
 
 IOI_CIRCUIT = {

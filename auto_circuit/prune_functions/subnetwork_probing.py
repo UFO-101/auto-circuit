@@ -46,15 +46,15 @@ def subnetwork_probing_prune_scores(
     """Prune scores are the mean activation magnitude of each edge."""
     output_idx = tuple([slice(None)] * output_dim + [-1])
 
-    corrupt_logprobs: Dict[str, t.Tensor] = {}
+    clean_logprobs: Dict[str, t.Tensor] = {}
     with t.inference_mode():
         for batch in train_data:
-            corrupt_out = model(batch.corrupt)[output_idx]
-            corrupt_logprobs[batch.key] = log_softmax(corrupt_out, dim=-1)
+            clean_out = model(batch.clean)[output_idx]
+            clean_logprobs[batch.key] = log_softmax(clean_out, dim=-1)
 
     src_outs_dict: Dict[int, t.Tensor] = {}
     for batch in train_data:
-        patch_outs = get_sorted_src_outs(model, batch.corrupt)
+        patch_outs = get_sorted_src_outs(model, batch.clean)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     losses, kl_divs, regularizes = [], [], []
@@ -69,11 +69,11 @@ def subnetwork_probing_prune_scores(
                 patch_src_outs = src_outs_dict[batch.key].clone().detach()
                 with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
                     masked_logprobs = log_softmax(
-                        model(batch.clean)[output_idx], dim=-1
+                        model(batch.corrupt)[output_idx], dim=-1
                     )
                     kl_div_term = kl_div(
                         masked_logprobs,
-                        corrupt_logprobs[batch.key],
+                        clean_logprobs[batch.key],
                         reduction="batchmean",
                         log_target=True,
                     )

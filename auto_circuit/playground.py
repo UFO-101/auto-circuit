@@ -3,6 +3,7 @@ import os
 import pickle
 import random
 from datetime import datetime
+from functools import partial
 from typing import Callable, Dict, Set, Tuple
 
 import numpy as np
@@ -21,10 +22,7 @@ from auto_circuit.metrics.official_circuits.ioi_official import (
 )
 from auto_circuit.metrics.ROC import measure_roc
 from auto_circuit.prune import run_pruned
-from auto_circuit.prune_functions.activation_magnitude import (
-    activation_magnitude_prune_scores,
-)
-from auto_circuit.prune_functions.random_edges import random_prune_scores
+from auto_circuit.prune_functions.ACDC import acdc_prune_scores
 
 # from auto_circuit.prune_functions.parameter_integrated_gradients import (
 #     BaselineWeights,
@@ -59,20 +57,20 @@ if toy_model:
     model = tl.HookedTransformer(cfg)
     model.init_weights()
 else:
-    model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
+    # model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
+    model = tl.HookedTransformer.from_pretrained("tiny-stories-33M", device=device)
 
 model.cfg.use_attn_result = True
 model.cfg.use_split_qkv_input = True
 model.cfg.use_hook_mlp_in = True
 assert model.tokenizer is not None
-# model.tokenizer.padding_side = "left"
-assert model.tokenizer.padding_side == "right"
 # model = t.compile(model)
 model.eval()
 
 # repo_root = "/Users/josephmiller/Documents/auto-circuit"
 repo_root = "/home/dev/auto-circuit"
-data_file = "datasets/indirect_object_identification.json"
+# data_file = "datasets/indirect_object_identification.json"
+data_file = "datasets/animal_diet_prompts.json"
 data_path = f"{repo_root}/{data_file}"
 print(percent_gpu_mem_used())
 
@@ -93,6 +91,7 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     batch_size=32,
     train_test_split=[0.5, 0.5],
     length_limit=64,
+    pad=False,
 )
 prepare_model(model, factorized=factorized, device=device)
 edges: Set[Edge] = model.edges  # type: ignore
@@ -106,17 +105,26 @@ prune_funcs: Dict[str, Callable] = {
     #     baseline_weights=pig_baseline,
     #     samples=pig_samples,
     # ),
-    "Act Mag": activation_magnitude_prune_scores,
-    "Random": random_prune_scores,
-    # "ACDC": partial(
-    #     acdc_prune_scores,
-    #     tao_exps=list(range(-1, 1)),
+    # "Act Mag": activation_magnitude_prune_scores,
+    # "Random": random_prune_scores,
+    "ACDC": partial(
+        acdc_prune_scores,
+        tao_exps=list(range(-6, 1)),
+        output_dim=1,
+    ),
+    # "Integrated Edge Gradients": partial(
+    #     integrated_edge_gradients_prune_scores,
     #     output_dim=1,
+    #     samples=50,
     # ),
+    # "Simple Gradient": partial(
+    #     simple_gradient_prune_scores,
+    #     output_dim=1,
+    # )
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores,
     #     learning_rate=0.1,
-    #     epochs=500,
+    #     epochs=3000,
     #     regularize_lambda=10,
     #     mask_fn="hard_concrete",
     #     dropout_p=0.5,
@@ -134,7 +142,7 @@ for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
 #%%
 # SAVE / LOAD PRUNE SCORES DICT
 save = False
-load = True
+load = False
 if save:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -147,6 +155,7 @@ if load:
     # ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-prune-scores"
     ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-Dropout-05-Epochs-800"
     for pth in [ioi_acdc_pth, ioi_sp_pth]:
+        # for pth in [ioi_acdc_pth]:
         with open(f"{repo_root}/.prune_scores_cache/{pth}.pkl", "rb") as f:
             loaded_prune_scores = pickle.load(f)
             if prune_scores_dict is None:
