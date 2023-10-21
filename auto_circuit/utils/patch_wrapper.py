@@ -14,6 +14,7 @@ class PatchWrapper(t.nn.Module):
         self,
         module: t.nn.Module,
         head_dim: Optional[int] = None,
+        seq_dim: Optional[int] = None,
         is_src: bool = False,
         src_idxs: Optional[slice] = None,
         is_dest: bool = False,
@@ -23,6 +24,7 @@ class PatchWrapper(t.nn.Module):
         super().__init__()
         self.module: t.nn.Module = module
         self.head_dim: Optional[int] = head_dim
+        self.seq_dim: Optional[int] = seq_dim
         self.curr_src_outs: Optional[t.Tensor] = None
 
         self.is_src = is_src
@@ -40,7 +42,9 @@ class PatchWrapper(t.nn.Module):
             self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
         self.patch_mode = False
 
-        self.dims = " ".join([f"d{i}" for i in range(1, head_dim)]) if head_dim else ""
+        assert head_dim is None or seq_dim is None or head_dim > seq_dim
+        dims = range(1, max(head_dim if head_dim else 2, seq_dim if seq_dim else 2))
+        self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
         self.src_slice = slice(prev_src_count) if prev_src_count else None
 
     def sample_hard_concrete(self, mask: t.Tensor, batch_size: int) -> t.Tensor:
@@ -59,19 +63,21 @@ class PatchWrapper(t.nn.Module):
         if self.patch_mode and self.is_dest:
             assert self.patch_src_outs is not None and self.curr_src_outs is not None
             diff = (self.patch_src_outs - self.curr_src_outs)[self.src_slice]
-            batch_str, dest_str = "", "" if self.head_dim is None else "dest"
+            batch_str = ""
+            head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
+            seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately
             if self.mask_fn == "hard_concrete":
                 mask = self.sample_hard_concrete(self.patch_mask, arg_0.size(0))
-                batch_str = "batch"
+                batch_str = "batch"  # Sample distribution for each batch element
             elif self.mask_fn == "sigmoid":
                 mask = self.sigmoid_mask(self.patch_mask)
             else:
                 assert self.mask_fn is None
                 mask = self.patch_mask
             mask = self.dropout_layer(mask)
-            einsum_pre = f"{batch_str} {dest_str} src, src batch {self.dims} ..."
-            einsum_post = f"batch {self.dims} {dest_str} ..."
-            arg_0 += einsum(mask, diff, f"{einsum_pre} -> {einsum_post}")
+            ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
+            ein_post = f"batch {self.dims} {head_str} ..."
+            arg_0 += einsum(mask, diff, f"{ein_pre} -> {ein_post}")
 
         new_args = (arg_0,) + args[1:]
         out = self.module(*new_args, **kwargs)

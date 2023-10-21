@@ -13,7 +13,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
     model = mini_tl_transformer
     edges: Set[Edge] = model.edges  # type: ignore
-    prepare_model(model, factorized=True, device="cpu")
+    prepare_model(model, factorized=True)
     n_model_edges = len(model.edges)  # type: ignore
 
     none_and_all = [0.0, 0.5, 1.0]
@@ -26,7 +26,7 @@ def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
 
 def test_groups_edge_counts(micro_model: MicroModel):
     model = micro_model
-    prepare_model(model, factorized=True, device="cpu")
+    prepare_model(model, factorized=True)
     edges: Set[Edge] = model.edges  # type: ignore
     edge_list = list(edges)
 

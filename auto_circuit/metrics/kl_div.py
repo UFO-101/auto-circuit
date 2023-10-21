@@ -10,17 +10,14 @@ def measure_kl_div(
     model: t.nn.Module,
     test_loader: DataLoader[PromptPairBatch],
     pruned_outs: Dict[int, List[t.Tensor]],
-    output_dim: int = 1,
 ) -> Tuple[Dict[int, float], ...]:
     # ) -> Dict[int, float]:
     kl_divs_clean, kl_divs_corrupt = {}, {}
-    output_idx = tuple([slice(None)] * output_dim + [-1])
+    out_slice = model.out_slice
     # Measure KL divergence
     with t.inference_mode():
-        clean_outs = t.cat([model(batch.clean)[output_idx] for batch in test_loader])
-        corrupt_outs = t.cat(
-            [model(batch.corrupt)[output_idx] for batch in test_loader]
-        )
+        clean_outs = t.cat([model(batch.clean)[out_slice] for batch in test_loader])
+        corrupt_outs = t.cat([model(batch.corrupt)[out_slice] for batch in test_loader])
     clean_logprobs = t.nn.functional.log_softmax(clean_outs, dim=-1)
     corrupt_logprobs = t.nn.functional.log_softmax(corrupt_outs, dim=-1)
 

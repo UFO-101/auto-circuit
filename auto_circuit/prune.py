@@ -13,7 +13,7 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import get_sorted_src_outs, patch_mode
-from auto_circuit.visualize import draw_graph
+from auto_circuit.visualize import draw_seq_graph
 
 
 def run_pruned(
@@ -22,10 +22,10 @@ def run_pruned(
     experiment_type: ExperimentType,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
-    output_dim: int = 1,
     render_graph: bool = False,
+    render_patched_edge_only: bool = False,
 ) -> Dict[int, List[t.Tensor]]:
-    output_idx = tuple([slice(None)] * output_dim + [-1])
+    out_slice = model.out_slice
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
     prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=True))
 
@@ -40,7 +40,7 @@ def run_pruned(
 
         if 0 in test_edge_counts:
             with t.inference_mode():
-                pruned_outs[0].append(model(batch_input)[output_idx])
+                pruned_outs[0].append(model(batch_input)[out_slice])
 
         patch_outs: Dict[SrcNode, t.Tensor]
         if experiment_type.patch_type == ActType.CLEAN:
@@ -58,16 +58,15 @@ def run_pruned(
         with patch_mode(model, curr_src_outs, patch_src_outs, reset_mask=True):
             for edge_idx, edge in enumerate(edge_pbar := tqdm(prune_scores.keys())):
                 edge_pbar.set_description(f"Prune Edge {edge}", refresh=False)
-                n_edges = edge_idx + 1
+                n_edge = edge_idx + 1
                 edge.patch_mask(model).data[edge.patch_idx] = 1
-                if n_edges in test_edge_counts:
+                if n_edge in test_edge_counts:
                     with t.inference_mode():
                         model_output = model(batch_input)
-                    pruned_outs[n_edges].append(
-                        model_output[output_idx].detach().clone()
-                    )
+                    pruned_outs[n_edge].append(model_output[out_slice].detach().clone())
             if render_graph:
-                d = dict([(e, patch_outs[e.src]) for e, _ in prune_scores.items()])
-                draw_graph(model, batch_input, d, output_dim)
+                labels = dict([(e, patch_outs[e.src]) for e, _ in prune_scores.items()])
+                # draw_graph(model, batch_input, labels)
+                draw_seq_graph(model, batch_input, labels, render_patched_edge_only)
         del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
     return pruned_outs

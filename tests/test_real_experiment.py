@@ -20,7 +20,7 @@ def test_kl_vs_edges(
 ):
     """Test that experiments satisfy basic requirements with a real model."""
     model = mini_tl_transformer
-    prepare_model(model, factorized=True, device="cpu")
+    prepare_model(model, factorized=True, device="cpu", slice_output=True)
     edges: Set[Edge] = model.edges  # type: ignore
     test_loader = mini_tl_dataloader
 
@@ -41,7 +41,6 @@ def test_kl_vs_edges(
         experiment_type=experiment_type,
         test_edge_counts=test_edge_counts,
         prune_scores=prune_scores,
-        output_dim=1,
         render_graph=False,
     )
     assert t.allclose(clean_out, pruned_outs[0][0], atol=1e-3)

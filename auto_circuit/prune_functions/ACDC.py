@@ -28,7 +28,6 @@ def acdc_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
     tao_exps: List[int] = list(range(-5, -1)),
-    output_dim: int = 1,
     test_mode: bool = False,
     show_graphs: bool = False,
 ) -> Dict[Edge, float]:
@@ -43,9 +42,9 @@ def acdc_prune_scores(
 
     Note: only the first batch of train_data is used."""
     test_model = deepcopy(model) if test_mode else None
-    output_idx = tuple([slice(None)] * output_dim + [-1])
+    out_slice = model.out_slice
     edges: Set[Edge] = model.edges  # type: ignore
-    edges: List[Edge] = list(sorted(edges, key=lambda x: x.dest.layer, reverse=True))
+    edges: List[Edge] = list(sorted(edges, key=lambda x: x.dest.lyr, reverse=True))
 
     prune_scores = dict([(edge, float("inf")) for edge in edges])
     for tao in (
@@ -60,7 +59,7 @@ def acdc_prune_scores(
         src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, clean_batch)
 
         with t.inference_mode():
-            clean_out = model(clean_batch)[output_idx]
+            clean_out = model(clean_batch)[out_slice]
             kv_cache, toks, short_embd, attn_mask, resids = None, None, None, None, []
             if isinstance(model, HookedTransformer):
                 print("train_batch.diverge_idx:", train_batch.diverge_idx)
@@ -110,19 +109,19 @@ def acdc_prune_scores(
                             tokens=toks,
                             shortformer_pos_embed=short_embd,
                             attention_mask=attn_mask,
-                        )[output_idx]
+                        )[out_slice]
                     else:
-                        out = model(clean_batch)[output_idx]
+                        out = model(clean_batch)[out_slice]
                 out_logprobs = t.nn.functional.log_softmax(out, dim=-1)
 
                 if test_mode:
                     assert test_model is not None
-                    render = show_graphs and (random() < 0.1 or len(edges) < 20)
+                    render = show_graphs and (random() < 0.02 or len(edges) < 20)
 
                     print("ACDC model, with out=", out) if render else None
                     d = dict([(e, patch_outs[e.src]) for e in (removed_edges | {edge})])
                     if render:
-                        draw_graph(model, clean_batch, d, output_dim, kv_cache)
+                        draw_graph(model, clean_batch, d, kv_cache)
 
                     n_edges = len(removed_edges) + 1
                     print("Test mode: running pruned model") if render else None
@@ -132,7 +131,6 @@ def acdc_prune_scores(
                         experiment_type=ExperimentType(ActType.CLEAN, ActType.CORRUPT),
                         test_edge_counts=[n_edges],
                         prune_scores=dict([(e, 1.0) for e in (removed_edges | {edge})]),
-                        output_dim=output_dim,
                         render_graph=render,
                     )[n_edges][0]
                     test_out_logprobs = t.nn.functional.log_softmax(test_out, dim=-1)

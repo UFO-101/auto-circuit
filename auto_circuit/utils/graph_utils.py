@@ -3,7 +3,8 @@ import math
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from functools import partial
-from itertools import accumulate, product
+from itertools import accumulate, chain
+from itertools import product as p
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 import torch as t
@@ -26,13 +27,64 @@ from auto_circuit.utils.patch_wrapper import MaskFn, PatchWrapper
 #%%
 
 
-def prepare_model(model: t.nn.Module, factorized: bool, device: str) -> None:
-    srcs, nodes = graph_edges(model, factorized)
-    make_model_patchable(model, srcs, nodes, device)
+def prepare_model(
+    model: t.nn.Module,
+    factorized: bool,
+    slice_output: bool = False,
+    seq_len: Optional[int] = None,
+    device: str = "cpu",
+) -> None:
+    srcs, nodes, seq_dim = graph_edges(model, factorized, seq_len)
+    make_model_patchable(model, srcs, nodes, device, seq_len, seq_dim)
+    out_slice = tuple([slice(None)] * seq_dim + [-1]) if slice_output else slice(None)
+    setattr(model, "out_slice", out_slice)
+
+
+# Todo: Make a PatchableModel class that wraps the model
+def graph_edges(
+    model: t.nn.Module, factorized: bool, seq_len: Optional[int] = None
+) -> Tuple[Set[SrcNode], Set[Node], int]:
+    """Get the edges of the computation graph of the model."""
+    seq_dim = 1
+    edges: Dict[Optional[int], List[Edge]] = defaultdict(list)
+    if not factorized:
+        if isinstance(model, MicroModel):
+            srcs, dests = mm_utils.simple_graph_nodes(model)
+        elif isinstance(model, HookedTransformer):
+            srcs, dests = tl_utils.simple_graph_nodes(model)
+        else:
+            raise NotImplementedError(model)
+        for s in [None] if seq_len is None else range(seq_len):
+            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].lyr + 1 == e[1].lyr]
+    else:
+        if isinstance(model, MicroModel):
+            srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
+            dests: Set[DestNode] = mm_utils.factorized_dest_nodes(model)
+        elif isinstance(model, HookedTransformer):
+            srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
+            dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
+        else:
+            raise NotImplementedError(model)
+        for s in [None] if seq_len is None else range(seq_len):
+            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].lyr < e[1].lyr]
+    nodes: Set[Node] = set(srcs | dests)
+    setattr(model, "nodes", nodes)
+    setattr(model, "srcs", srcs)
+    setattr(model, "dests", dests)
+    setattr(model, "edge_dict", edges)
+    setattr(model, "edges", list(chain.from_iterable(edges.values())))
+    setattr(model, "seq_dim", seq_dim)
+    setattr(model, "seq_len", seq_len)
+    return srcs, nodes, seq_dim
 
 
 def make_model_patchable(
-    model: t.nn.Module, src_nodes: Set[SrcNode], nodes: Set[Node], device: str
+    model: t.nn.Module,
+    src_nodes: Set[SrcNode],
+    nodes: Set[Node],
+    device: str,
+    seq_len: Optional[int] = None,
+    seq_dim: Optional[int] = None,
 ):
     node_dict: Dict[str, Set[Node]] = defaultdict(set)
     [node_dict[node.module_name].add(node) for node in nodes]
@@ -56,14 +108,15 @@ def make_model_patchable(
         patch_mask, prev_src_count = None, None
         if is_dest := any([type(node) == DestNode for node in module_nodes]):
             module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
-            prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
-            if module_dest_count > 1:
-                patch_mask = t.zeros((module_dest_count, prev_src_count), device=device)
-            else:
-                patch_mask = t.zeros((prev_src_count,), device=device)
+            prev_src_count = len([n for n in src_nodes if n.lyr < a_node.lyr])
+            seq_shape = [seq_len] if seq_len is not None else []
+            head_shape = [module_dest_count] if module_dest_count > 1 else []
+            mask_shape = seq_shape + head_shape + [prev_src_count]
+            patch_mask = t.zeros(mask_shape, device=device)
         wrapper = PatchWrapper(
             module=module,
             head_dim=head_dim,
+            seq_dim=None if seq_len is None else seq_dim,  # Patch tokens separately
             is_src=is_src,
             src_idxs=src_idxs,
             is_dest=is_dest,
@@ -134,34 +187,6 @@ def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn, dropout_p: float = 0.0):
         for wrapper in model.dest_wrappers:  # type: ignore
             wrapper.mask_fn = None
             wrapper.dropout_layer.p = 0.0
-
-
-def graph_edges(model: t.nn.Module, factorized: bool) -> Tuple[Set[SrcNode], Set[Node]]:
-    """Get the edges of the computation graph of the model."""
-    if not factorized:
-        if isinstance(model, MicroModel):
-            srcs, dests = mm_utils.simple_graph_nodes(model)
-        elif isinstance(model, HookedTransformer):
-            srcs, dests = tl_utils.simple_graph_nodes(model)
-        else:
-            raise NotImplementedError(model)
-        edges = [Edge(*e) for e in product(srcs, dests) if e[0].layer + 1 == e[1].layer]
-    else:
-        if isinstance(model, MicroModel):
-            srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
-            dests: Set[DestNode] = mm_utils.factorized_dest_nodes(model)
-        elif isinstance(model, HookedTransformer):
-            srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
-            dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
-        else:
-            raise NotImplementedError(model)
-        edges = [Edge(*e) for e in product(srcs, dests) if e[0].layer < e[1].layer]
-    nodes: Set[Node] = set(srcs | dests)
-    setattr(model, "nodes", nodes)
-    setattr(model, "srcs", srcs)
-    setattr(model, "dests", dests)
-    setattr(model, "edges", set(edges))
-    return srcs, nodes
 
 
 def edge_counts_util(

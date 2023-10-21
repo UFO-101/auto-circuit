@@ -68,20 +68,25 @@ RESPONDERS = [
 ]
 
 # Function to generate a single prompt with the revised askers
-def generate_prompt(animal: str, asker: Tuple[str, str], responder: str) -> str:
+def generate_long_prompt(animal: str, asker: Tuple[str, str], responder: str) -> str:
     pt_1 = f'"What do {animal} like to eat?", {asker[0]} asked {asker[1]} {responder}.'
     pt_2 = f' {asker[1].capitalize()} {responder} smiled and said, "They like to eat'
     return pt_1 + pt_2
 
 
+def generate_short_prompt(animal: str, asker: Tuple[str, str], responder: str) -> str:
+    return f"The {animal} ate some"
+
+
 # Function to generate N prompts with extended lists
-def generate_prompts(N: int) -> Dict[str, Any]:
+def generate_prompts(N: int, short: bool = True) -> Dict[str, Any]:
+    prompt_generator = generate_short_prompt if short else generate_long_prompt
     prompts = []
     for _ in range(N):
-        clean_prompt = generate_prompt(
+        clean_prompt = prompt_generator(
             CLEAN_PROMPT_ANIMAL, choice(ASKER_TUPLES), choice(RESPONDERS)
         )
-        corrupt_prompt = generate_prompt(
+        corrupt_prompt = prompt_generator(
             choice(ANIMALS), choice(ASKER_TUPLES), choice(RESPONDERS)
         )
         prompts.append(
@@ -91,8 +96,8 @@ def generate_prompts(N: int) -> Dict[str, Any]:
 
 
 #%%
-with open("animal_diet_prompts.json", "w") as f:
-    json.dump(generate_prompts(1000), f)
+with open("animal_diet_short_prompts.json", "w") as f:
+    json.dump(generate_prompts(1000, short=True), f)
 #%%
 
 # TOKENS_WITH_SPACE = [" " + word for word in ANIMALS]

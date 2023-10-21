@@ -22,7 +22,9 @@ from auto_circuit.metrics.official_circuits.ioi_official import (
 )
 from auto_circuit.metrics.ROC import measure_roc
 from auto_circuit.prune import run_pruned
-from auto_circuit.prune_functions.ACDC import acdc_prune_scores
+from auto_circuit.prune_functions.integrated_edge_gradients import (
+    integrated_edge_gradients_prune_scores,
+)
 
 # from auto_circuit.prune_functions.parameter_integrated_gradients import (
 #     BaselineWeights,
@@ -71,6 +73,7 @@ model.eval()
 repo_root = "/home/dev/auto-circuit"
 # data_file = "datasets/indirect_object_identification.json"
 data_file = "datasets/animal_diet_prompts.json"
+# data_file = "datasets/mini_prompts.json"
 data_path = f"{repo_root}/{data_file}"
 print(percent_gpu_mem_used())
 
@@ -91,9 +94,11 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     batch_size=32,
     train_test_split=[0.5, 0.5],
     length_limit=64,
-    pad=False,
+    pad=True,
 )
-prepare_model(model, factorized=factorized, device=device)
+prepare_model(
+    model, factorized=factorized, slice_output=True, seq_len=25, device=device
+)
 edges: Set[Edge] = model.edges  # type: ignore
 prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
 
@@ -107,19 +112,16 @@ prune_funcs: Dict[str, Callable] = {
     # ),
     # "Act Mag": activation_magnitude_prune_scores,
     # "Random": random_prune_scores,
-    "ACDC": partial(
-        acdc_prune_scores,
-        tao_exps=list(range(-6, 1)),
-        output_dim=1,
-    ),
-    # "Integrated Edge Gradients": partial(
-    #     integrated_edge_gradients_prune_scores,
-    #     output_dim=1,
-    #     samples=50,
+    # "ACDC": partial(
+    #     acdc_prune_scores,
+    #     tao_exps=list(range(-6, 1)),
     # ),
+    "Integrated Edge Gradients": partial(
+        integrated_edge_gradients_prune_scores,
+        samples=50,
+    ),
     # "Simple Gradient": partial(
     #     simple_gradient_prune_scores,
-    #     output_dim=1,
     # )
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores,
@@ -139,6 +141,12 @@ for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
     else:
         prune_scores_dict[name] = new_prune_scores
 
+#%%
+ps = prune_scores_dict["Integrated Edge Gradients"]
+ps = dict(sorted(ps.items(), key=lambda x: x[1], reverse=True)[:170])
+clean_patch_corrupt = ExperimentType(ActType.CLEAN, ActType.CORRUPT)
+corrupt_patch_clean = ExperimentType(ActType.CORRUPT, ActType.CLEAN)
+run_pruned(model, test_loader, corrupt_patch_clean, [], ps, True, True)
 #%%
 # SAVE / LOAD PRUNE SCORES DICT
 save = False

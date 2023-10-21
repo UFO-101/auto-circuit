@@ -16,11 +16,10 @@ from auto_circuit.utils.graph_utils import (
 def simple_gradient_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
-    output_dim: int = 1,
 ) -> Dict[Edge, float]:
     """Prune scores are the integrated gradient of each edge."""
-    output_idx = tuple([slice(None)] * output_dim + [-1])
     edges: Set[Edge] = model.edges  # type: ignore
+    out_slice = model.out_slice
 
     src_outs_dict: Dict[int, t.Tensor] = {}
     for batch in train_data:
@@ -31,7 +30,7 @@ def simple_gradient_prune_scores(
         for batch in train_data:
             patch_src_outs = src_outs_dict[batch.key].clone().detach()
             with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
-                masked_logprobs = log_softmax(model(batch.corrupt)[output_idx], dim=-1)
+                masked_logprobs = log_softmax(model(batch.corrupt)[out_slice], dim=-1)
                 answer_probs = t.gather(
                     masked_logprobs, dim=1, index=batch.answers
                 ).squeeze(-1)

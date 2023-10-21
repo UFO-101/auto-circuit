@@ -39,7 +39,7 @@ class ExperimentType:
 class Node:
     name: str
     module_name: str
-    layer: int  # Layer of the model (transformer blocks count as 2 layers)
+    lyr: int  # Layer of the model (transformer blocks count as 2 layers)
     idx: int = 0  # Index of the node across all src/dest nodes in all layers
     head_idx: Optional[int] = None
     head_dim: Optional[int] = None
@@ -70,6 +70,7 @@ class DestNode(Node):
 class Edge:
     src: SrcNode
     dest: DestNode
+    seq_idx: Optional[int] = None
 
     @property
     def name(self) -> str:
@@ -77,8 +78,9 @@ class Edge:
 
     @property
     def patch_idx(self) -> Tuple[int, ...]:
-        dest_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
-        return tuple(dest_idx + [self.src.idx])
+        seq_idx = [] if self.seq_idx is None else [self.seq_idx]
+        head_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
+        return tuple(seq_idx + head_idx + [self.src.idx])
 
     def patch_mask(self, model: t.nn.Module) -> t.nn.Parameter:
         return self.dest.module(model).patch_mask

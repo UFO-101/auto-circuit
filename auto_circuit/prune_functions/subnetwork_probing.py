@@ -34,7 +34,6 @@ SP = "Subnetwork Probing"
 def subnetwork_probing_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
-    output_dim: int = 1,
     learning_rate: float = 0.1,
     epochs: int = 20,
     regularize_lambda: float = 10,
@@ -44,12 +43,12 @@ def subnetwork_probing_prune_scores(
     show_train_graph: bool = False,
 ) -> Dict[Edge, float]:
     """Prune scores are the mean activation magnitude of each edge."""
-    output_idx = tuple([slice(None)] * output_dim + [-1])
+    out_slice = model.out_slice
 
     clean_logprobs: Dict[str, t.Tensor] = {}
     with t.inference_mode():
         for batch in train_data:
-            clean_out = model(batch.clean)[output_idx]
+            clean_out = model(batch.clean)[out_slice]
             clean_logprobs[batch.key] = log_softmax(clean_out, dim=-1)
 
     src_outs_dict: Dict[int, t.Tensor] = {}
@@ -69,7 +68,7 @@ def subnetwork_probing_prune_scores(
                 patch_src_outs = src_outs_dict[batch.key].clone().detach()
                 with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
                     masked_logprobs = log_softmax(
-                        model(batch.corrupt)[output_idx], dim=-1
+                        model(batch.corrupt)[out_slice], dim=-1
                     )
                     kl_div_term = kl_div(
                         masked_logprobs,

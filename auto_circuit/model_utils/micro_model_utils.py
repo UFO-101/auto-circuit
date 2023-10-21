@@ -17,11 +17,11 @@ class Block(t.nn.Module):
         self.head_outputs = t.nn.Identity()
 
     def forward(self, x: t.Tensor) -> t.Tensor:  # shape: (batch, resid)
-        x = einops.repeat(x, "b r -> b h r", h=2)
+        x = einops.repeat(x, "b s r -> b s h r", h=2)
         x = self.head_inputs(x)
-        x = einops.einsum(self.weights, x, "h r, b h r -> b h r")
+        x = einops.einsum(self.weights, x, "h r, b s h r -> b s h r")
         x = self.head_outputs(x)
-        return einops.einsum(x, "b h r -> b r")
+        return einops.einsum(x, "b s h r -> b s r")
 
 
 class MicroModel(t.nn.Module):
@@ -51,19 +51,19 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
     nodes = set()
     layers, idxs = count(), count()
     nodes.add(
-        SrcNode(name="Input", module_name="input", layer=next(layers), idx=next(idxs))
+        SrcNode(name="Input", module_name="input", lyr=next(layers), idx=next(idxs))
     )
     for layer_idx in range(model.n_layers):
         layer = next(layers)
         for elem in [0, 1]:
             nodes.add(
                 SrcNode(
-                    name=f"Block Layer {layer_idx} Elem {elem}",
+                    name=f"Block {layer_idx} Head {elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
-                    layer=layer,
+                    lyr=layer,
                     idx=next(idxs),
                     head_idx=elem,
-                    head_dim=1,
+                    head_dim=2,
                     weight="weights",
                     weight_head_dim=0,
                 )
@@ -79,19 +79,19 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
         for elem in [0, 1]:
             nodes.add(
                 DestNode(
-                    name=f"Block Layer {layer_idx} Elem {elem}",
+                    name=f"Block {layer_idx} Head {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
-                    layer=layer,
+                    lyr=layer,
                     idx=next(idxs),
                     head_idx=elem,
-                    head_dim=1,
+                    head_dim=2,
                 )
             )
     nodes.add(
         DestNode(
             name="Output",
             module_name="output",
-            layer=next(layers),
+            lyr=next(layers),
             idx=next(idxs),
         )
     )
@@ -106,12 +106,12 @@ def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
         for elem in [0, 1]:
             src_nodes.add(
                 SrcNode(
-                    name=f"Block Layer {layer_idx} Elem {elem}",
+                    name=f"Block {layer_idx} Head {elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
-                    layer=layer,
+                    lyr=layer,
                     idx=next(src_idxs),
                     head_idx=elem,
-                    head_dim=1,
+                    head_dim=2,
                     weight="weights",
                     weight_head_dim=0,
                 )
@@ -121,7 +121,7 @@ def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
             DestNode(
                 name="Output" if last_block else f"Resid Layer {layer_idx}",
                 module_name="output" if last_block else f"resids.{layer_idx}",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(dest_idxs),
             )
         )

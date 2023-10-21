@@ -18,7 +18,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
         SrcNode(
             name="Resid Start",
             module_name="blocks.0.hook_resid_pre",
-            layer=next(layers),
+            lyr=next(layers),
             idx=next(idxs),
             weight="embed.W_E",
         )
@@ -31,7 +31,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                 SrcNode(
                     name=f"A{block_idx}.{head_idx}",
                     module_name=f"blocks.{block_idx}.attn.hook_result",
-                    layer=layer,
+                    lyr=layer,
                     idx=next(idxs),
                     head_dim=2,
                     head_idx=head_idx,
@@ -43,7 +43,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
             SrcNode(
                 name=f"MLP {block_idx}",
                 module_name=f"blocks.{block_idx}.mlp",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(idxs),
                 weight=f"blocks.{block_idx}.mlp.W_out",
             )
@@ -67,7 +67,7 @@ def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
                     DestNode(
                         name=f"A{block_idx}.{head_idx}.{letter}",
                         module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
-                        layer=layer,
+                        lyr=layer,
                         idx=next(idxs),
                         head_dim=2,
                         head_idx=head_idx,
@@ -79,7 +79,7 @@ def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
             DestNode(
                 name=f"MLP {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_mlp_in",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(idxs),
                 weight=f"blocks.{block_idx}.mlp.W_in",
             )
@@ -88,7 +88,7 @@ def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
         DestNode(
             name="Resid End",
             module_name=f"blocks.{model.cfg.n_layers - 1}.hook_resid_post",
-            layer=next(layers),
+            lyr=next(layers),
             idx=next(idxs),
             weight="unembed.W_U",
         )
@@ -109,7 +109,7 @@ def simple_graph_nodes(
                 SrcNode(
                     name=f"A{block_idx}.{head_idx}",
                     module_name=f"blocks.{block_idx}.attn.hook_result",
-                    layer=layer,
+                    lyr=layer,
                     idx=next(src_idxs),
                     head_idx=head_idx,
                     head_dim=2,
@@ -121,7 +121,7 @@ def simple_graph_nodes(
             DestNode(
                 name=f"Block {block_idx} Resid Mid",
                 module_name=f"blocks.{block_idx}.hook_resid_mid",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(dest_idxs),
             )
         )
@@ -129,7 +129,7 @@ def simple_graph_nodes(
             SrcNode(
                 name=f"MLP {block_idx}",
                 module_name=f"blocks.{block_idx}.mlp",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(src_idxs),
                 weight=f"blocks.{block_idx}.mlp.W_out",
             )
@@ -139,7 +139,7 @@ def simple_graph_nodes(
             DestNode(
                 name="Resid Final" if last_block else f"Block {block_idx} Resid Post",
                 module_name=f"blocks.{block_idx}.hook_resid_post",
-                layer=next(layers),
+                lyr=next(layers),
                 idx=next(dest_idxs),
             )
         )

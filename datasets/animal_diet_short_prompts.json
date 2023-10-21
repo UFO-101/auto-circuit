@@ -1,0 +1,5004 @@
+{
+  "prompts": [
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The rabbits ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The turtles ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The whales ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The frogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sharks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The sheep ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The pigs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The ducks ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The bears ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The fish ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The lions ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The elephants ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The deer ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The goats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The dogs ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The chickens ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The horses ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The cats ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The snakes ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The monkeys ate some",
+      "answer": " grass"
+    },
+    {
+      "clean": "The cows ate some",
+      "corrupt": "The tigers ate some",
+      "answer": " grass"
+    }
+  ]
+}
