@@ -5,14 +5,15 @@ import plotly.graph_objects as go
 import pygraphviz as pgv
 import torch as t
 from IPython.display import display
+from ordered_set import OrderedSet
 from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.types import (
     DestNode,
     Edge,
     EdgeCounts,
-    ExperimentType,
     Node,
+    PatchType,
     SrcNode,
 )
 from auto_circuit.utils.graph_utils import (
@@ -23,8 +24,8 @@ from auto_circuit.utils.graph_utils import (
 
 def kl_vs_edges_plot(
     data: Dict[str, Dict[int, float]],
-    experiment_type: ExperimentType,
     edge_counts: EdgeCounts,
+    patch_type: PatchType,
     y_axis_title: str,
     factorized: bool,
     log_y_axis: bool = True,
@@ -41,8 +42,7 @@ def kl_vs_edges_plot(
 
     fig.update_layout(
         title=(
-            f"Task Pruning: {experiment_type.input_type} input, patching"
-            f" {experiment_type.patch_type} edges"
+            f"Task Pruning: {patch_type}"
             f" ({'factorized' if factorized else 'unfactorized'} model)"
         ),
         xaxis_title="Edges",
@@ -77,19 +77,19 @@ def roc_plot(title: str, data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure
 
 def head(n: str) -> str:
     return n[:-2] if n.startswith("A") and len(n) > 5 else n
-    # return n.split(".")[0] if n.startswith("A") else n
 
 
-def t_fmt(x: Any, idx: Any = None) -> str:
-    if type(x) == t.Tensor and (arr := x[idx].squeeze()).ndim == 1:
-        return "[" + ", ".join([f"{v:.2f}".rstrip("0") for v in arr.tolist()[:2]]) + "]"
-    return str(x[idx]).lstrip("tensor(").rstrip(")") if type(x) == t.Tensor else str(x)
+def t_fmt(x: Any, idx: Any = None, replace_line_break: str = "\n") -> str:
+    if type(x) != t.Tensor:
+        return str(x)
+    if (arr := x[idx].squeeze()).ndim == 1:
+        return f"[{', '.join([f'{v:.2f}'.rstrip('0') for v in arr.tolist()[:2]])} ...]"
+    return str(x[idx]).lstrip("tensor(").rstrip(")").replace("\n", replace_line_break)
 
 
 def draw_graph(
     model: t.nn.Module,
     input: t.Tensor,
-    edge_label_override: Dict[Edge, Any] = {},
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
     display_ipython: bool = True,
     file_path: Optional[str] = None,
@@ -106,10 +106,9 @@ def draw_graph(
     node_lbls = defaultdict(str, node_ins)
 
     for e in edges:
-        patched_edge = False
         label = src_outs[e.src]
-        if patched_edge := (e in edge_label_override):
-            label = edge_label_override[e]
+        if patched_edge := (e.patch_mask(model)[e.patch_idx].item() == 1.0):
+            label = e.dest.module(model).patch_src_outs[e.src.idx]  # type: ignore
         G.add_edge(
             head(e.src.name) + f"\n{t_fmt(node_lbls[head(e.src.name)], output_idx)}",
             head(e.dest.name) + f"\n{t_fmt(node_lbls[head(e.dest.name)], output_idx)}",
@@ -127,125 +126,130 @@ def draw_graph(
         G.draw(file_path)
 
 
-def model_network_sankey(
+def net_viz(
     model: t.nn.Module,
-    nodes: Set[Node],
-    edges: Set[Edge],
+    seq_edges: Set[Edge],
     input: t.Tensor,
+    prune_scores: Dict[Edge, float],
+    vert_interval: Tuple[float, float],
     seq_idx: Optional[int] = None,
-    seq_len: Optional[int] = None,
-    edge_label_override: Dict[Edge, Any] = {},
-    patched_edge_only: bool = False,
+    show_all: bool = False,
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> go.Sankey:
+    nodes: OrderedSet[Node] = OrderedSet(model.nodes)  # type: ignore
     seq_dim: int = model.seq_dim  # type: ignore
-    assert (seq_idx is None) == (seq_len is None)
-    if seq_idx is None:
-        label_slice = (
-            (0,)
-            if input.size(0) < 5
-            else tuple([0] + [slice(None)] * (seq_dim - 1) + [-1])
-        )
-    else:
-        label_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_idx])
+    seq_sl = (-1 if input.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
+    label_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
 
     src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input, kv_cache)
     dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input, kv_cache)
-    node_ins: Dict[str, t.Tensor] = dict(
-        [(head(k.name), v) for k, v in dest_ins.items()]
-    )
+    node_ins = dict([(head(k.name), v) for k, v in dest_ins.items()])
     node_labels = defaultdict(str, node_ins)
 
-    node_info: Set[Tuple[str, int]] = set([(head(n.name), n.lyr) for n in nodes])
-    graph_node_dict = dict([(n[0], i) for i, n in enumerate(node_info)])
-    n_lyrs = max([n.lyr for n in nodes])
-    max([n.head_idx for n in nodes if n.head_idx is not None])
+    # Define the sankey nodes
+    viz_nodes = dict([(head(n.name), n) for n in nodes])
+    viz_node_head_idxs = [n.head_idx for n in viz_nodes.values()]
+    n_layers = max([n.layer for n in nodes])
+    n_head = max([n.head_idx for n in nodes if n.head_idx is not None])
     graph_nodes = {
         "label": [
-            n[0]
-            + ("<br>Input:<br>" if node_labels[n[0]] != "" else "")
-            + (t_fmt(node_labels[n[0]], label_slice))
-            for n in node_info
+            name
+            + ("<br>In: " if node_labels[name] != "" else "")
+            + (t_fmt(node_labels[name], label_slice, "<br>"))
+            for name, _ in viz_nodes.items()
         ],
-        "x": [(n[1] + 1) / (n_lyrs + 2) for n in node_info],
-        # Set y so fixed works?
-        # "y": [(n.head_idx + 1) / (n_heads + 2)
-        # if n.head_idx is not None else 0.5 for n in nodes],
+        "x": [(n.layer + 1) / (n_layers + 2) for n in viz_nodes.values()],
+        "y": [0.5 if h is None else (h + 1) / (n_head + 2) for h in viz_node_head_idxs],
         "pad": 10,
     }
-    sources, targets, labels, colors = [], [], [], []
-    for e in edges:
-        patched_edge = False
-        label = src_outs[e.src]
-        if patched_edge := (e in edge_label_override):
-            label = edge_label_override[e]
-        # if patched_edge or not patched_edge_only:
-        sources.append(graph_node_dict[head(e.src.name)])
-        targets.append(graph_node_dict[head(e.dest.name)])
-        labels.append(e.name + "<br>" + t_fmt(label, label_slice))
-        normal_color = "rgba(0,0,0,0.0)" if patched_edge_only else "rgba(0,0,0,0.2)"
-        colors.append("rgba(255,0,0,0.4)" if patched_edge else normal_color)
 
-    if seq_idx is not None:
-        assert seq_len is not None
-        margin = 1 / (seq_len * 10)
-        vert = [(seq_idx / seq_len) + margin, ((seq_idx + 1) / seq_len) - margin]
-    else:
-        vert = [0, 1]
+    # Define the sankey edges
+    sources, targets, values, labels, colors = [], [], [], [], []
+    seq_prune_score = 0.0
+    for e in seq_edges:
+        label = src_outs[e.src]
+        if patched_edge := (e.patch_mask(model)[e.patch_idx].item() == 1.0):
+            label = e.dest.module(model).patch_src_outs[e.src.idx]  # type: ignore
+            seq_prune_score += abs(prune_scores[e]) if e in prune_scores else 0.0
+        sources.append(list(viz_nodes).index(head(e.src.name)))
+        targets.append(list(viz_nodes).index(head(e.dest.name)))
+        values.append(abs(prune_scores[e]) if e in prune_scores else 0.8)
+        labels.append(e.name + "<br>" + t_fmt(label, label_slice, "<br>"))
+        normal_color = "rgba(0,0,0,0.0)" if show_all else "rgba(0,0,0,0.2)"
+        ptch_col = f"rgba({'255,0,0' if prune_scores.get(e, 0) > 0 else '0,0,255'},0.3)"
+        colors.append(ptch_col if patched_edge else normal_color)
 
     return go.Sankey(
-        arrangement="fixed",
+        arrangement="snap",
         node=graph_nodes,
         link={
             "arrowlen": 25,
             "source": sources,
             "target": targets,
-            # "value": [1, 2, 1, 1, 1, 1, 1, 2]
-            "value": [1 for _ in range(len(sources))],
+            "value": values,
             "label": labels,
             "color": colors,
         },
-        domain={
-            "y": vert,
-        },
+        domain={"y": vert_interval},
     )
 
 
 def draw_seq_graph(
     model: t.nn.Module,
     input: t.Tensor,
-    edge_label_override: Dict[Edge, Any] = {},
-    patched_edge_only: bool = False,
+    prune_scores: Dict[Edge, float],
+    show_all: bool = True,
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
+    seq_labels: Optional[List[str]] = None,
     display_ipython: bool = True,
     file_path: Optional[str] = None,
 ) -> None:
     nodes: Set[Node] = model.nodes  # type: ignore
-    # nodes_l = list(sorted(nodes, key=lambda x: (x.lyr, x.head_idx)))
     edge_dict: Dict[Optional[int], List[Edge]] = model.edge_dict  # type: ignore
-    n_lyrs = max([n.lyr for n in nodes])
+    n_layers = max([n.layer for n in nodes])
     seq_len: Optional[int] = model.seq_len  # type: ignore
 
+    # Calculate the vertical interval for each sub-diagram
+    total_prune_score = sum([abs(v) for v in prune_scores.values()])
+    sankey_heights: Dict[Optional[int], float] = defaultdict(float)
+    for edge, score in prune_scores.items():
+        sankey_heights[edge.seq_idx] += abs(score)
+    for seq_idx in edge_dict:
+        if seq_idx not in sankey_heights:
+            sankey_heights[seq_idx] = total_prune_score / (len(edge_dict) * 2)
+    margin_height: float = total_prune_score / ((n_figs := len(sankey_heights)) * 4)
+    total_height = sum(sankey_heights.values()) + margin_height * (n_figs - 1)
+    intervals, interval_end = {}, 0.0
+    for seq_idx, height in sorted(sankey_heights.items(), key=lambda x: (x is None, x)):
+        interval_start = interval_end + (margin_height if len(intervals) > 0 else 0)
+        interval_end = interval_start + height
+        intervals[seq_idx] = interval_start / total_height, interval_end / total_height
+
     sankeys = []
-    for seq_idx, seq_edges in edge_dict.items():
-        sankeys.append(
-            model_network_sankey(
-                model,
-                nodes,
-                set(seq_edges),
-                input,
-                seq_idx,
-                seq_len,
-                edge_label_override,
-                patched_edge_only,
-                kv_cache,
-            )
-        )
+    for idx, seq_edges in edge_dict.items():
+        e_set, vert = set(seq_edges), intervals[idx]
+        viz = net_viz(model, e_set, input, prune_scores, vert, idx, show_all, kv_cache)
+        sankeys.append(viz)
 
     layout = go.Layout(
         title="Patched Network",
-        height=700 * len(sankeys),
-        width=300 * n_lyrs,
+        height=500 * len(sankeys),
+        width=300 * n_layers,
+        plot_bgcolor="blue",
     )
     fig = go.Figure(data=sankeys, layout=layout)
-    fig.show()
+    for idx, seq_label in enumerate(seq_labels) if seq_labels else []:
+        assert seq_len is not None
+        y_range: Tuple[float, float] = fig.data[idx].domain["y"]  # type: ignore
+        fig.add_annotation(
+            x=0.05,
+            y=(y_range[0] + y_range[1]) / 2,
+            text=f"<b>{seq_label}</b>",
+            showarrow=False,
+            xref="paper",
+            yref="paper",
+        )
+    if display_ipython:
+        fig.show()
+    if file_path:
+        fig.write_image(file_path)

@@ -18,6 +18,7 @@ from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     mask_fn_mode,
     patch_mode,
+    set_all_masks,
     train_mask_mode,
 )
 from auto_circuit.utils.patch_wrapper import MaskFn
@@ -57,21 +58,18 @@ def subnetwork_probing_prune_scores(
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     losses, kl_divs, regularizes = [], [], []
-    with train_mask_mode(model, init_val) as patch_masks, mask_fn_mode(
-        model, mask_fn, dropout_p
-    ):
+    set_all_masks(model, val=init_val)
+    with train_mask_mode(model) as patch_masks, mask_fn_mode(model, mask_fn, dropout_p):
         optim = t.optim.Adam(patch_masks, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
             desc = f"Loss: {losses[-1]:.3f}, KL: {kl_divs[-1]:.3f}" if epoch > 0 else ""
             epoch_pbar.set_description_str(f"{SP} Epoch {epoch} " + desc, refresh=False)
             for batch in train_data:
-                patch_src_outs = src_outs_dict[batch.key].clone().detach()
-                with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
-                    masked_logprobs = log_softmax(
-                        model(batch.corrupt)[out_slice], dim=-1
-                    )
+                patch_outs = src_outs_dict[batch.key].clone().detach()
+                with patch_mode(model, t.zeros_like(patch_outs), patch_outs):
+                    train_logprob = log_softmax(model(batch.corrupt)[out_slice], dim=-1)
                     kl_div_term = kl_div(
-                        masked_logprobs,
+                        train_logprob,
                         clean_logprobs[batch.key],
                         reduction="batchmean",
                         log_target=True,
@@ -85,6 +83,7 @@ def subnetwork_probing_prune_scores(
                     model.zero_grad()
                     loss.backward()
                     optim.step()
+        min_val = abs(min([t.min(mask).item() for mask in patch_masks]))
 
     if show_train_graph:
         title = "Subnetwork Probing Loss History"
@@ -96,4 +95,4 @@ def subnetwork_probing_prune_scores(
         fig.show()
 
     edges: Set[Edge] = model.edges  # type: ignore
-    return dict([(e, e.patch_mask(model)[e.patch_idx].item()) for e in edges])
+    return dict([(e, min_val + e.patch_mask(model)[e.patch_idx].item()) for e in edges])

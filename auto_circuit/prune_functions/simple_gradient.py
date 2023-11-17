@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, Literal, Set
 
 import torch as t
 from torch.nn.functional import log_softmax
@@ -9,13 +9,16 @@ from auto_circuit.types import Edge
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     patch_mode,
+    set_all_masks,
     train_mask_mode,
 )
+from auto_circuit.utils.misc import batch_avg_answer_val
 
 
 def simple_gradient_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
+    grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
 ) -> Dict[Edge, float]:
     """Prune scores are the integrated gradient of each edge."""
     edges: Set[Edge] = model.edges  # type: ignore
@@ -26,20 +29,30 @@ def simple_gradient_prune_scores(
         patch_outs = get_sorted_src_outs(model, batch.clean)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
+    set_all_masks(model, val=0.5)
     with train_mask_mode(model):
         for batch in train_data:
             patch_src_outs = src_outs_dict[batch.key].clone().detach()
             with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
-                masked_logprobs = log_softmax(model(batch.corrupt)[out_slice], dim=-1)
-                answer_probs = t.gather(
-                    masked_logprobs, dim=1, index=batch.answers
-                ).squeeze(-1)
-                loss = answer_probs.mean()
+                logits = model(batch.corrupt)[out_slice]
+                if grad_function == "logit":
+                    token_vals = logits
+                elif grad_function == "prob":
+                    token_vals = t.softmax(logits, dim=-1)
+                elif grad_function == "logprob":
+                    token_vals = log_softmax(logits, dim=-1)
+                elif grad_function == "logit_exp":
+                    numerator = t.exp(logits)
+                    denominator = numerator.sum(dim=-1, keepdim=True)
+                    token_vals = numerator / denominator.detach()
+                else:
+                    raise ValueError(f"Unknown grad_function: {grad_function}")
+                loss = batch_avg_answer_val(token_vals, batch)
                 loss.backward()
 
     prune_scores = {}
     for edge in edges:
         grad = edge.patch_mask(model).grad
         assert grad is not None
-        prune_scores[edge] = grad[edge.patch_idx].abs()
+        prune_scores[edge] = grad[edge.patch_idx]
     return prune_scores

@@ -90,14 +90,14 @@ def generate_prompts(N: int, short: bool = True) -> Dict[str, Any]:
             choice(ANIMALS), choice(ASKER_TUPLES), choice(RESPONDERS)
         )
         prompts.append(
-            {"clean": clean_prompt, "corrupt": corrupt_prompt, "answer": ANSWER}
+            {"clean": clean_prompt, "corrupt": corrupt_prompt, "answers": [ANSWER]}
         )
     return {"prompts": prompts}
 
 
 #%%
-with open("animal_diet_short_prompts.json", "w") as f:
-    json.dump(generate_prompts(1000, short=True), f)
+with open("animal_diet_long_prompts.json", "w") as f:
+    json.dump(generate_prompts(1000, short=False), f)
 #%%
 
 # TOKENS_WITH_SPACE = [" " + word for word in ANIMALS]

@@ -23,15 +23,15 @@ def measure_roc(
     # Filter edges that are not between attention heads
     edges = set(filter(is_head_node, edges)) if head_nodes_only else edges
     prune_scores = {edge: val for edge, val in prune_scores.items() if edge in edges}
-    prune_scores = dict(sorted(prune_scores.items(), key=lambda x: x[1], reverse=True))
+    sort_ps = dict(sorted(prune_scores.items(), key=lambda x: abs(x[1]), reverse=True))
 
     edge_counts_type = EdgeCounts.GROUPS if group_edges else EdgeCounts.LOGARITHMIC
-    test_edge_counts = edge_counts_util(edges, edge_counts_type, prune_scores)
+    test_edge_counts = edge_counts_util(edges, edge_counts_type, sort_ps)
 
     incorrect_edges = edges - correct_edges
     points: Set[Tuple[float, float]] = set()
     current_pred_edges: Set[Edge] = set()
-    for edge_idx, (edge, _) in enumerate(prune_scores.items()):
+    for edge_idx, (edge, _) in enumerate(sort_ps.items()):
         current_pred_edges.add(edge)
         edge_count = edge_idx + 1
         if edge_count in test_edge_counts or edge_count == len(edges):

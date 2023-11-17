@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import torch as t
 from ordered_set import OrderedSet
@@ -11,23 +11,24 @@ from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.prune import run_pruned
 from auto_circuit.types import (
-    ActType,
     Edge,
-    ExperimentType,
+    PatchType,
     SrcNode,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     patch_mode,
+    set_all_masks,
 )
-from auto_circuit.visualize import draw_graph
+from auto_circuit.visualize import draw_graph, draw_seq_graph
 
 
 def acdc_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
     tao_exps: List[int] = list(range(-5, -1)),
+    tao_bases: List[int] = [1, 3, 5, 7, 9],
     test_mode: bool = False,
     show_graphs: bool = False,
 ) -> Dict[Edge, float]:
@@ -43,12 +44,12 @@ def acdc_prune_scores(
     Note: only the first batch of train_data is used."""
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
-    edges: Set[Edge] = model.edges  # type: ignore
-    edges: List[Edge] = list(sorted(edges, key=lambda x: x.dest.lyr, reverse=True))
+    edges: OrderedSet[Edge] = model.edges  # type: ignore
+    edges = OrderedSet(sorted(edges, key=lambda x: x.dest.layer, reverse=True))
 
     prune_scores = dict([(edge, float("inf")) for edge in edges])
     for tao in (
-        pbar_tao := tqdm([a * 10**b for a, b in product([1, 3, 5, 7, 9], tao_exps)])
+        pbar_tao := tqdm([a * 10**b for a, b in product(tao_bases, tao_exps)])
     ):
         pbar_tao.set_description_str("ACDC \u03C4={:.7f}".format(tao), refresh=True)
 
@@ -75,7 +76,7 @@ def acdc_prune_scores(
                 assert model.tokenizer is not None
                 assert model.tokenizer.padding_side == "left"
                 _, toks, short_embd, attn_mask = model.input_to_embed(
-                    clean_batch, past_kv_cache=kv_cache
+                    clean_batch, past_kv_cache=kv_cache  # We patch edges not in graph
                 )
                 _, cache = model.run_with_cache(clean_batch, past_kv_cache=kv_cache)
                 n_layers = range(model.cfg.n_layers)
@@ -92,13 +93,14 @@ def acdc_prune_scores(
         prev_kl_div = 0.0
         removed_edges: OrderedSet[Edge] = OrderedSet([])
 
-        with patch_mode(model, src_outs_tensor, patch_outs_tensor, reset_mask=True):
+        set_all_masks(model, val=0.0)
+        with patch_mode(model, src_outs_tensor, patch_outs_tensor):
             for edge_idx, edge in enumerate((pbar_edge := tqdm(edges))):
                 rmvd, left = len(removed_edges), edge_idx + 1 - len(removed_edges)
                 desc = f"Removed: {rmvd}, Left: {left}, Current:'{edge}'"
                 pbar_edge.set_description_str(desc, refresh=False)
 
-                edge.patch_mask(model).data[edge.patch_idx] = 1
+                edge.patch_mask(model).data[edge.patch_idx] = 1.0
                 with t.inference_mode():
                     if isinstance(model, HookedTransformer):
                         start_layer = int(edge.dest.module_name.split(".")[1])
@@ -116,21 +118,23 @@ def acdc_prune_scores(
 
                 if test_mode:
                     assert test_model is not None
-                    render = show_graphs and (random() < 0.02 or len(edges) < 20)
+                    render = show_graphs and (
+                        random() < 0.02 or len(edges) < 20 or True
+                    )
 
                     print("ACDC model, with out=", out) if render else None
-                    d = dict([(e, patch_outs[e.src]) for e in (removed_edges | {edge})])
+                    tree = dict([(e, 1.0) for e in edges - (removed_edges | {edge})])
                     if render:
-                        draw_graph(model, clean_batch, d, kv_cache)
+                        draw_graph(model, clean_batch, kv_cache)
+                        draw_seq_graph(model, clean_batch, tree, kv_cache=kv_cache)
 
-                    n_edges = len(removed_edges) + 1
                     print("Test mode: running pruned model") if render else None
                     test_out = run_pruned(
                         model=test_model,
                         data_loader=train_data,
-                        experiment_type=ExperimentType(ActType.CLEAN, ActType.CORRUPT),
-                        test_edge_counts=[n_edges],
-                        prune_scores=dict([(e, 1.0) for e in (removed_edges | {edge})]),
+                        test_edge_counts=[n_edges := len(tree)],
+                        prune_scores=tree,
+                        patch_type=PatchType.TREE_PATCH,
                         render_graph=render,
                     )[n_edges][0]
                     test_out_logprobs = t.nn.functional.log_softmax(test_out, dim=-1)
@@ -141,10 +145,10 @@ def acdc_prune_scores(
                     out_logprobs, clean_logprobs, reduction="batchmean", log_target=True
                 )
                 mean_kl_div = kl_div.mean().item()
-                if mean_kl_div - prev_kl_div < tao:
+                if mean_kl_div - prev_kl_div < tao:  # Edge is unimportant
                     removed_edges.add(edge)
                     prune_scores[edge] = min(tao, prune_scores[edge])
                     prev_kl_div = mean_kl_div
-                else:
-                    edge.patch_mask(model).data[edge.patch_idx] = 0
+                else:  # Edge is important
+                    edge.patch_mask(model).data[edge.patch_idx] = 0.0
     return prune_scores

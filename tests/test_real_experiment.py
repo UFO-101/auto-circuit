@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_functions.random_edges import random_prune_scores
-from auto_circuit.types import ActType, Edge, ExperimentType
+from auto_circuit.types import Edge, PatchType
 from auto_circuit.utils.graph_utils import edge_counts_util, prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -24,10 +24,6 @@ def test_kl_vs_edges(
     edges: Set[Edge] = model.edges  # type: ignore
     test_loader = mini_tl_dataloader
 
-    experiment_type = ExperimentType(
-        input_type=ActType.CLEAN, patch_type=ActType.CORRUPT
-    )
-
     test_input = next(iter(test_loader))
     with t.inference_mode():
         clean_out = model(test_input.clean)[:, -1]
@@ -38,11 +34,11 @@ def test_kl_vs_edges(
     pruned_outs = run_pruned(
         model=model,
         data_loader=test_loader,
-        experiment_type=experiment_type,
         test_edge_counts=test_edge_counts,
         prune_scores=prune_scores,
+        patch_type=PatchType.PATH_PATCH,
         render_graph=False,
     )
-    assert t.allclose(clean_out, pruned_outs[0][0], atol=1e-3)
-    assert not t.allclose(corrupt_out, pruned_outs[5][0], atol=1e-3)
-    assert t.allclose(corrupt_out, pruned_outs[len(edges)][0], atol=1e-3)
+    assert t.allclose(corrupt_out, pruned_outs[0][0], atol=1e-3)
+    assert not t.allclose(clean_out, pruned_outs[5][0], atol=1e-3)
+    assert t.allclose(clean_out, pruned_outs[len(edges)][0], atol=1e-3)

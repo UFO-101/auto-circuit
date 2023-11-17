@@ -8,18 +8,6 @@ from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapper
 
 
-class ActType(Enum):
-    """Type of activation. Used to determine network inputs and patch values."""
-
-    CLEAN = 1
-    CORRUPT = 2
-    ZERO = 3
-    # MEAN = 4
-
-    def __str__(self) -> str:
-        return self.name[0] + self.name[1:].lower()
-
-
 class EdgeCounts(Enum):
     ALL = 1
     LOGARITHMIC = 2
@@ -29,17 +17,19 @@ class EdgeCounts(Enum):
 TestEdges = EdgeCounts | List[int | float]
 
 
-@dataclass(frozen=True)
-class ExperimentType:
-    input_type: ActType
-    patch_type: ActType
+class PatchType(Enum):
+    PATH_PATCH = 1
+    TREE_PATCH = 2
+
+    def __str__(self) -> str:
+        return self.name.replace("_", " ").title()
 
 
 @dataclass(frozen=True)
 class Node:
     name: str
     module_name: str
-    lyr: int  # Layer of the model (transformer blocks count as 2 layers)
+    layer: int  # Layer of the model (transformer blocks count as 2 layers)
     idx: int = 0  # Index of the node across all src/dest nodes in all layers
     head_idx: Optional[int] = None
     head_dim: Optional[int] = None

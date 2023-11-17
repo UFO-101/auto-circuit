@@ -22,14 +22,19 @@ from auto_circuit.metrics.official_circuits.ioi_official import (
 )
 from auto_circuit.metrics.ROC import measure_roc
 from auto_circuit.prune import run_pruned
+from auto_circuit.prune_functions.activation_magnitude import (
+    activation_magnitude_prune_scores,
+)
 from auto_circuit.prune_functions.integrated_edge_gradients import (
     integrated_edge_gradients_prune_scores,
 )
+from auto_circuit.prune_functions.random_edges import random_prune_scores
+from auto_circuit.prune_functions.simple_gradient import simple_gradient_prune_scores
 
 # from auto_circuit.prune_functions.parameter_integrated_gradients import (
 #     BaselineWeights,
 # )
-from auto_circuit.types import ActType, Edge, EdgeCounts, ExperimentType
+from auto_circuit.types import Edge, EdgeCounts, PatchType
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util, prepare_model
 from auto_circuit.utils.misc import percent_gpu_mem_used
@@ -59,8 +64,8 @@ if toy_model:
     model = tl.HookedTransformer(cfg)
     model.init_weights()
 else:
-    # model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
-    model = tl.HookedTransformer.from_pretrained("tiny-stories-33M", device=device)
+    model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
+    # model = tl.HookedTransformer.from_pretrained("tiny-stories-33M", device=device)
 
 model.cfg.use_attn_result = True
 model.cfg.use_split_qkv_input = True
@@ -72,14 +77,15 @@ model.eval()
 # repo_root = "/Users/josephmiller/Documents/auto-circuit"
 repo_root = "/home/dev/auto-circuit"
 # data_file = "datasets/indirect_object_identification.json"
-data_file = "datasets/animal_diet_prompts.json"
+data_file = "datasets/greater_than_gpt2-small_prompts.json"
+# data_file = "datasets/animal_diet_short_prompts.json"
 # data_file = "datasets/mini_prompts.json"
 data_path = f"{repo_root}/{data_file}"
 print(percent_gpu_mem_used())
 
 #%%
 # ---------- Config ----------
-experiment_type = ExperimentType(input_type=ActType.CORRUPT, patch_type=ActType.CLEAN)
+experiment_type = PatchType.PATH_PATCH
 factorized = True
 # pig_baseline, pig_samples = BaselineWeights.ZERO, 50
 default_edge_count_type = EdgeCounts.LOGARITHMIC
@@ -97,7 +103,7 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     pad=True,
 )
 prepare_model(
-    model, factorized=factorized, slice_output=True, seq_len=25, device=device
+    model, factorized=factorized, slice_output=True, seq_len=None, device=device
 )
 edges: Set[Edge] = model.edges  # type: ignore
 prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
@@ -110,26 +116,40 @@ prune_funcs: Dict[str, Callable] = {
     #     baseline_weights=pig_baseline,
     #     samples=pig_samples,
     # ),
-    # "Act Mag": activation_magnitude_prune_scores,
-    # "Random": random_prune_scores,
+    "Act Mag": activation_magnitude_prune_scores,
+    "Random": random_prune_scores,
     # "ACDC": partial(
     #     acdc_prune_scores,
     #     tao_exps=list(range(-6, 1)),
     # ),
-    "Integrated Edge Gradients": partial(
+    "Integrated edge gradients": partial(
         integrated_edge_gradients_prune_scores,
         samples=50,
     ),
-    # "Simple Gradient": partial(
-    #     simple_gradient_prune_scores,
-    # )
+    "Prob Gradient": partial(
+        simple_gradient_prune_scores,
+        grad_function="prob",
+    ),
+    "Exp Logit Gradient": partial(
+        simple_gradient_prune_scores,
+        grad_function="logit_exp",
+    ),
+    "Logit Gradient": partial(
+        simple_gradient_prune_scores,
+        grad_function="logit",
+    ),
+    "Logprob Gradient": partial(
+        simple_gradient_prune_scores,
+        grad_function="logprob",
+    ),
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores,
     #     learning_rate=0.1,
-    #     epochs=3000,
+    #     epochs=500,
     #     regularize_lambda=10,
-    #     mask_fn="hard_concrete",
-    #     dropout_p=0.5,
+    #     mask_fn=None,  # "hard_concrete",
+    #     dropout_p=0.0,
+    #     init_val=1.0,
     #     show_train_graph=True,
     # ),
 }
@@ -142,15 +162,22 @@ for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
         prune_scores_dict[name] = new_prune_scores
 
 #%%
-ps = prune_scores_dict["Integrated Edge Gradients"]
-ps = dict(sorted(ps.items(), key=lambda x: x[1], reverse=True)[:170])
-clean_patch_corrupt = ExperimentType(ActType.CLEAN, ActType.CORRUPT)
-corrupt_patch_clean = ExperimentType(ActType.CORRUPT, ActType.CLEAN)
-run_pruned(model, test_loader, corrupt_patch_clean, [], ps, True, True)
+# ps = prune_scores_dict["Integrated Edge Gradients"]
+# ps = dict(sorted(ps.items(), key=lambda x: abs(x[1]), reverse=True)[:30])
+# run_pruned(
+#     model=model,
+#     data_loader=test_loader,
+#     test_edge_counts=[],
+#     prune_scores=ps,
+#     patch_type=PatchType.PATH_PATCH,
+#     render_graph=True,
+#     render_patched_edge_only=True,
+#     seq_labels="BOS The cows ate some".split(),
+# )
 #%%
 # SAVE / LOAD PRUNE SCORES DICT
 save = False
-load = False
+load = True
 if save:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -162,8 +189,8 @@ if load:
     ioi_acdc_pth = "IOI-ACDC-prune-scores"
     # ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-prune-scores"
     ioi_sp_pth = "IOI-Subnetwork-Edge-Probing-Dropout-05-Epochs-800"
-    for pth in [ioi_acdc_pth, ioi_sp_pth]:
-        # for pth in [ioi_acdc_pth]:
+    # for pth in [ioi_acdc_pth, ioi_sp_pth]:
+    for pth in [ioi_acdc_pth]:
         with open(f"{repo_root}/.prune_scores_cache/{pth}.pkl", "rb") as f:
             loaded_prune_scores = pickle.load(f)
             if prune_scores_dict is None:
@@ -184,9 +211,7 @@ for prune_func_str, prune_scores in (
     group_edges = prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
     edge_count_type = EdgeCounts.GROUPS if group_edges else default_edge_count_type
     test_edge_counts = edge_counts_util(edges, edge_count_type, prune_scores)
-    pruned_outs = run_pruned(
-        model, test_loader, experiment_type, test_edge_counts, prune_scores
-    )
+    pruned_outs = run_pruned(model, test_loader, test_edge_counts, prune_scores)
     kl_clean, kl_corrupt = measure_kl_div(model, test_loader, pruned_outs)
     kl_divs[prune_func_str + " clean"] = kl_clean
     kl_divs[prune_func_str + " corr"] = kl_corrupt
@@ -194,7 +219,7 @@ for prune_func_str, prune_scores in (
     t.cuda.empty_cache()
 
 kl_vs_edges_plot(
-    kl_divs, experiment_type, default_edge_count_type, "KL Divergence", factorized
+    kl_divs, default_edge_count_type, PatchType.PATH_PATCH, "KL Divergence", factorized
 ).show()
 #%%
 rocs: Dict[str, Set[Tuple[float, float]]] = {}
@@ -214,17 +239,18 @@ for prune_func_str, prune_scores in (func_pbar := tqdm(prune_scores_dict.items()
     pruned_outs = run_pruned(
         model,
         test_loader,
-        experiment_type,
         test_edge_counts,
         prune_scores,
     )
-    answer_probs[prune_func_str] = measure_answer_prob(model, test_loader, pruned_outs)
+    answer_probs[prune_func_str] = measure_answer_prob(
+        model, test_loader, pruned_outs, prob_func="softmax"
+    )
     del pruned_outs
 
 kl_vs_edges_plot(
     answer_probs,
-    experiment_type,
     default_edge_count_type,
+    PatchType.PATH_PATCH,
     "Correct Token Prob",
     factorized,
     False,

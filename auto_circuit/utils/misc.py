@@ -5,6 +5,8 @@ from typing import Iterator, Set
 import torch as t
 from torch.utils.hooks import RemovableHandle
 
+from auto_circuit.data import PromptPairBatch
+
 
 @contextmanager
 def remove_hooks() -> Iterator[Set[RemovableHandle]]:
@@ -36,3 +38,16 @@ def percent_gpu_mem_used(total_gpu_mib: int = 49000) -> str:
         )
         + "%"
     )
+
+
+def batch_avg_answer_val(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+    if isinstance(batch.answers, t.Tensor):
+        return t.gather(vals, dim=1, index=batch.answers).mean()
+    else:
+        assert isinstance(batch.answers, list)
+        answer_probs = []
+        for prompt_idx, prompt_answers in enumerate(batch.answers):
+            answer_probs.append(
+                t.gather(vals[prompt_idx], dim=-1, index=prompt_answers).mean()
+            )
+        return t.stack(answer_probs).mean()

@@ -11,7 +11,7 @@ from auto_circuit.data import (
 )
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.prune import run_pruned
-from auto_circuit.types import ActType, Edge, ExperimentType
+from auto_circuit.types import Edge, PatchType
 from auto_circuit.utils.graph_utils import prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -31,10 +31,6 @@ def test_pruning(
     model = micro_model
     prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
     test_loader = micro_dataloader
-
-    experiment_type = ExperimentType(
-        input_type=ActType.CLEAN, patch_type=ActType.CORRUPT
-    )
 
     test_input = next(iter(test_loader))
     with t.inference_mode():
@@ -57,16 +53,16 @@ def test_pruning(
     pruned_outs = run_pruned(
         model=model,
         data_loader=test_loader,
-        experiment_type=experiment_type,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
+        patch_type=PatchType.PATH_PATCH,
         render_graph=show_graphs,
-        render_patched_edge_only=True,
+        render_patched_edge_only=False,
     )
-    assert t.allclose(pruned_outs[0][0], clean_out[:, -1], atol=1e-3)
-    assert t.allclose(pruned_outs[1][0], t.tensor([[19.0, 41.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[2][0], t.tensor([[13.0, 25.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[3][0], t.tensor([[9.0, 13.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[0][0], corrupt_out[:, -1], atol=1e-3)
+    assert t.allclose(pruned_outs[1][0], t.tensor([[-19.0, -41.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[2][0], t.tensor([[-13.0, -25.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[3][0], t.tensor([[-9.0, -13.0]]), atol=1e-3)
 
 
 # micro_model = micro_model()
@@ -86,14 +82,10 @@ def test_prune_sequence(
     prepare_model(model, factorized=True, seq_len=3, slice_output=False)
     test_loader = micro_dataloader
 
-    experiment_type = ExperimentType(
-        input_type=ActType.CLEAN, patch_type=ActType.CORRUPT
-    )
-
     test_input = next(iter(test_loader))
     with t.inference_mode():
-        clean_out = model(test_input.clean)
-    assert t.allclose(clean_out[:, -1], t.tensor([[25.0, 49.0]]))
+        corrupt_out = model(test_input.corrupt)
+    # assert t.allclose(clean_out[:, -1], t.tensor([[25.0, 49.0]]))
 
     edges: Set[Edge] = model.edges  # type: ignore
     edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in edges])
@@ -102,24 +94,30 @@ def test_prune_sequence(
         edge_dict[(2, "Block 0 Head 1->Output")]: 3.0,
         edge_dict[(2, "Block 0 Head 0->Block 1 Head 1")]: 2.0,
         edge_dict[(0, "Input->Output")]: 1.0,
-        # edge_dict[(2, "A0.1->Resid End")]: 3.0,
-        # edge_dict[(2, "A0.0->A1.1.V")]: 2.0,
-        # edge_dict[(0, "Resid Start->Resid End")]: 1.0,
+        # edge_dict[(2, "A0.0->A1.0.Q")]: 7.0,
+        # edge_dict[(2, "A0.1->A1.0.Q")]: 6.0,
+        # edge_dict[(2, "A1.0->Resid End")]: 4.0,
+        # edge_dict[(2, "Resid Start->A1.1.Q")]: 4.0,
+        # edge_dict[(0, "Resid Start->A0.0.Q")]: 3.0,
+        # edge_dict[(2, "A1.1->Resid End")]: 2.0,
+        # edge_dict[(2, "Resid Start->A0.1.Q")]: 1.0,
     }
 
     pruned_outs = run_pruned(
         model=model,
         data_loader=test_loader,
-        experiment_type=experiment_type,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
+        patch_type=PatchType.PATH_PATCH,
         render_graph=show_graphs,
-        render_patched_edge_only=False,
+        render_patched_edge_only=True,
+        seq_labels=["A", "B", "C"],
+        render_file_path="tree_patching.png",
     )
-    assert t.allclose(pruned_outs[0][0], clean_out, atol=1e-3)
-    assert t.allclose(pruned_outs[1][0][:, 2], t.tensor([[19.0, 41.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[2][0][:, 2], t.tensor([[13.0, 25.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[3][0][:, 0], t.tensor([[69.0, 141.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[0][0], corrupt_out, atol=1e-3)
+    assert t.allclose(pruned_outs[1][0][:, 2], t.tensor([[-19.0, -41.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[2][0][:, 2], t.tensor([[-13.0, -25.0]]), atol=1e-3)
+    assert t.allclose(pruned_outs[3][0][:, 0], t.tensor([[-69.0, -141.0]]), atol=1e-3)
 
 
 # test_prune_sequence(micro_model, micro_dataloader, show_graphs=True)

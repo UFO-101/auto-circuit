@@ -9,20 +9,17 @@ from auto_circuit.data import PromptPairBatch
 from auto_circuit.prune_functions.ACDC import acdc_prune_scores
 from auto_circuit.utils.graph_utils import prepare_model
 
-# from tests.conftest import micro_dataloader, micro_model
-
 
 @pytest.mark.parametrize(
-    "model, dataloader, output_dim",
+    "model, dataloader",
     [
-        ("micro_model", "micro_dataloader", 0),
-        ("mini_tl_transformer", "mini_tl_dataloader", 1),
+        ("micro_model", "micro_dataloader"),
+        ("mini_tl_transformer", "mini_tl_dataloader"),
     ],
 )
 def test_acdc(
     model: t.nn.Module,
     dataloader: DataLoader[PromptPairBatch],
-    output_dim: int,
     request: Any,
     show_graphs: bool = False,  # Useful for debugging
 ):
@@ -33,6 +30,7 @@ def test_acdc(
         model=fixture_model,
         train_data=fixture_dataloader,
         tao_exps=[-3],
+        tao_bases=[1],
         test_mode=True,  # The actual test logic is embedded in the function
         show_graphs=show_graphs,
     )
@@ -42,8 +40,4 @@ def test_acdc(
 # model = mini_tl_transformer()
 # dataloader = micro_dataloader()
 # dataloader = mini_tl_dataloader()
-# output_dim = 0
-# output_dim = 1
-# request = None
-# show_graphs = False
-# test_acdc(model, dataloader, output_dim, request, show_graphs)
+# test_acdc(model, dataloader, request=None, show_graphs=True)

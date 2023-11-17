@@ -773,13 +773,12 @@ for clean_prompt, corrupt_prompt in zip(ioi_dataset.ioi_prompts, abc_dataset.ioi
         "clean": " ".join(clean_prompt["text"].split()[:-1]),
         "corrupt": " ".join(corrupt_prompt["text"].split()[:-1]),
         # We don't need the space but these are more common tokens (lower indices)
-        "answer": " " + clean_prompt["text"].split()[-1]
+        "answers": [" " + clean_prompt["text"].split()[-1]]
     }
     prompt_dicts.append(prompt_dict)
 
 data_json = {"prompts": prompt_dicts}
 
-# Write to indirect_object_identification.json in this directory
 with open("indirect_object_identification.json", "w") as f:
     json.dump(data_json, f)
 

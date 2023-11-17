@@ -3,12 +3,16 @@
     {
       "clean": "I like",
       "corrupt": "I hate",
-      "answer": " cheese"
+      "answers": [
+        " cheese"
+      ]
     },
     {
       "clean": "I like",
       "corrupt": "I hate",
-      "answer": " cheese"
+      "answers": [
+        " cheese"
+      ]
     }
   ]
 }

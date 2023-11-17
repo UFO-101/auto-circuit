@@ -55,7 +55,9 @@ def graph_edges(
         else:
             raise NotImplementedError(model)
         for s in [None] if seq_len is None else range(seq_len):
-            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].lyr + 1 == e[1].lyr]
+            edges[s] = [
+                Edge(*e, s) for e in p(srcs, dests) if e[0].layer + 1 == e[1].layer
+            ]
     else:
         if isinstance(model, MicroModel):
             srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
@@ -66,7 +68,7 @@ def graph_edges(
         else:
             raise NotImplementedError(model)
         for s in [None] if seq_len is None else range(seq_len):
-            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].lyr < e[1].lyr]
+            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].layer < e[1].layer]
     nodes: Set[Node] = set(srcs | dests)
     setattr(model, "nodes", nodes)
     setattr(model, "srcs", srcs)
@@ -108,7 +110,7 @@ def make_model_patchable(
         patch_mask, prev_src_count = None, None
         if is_dest := any([type(node) == DestNode for node in module_nodes]):
             module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
-            prev_src_count = len([n for n in src_nodes if n.lyr < a_node.lyr])
+            prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
             seq_shape = [seq_len] if seq_len is not None else []
             head_shape = [module_dest_count] if module_dest_count > 1 else []
             mask_shape = seq_shape + head_shape + [prev_src_count]
@@ -138,14 +140,12 @@ def patch_mode(
     model: t.nn.Module,
     curr_src_outs: t.Tensor,
     patch_src_outs: t.Tensor,
-    reset_mask: bool = False,
 ):
     for wrapper in model.wrappers:  # type: ignore
         wrapper.patch_mode = True
         wrapper.curr_src_outs = curr_src_outs
         if wrapper.is_dest:
             wrapper.patch_src_outs = patch_src_outs
-            t.nn.init.constant_(wrapper.patch_mask, 0.0) if reset_mask else None
     try:
         yield
     finally:
@@ -154,19 +154,21 @@ def patch_mode(
             wrapper.curr_src_outs = None
             if wrapper.is_dest:
                 wrapper.patch_src_outs = None
-                t.nn.init.constant_(wrapper.patch_mask, 0.0) if reset_mask else None
         del curr_src_outs, patch_src_outs
 
 
+def set_all_masks(model: t.nn.Module, val: float) -> None:
+    for wrapper in model.wrappers:  # type: ignore
+        if wrapper.is_dest:
+            t.nn.init.constant_(wrapper.patch_mask, val)
+
+
 @contextmanager
-def train_mask_mode(
-    model: t.nn.Module, init_const: float = 1.0
-) -> Iterator[List[t.nn.Parameter]]:
+def train_mask_mode(model: t.nn.Module) -> Iterator[List[t.nn.Parameter]]:
     model.eval()
     model.zero_grad()
     parameters: List[t.nn.Parameter] = []
     for wrapper in model.dest_wrappers:  # type: ignore
-        t.nn.init.constant_(wrapper.patch_mask, init_const)
         parameters.append(wrapper.patch_mask)
         wrapper.train()
     try:

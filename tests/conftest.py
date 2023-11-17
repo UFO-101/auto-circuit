@@ -54,15 +54,33 @@ def mini_tl_dataloader() -> DataLoader[PromptPairBatch]:
 
 
 @pytest.fixture(scope="session")
-def micro_dataloader() -> DataLoader[PromptPairBatch]:
+def greater_than_gpt2_dataloader() -> DataLoader[PromptPairBatch]:
     _, test_loader = load_datasets_from_json(
-        None,
-        repo_path_to_abs_path("datasets/micro_model_inputs.json"),
+        mini_tl_model.tokenizer,
+        repo_path_to_abs_path("datasets/greater_than_gpt2-small_prompts.json"),
         device=DEVICE,
         prepend_bos=True,
-        batch_size=1,
-        train_test_split=[1, 1],
-        length_limit=2,
+        batch_size=2,
+        train_test_split=[2, 2],
+        length_limit=4,
+    )
+    return test_loader
+
+
+@pytest.fixture(scope="session")
+def micro_dataloader(
+    multiple_answers: bool = False, batch_count: int = 1, batch_size: int = 1
+) -> DataLoader[PromptPairBatch]:
+    dataloader_len = batch_size * batch_count
+    file_name = f"micro_model_inputs{'_multiple_answers' if multiple_answers else ''}"
+    _, test_loader = load_datasets_from_json(
+        None,
+        repo_path_to_abs_path(f"datasets/{file_name}.json"),
+        device=DEVICE,
+        prepend_bos=True,
+        batch_size=batch_size,
+        train_test_split=[dataloader_len, dataloader_len],
+        length_limit=dataloader_len * 2,
     )
     return test_loader
 
