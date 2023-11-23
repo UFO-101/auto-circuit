@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import torch as t
 from ordered_set import OrderedSet
@@ -44,8 +44,10 @@ def acdc_prune_scores(
     Note: only the first batch of train_data is used."""
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
-    edges: OrderedSet[Edge] = model.edges  # type: ignore
-    edges = OrderedSet(sorted(edges, key=lambda x: x.dest.layer, reverse=True))
+    edge_set: Set[Edge] = model.edges  # type: ignore
+    edges: OrderedSet[Edge] = OrderedSet(
+        sorted(edge_set, key=lambda x: x.dest.layer, reverse=True)
+    )
 
     prune_scores = dict([(edge, float("inf")) for edge in edges])
     for tao in (

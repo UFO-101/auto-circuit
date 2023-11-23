@@ -74,7 +74,7 @@ def graph_edges(
     setattr(model, "srcs", srcs)
     setattr(model, "dests", dests)
     setattr(model, "edge_dict", edges)
-    setattr(model, "edges", list(chain.from_iterable(edges.values())))
+    setattr(model, "edges", set(list(chain.from_iterable(edges.values()))))
     setattr(model, "seq_dim", seq_dim)
     setattr(model, "seq_len", seq_len)
     return srcs, nodes, seq_dim

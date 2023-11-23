@@ -5,35 +5,9 @@ from typing import Dict, List
 
 def single_input(multiple_answers: bool) -> Dict[str, List[List[float]] | List[int]]:
     return {
-      "clean": [
-        [
-          3.0,
-          3.0
-        ],
-        [
-          2.0,
-          2.0
-        ],
-        [
-          1.0,
-          1.0
-        ]
-      ],
-      "corrupt": [
-        [
-          -3.0,
-          -3.0
-        ],
-        [
-          -2.0,
-          -2.0
-        ],
-        [
-          -1.0,
-          -1.0
-        ]
-      ],
-      "answers": [1] if not multiple_answers else [0, 1]
+        "clean": [[3.0, 3.0], [2.0, 2.0], [1.0, 1.0]],
+        "corrupt": [[-3.0, -3.0], [-2.0, -2.0], [-1.0, -1.0]],
+        "answers": [1] if not multiple_answers else [0, 1],
     }
 
 

@@ -17,8 +17,8 @@ import auto_circuit.prune
 import auto_circuit.utils.graph_utils
 from auto_circuit.metrics.answer_prob import measure_answer_prob
 from auto_circuit.metrics.kl_div import measure_kl_div
-from auto_circuit.metrics.official_circuits.ioi_official import (
-    ioi_true_edges,
+from auto_circuit.metrics.official_circuits.docstring_official import (
+    docstring_true_edges,
 )
 from auto_circuit.metrics.ROC import measure_roc
 from auto_circuit.prune import run_pruned
@@ -64,7 +64,8 @@ if toy_model:
     model = tl.HookedTransformer(cfg)
     model.init_weights()
 else:
-    model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
+    # model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
+    model = tl.HookedTransformer.from_pretrained("attn-only-4l", device=device)
     # model = tl.HookedTransformer.from_pretrained("tiny-stories-33M", device=device)
 
 model.cfg.use_attn_result = True
@@ -77,7 +78,8 @@ model.eval()
 # repo_root = "/Users/josephmiller/Documents/auto-circuit"
 repo_root = "/home/dev/auto-circuit"
 # data_file = "datasets/indirect_object_identification.json"
-data_file = "datasets/greater_than_gpt2-small_prompts.json"
+# data_file = "datasets/greater_than_gpt2-small_prompts.json"
+data_file = "datasets/docstring_prompts.json"
 # data_file = "datasets/animal_diet_short_prompts.json"
 # data_file = "datasets/mini_prompts.json"
 data_path = f"{repo_root}/{data_file}"
@@ -120,28 +122,18 @@ prune_funcs: Dict[str, Callable] = {
     "Random": random_prune_scores,
     # "ACDC": partial(
     #     acdc_prune_scores,
-    #     tao_exps=list(range(-6, 1)),
+    #     # tao_exps=list(range(-6, 1)),
+    #     tao_exps=[-5],
+    #     tao_bases=[1],
     # ),
     "Integrated edge gradients": partial(
         integrated_edge_gradients_prune_scores,
         samples=50,
     ),
-    "Prob Gradient": partial(
-        simple_gradient_prune_scores,
-        grad_function="prob",
-    ),
-    "Exp Logit Gradient": partial(
-        simple_gradient_prune_scores,
-        grad_function="logit_exp",
-    ),
-    "Logit Gradient": partial(
-        simple_gradient_prune_scores,
-        grad_function="logit",
-    ),
-    "Logprob Gradient": partial(
-        simple_gradient_prune_scores,
-        grad_function="logprob",
-    ),
+    "Prob Gradient": partial(simple_gradient_prune_scores, grad_function="prob"),
+    "Exp Logit Gradient": partial(simple_gradient_prune_scores, grad_function="logit_exp"),
+    "Logit Gradient": partial(simple_gradient_prune_scores, grad_function="logit"),
+    "Logprob Gradient": partial(simple_gradient_prune_scores, grad_function="logprob"),
     # "Subnetwork Probing": partial(
     #     subnetwork_probing_prune_scores,
     #     learning_rate=0.1,
@@ -177,7 +169,7 @@ for name, prune_func in (prune_score_pbar := tqdm(prune_funcs.items())):
 #%%
 # SAVE / LOAD PRUNE SCORES DICT
 save = False
-load = True
+load = False
 if save:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -204,9 +196,7 @@ if load:
 
 #%%
 kl_divs: Dict[str, Dict[int, float]] = {}
-for prune_func_str, prune_scores in (
-    prune_func_pbar := tqdm(prune_scores_dict.items())
-):
+for prune_func_str, prune_scores in (prune_func_pbar := tqdm(prune_scores_dict.items())):
     prune_func_pbar.set_description_str(f"Pruning with {prune_func_str} scores")
     group_edges = prune_func_str.startswith("ACDC") or prune_func_str.startswith("IOI")
     edge_count_type = EdgeCounts.GROUPS if group_edges else default_edge_count_type
@@ -219,15 +209,20 @@ for prune_func_str, prune_scores in (
     t.cuda.empty_cache()
 
 kl_vs_edges_plot(
-    kl_divs, default_edge_count_type, PatchType.PATH_PATCH, "KL Divergence", factorized
+    kl_divs, default_edge_count_type, PatchType.PATH_PATCH, "KL Divergence"
 ).show()
 #%%
-rocs: Dict[str, Set[Tuple[float, float]]] = {}
-for func_str, prune_scores in prune_scores_dict.items():
+roc: Dict[str, Set[Tuple[float, float]]] = {}
+for func_str, prune_scores in (prune_func_pbar := tqdm(prune_scores_dict.items())):
+    prune_func_pbar.set_description_str(f"Pruning with {func_str} scores")
     group_edges = func_str.startswith("ACDC") or func_str.startswith("IOI")
-    correct_edges = ioi_true_edges(model)
-    rocs[func_str] = measure_roc(model, prune_scores, correct_edges, True, group_edges)
-roc_plot("IOI", rocs).show()
+    # correct_edges = ioi_true_edges(model)
+    # roc[func_str] = measure_roc(model, prune_scores, correct_edges, True, group_edges)
+    # correct_edges = greaterthan_true_edges(model)
+    # roc[func_str] = measure_roc(model, prune_scores, correct_edges, False, group_edges)
+    correct_edges = docstring_true_edges(model)
+    roc[func_str] = measure_roc(model, prune_scores, correct_edges, False, group_edges)
+roc_plot("Greaterthan", roc).show()
 
 #%%
 answer_probs: Dict[str, Dict[int, float]] = {}
@@ -253,7 +248,6 @@ kl_vs_edges_plot(
     PatchType.PATH_PATCH,
     "Correct Token Prob",
     factorized,
-    False,
 ).show()
 
 #%%

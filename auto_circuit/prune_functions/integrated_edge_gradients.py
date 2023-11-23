@@ -38,7 +38,7 @@ def integrated_edge_gradients_prune_scores(
             for batch in train_data:
                 patch_src_outs = src_outs_dict[batch.key].clone().detach()
                 with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
-                    model_out = model(batch.clean)[out_slice]
+                    model_out = model(batch.corrupt)[out_slice]
                     masked_logprobs = log_softmax(model_out, dim=-1)
                     loss = batch_avg_answer_val(masked_logprobs, batch)
                     loss.backward()

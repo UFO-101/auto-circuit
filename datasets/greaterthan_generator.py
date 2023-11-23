@@ -196,5 +196,5 @@ model = tl.HookedTransformer.from_pretrained("gpt2-small")
 prompt_dicts = get_year_data(1000, model)
 data_json = {"prompts": prompt_dicts}
 
-with open(f"greater_than_{model_name}_prompts.json", "w") as f:
+with open(f"greaterthan_{model_name}_prompts.json", "w") as f:
     json.dump(data_json, f)

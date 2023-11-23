@@ -1,4 +1,4 @@
-from typing import Dict, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 import torch as t
 
@@ -17,7 +17,7 @@ def measure_roc(
     correct_edges: Set[Edge],
     head_nodes_only: bool = False,
     group_edges: bool = False,
-) -> Set[Tuple[float, float]]:
+) -> List[Tuple[float, float]]:
     edges: Set[Edge] = model.edges  # type: ignore
 
     # Filter edges that are not between attention heads
@@ -29,7 +29,7 @@ def measure_roc(
     test_edge_counts = edge_counts_util(edges, edge_counts_type, sort_ps)
 
     incorrect_edges = edges - correct_edges
-    points: Set[Tuple[float, float]] = set()
+    points: List[Tuple[float, float]] = []
     current_pred_edges: Set[Edge] = set()
     for edge_idx, (edge, _) in enumerate(sort_ps.items()):
         current_pred_edges.add(edge)
@@ -39,5 +39,5 @@ def measure_roc(
             true_positive_rate = true_positives / len(correct_edges)
             false_positives = len(incorrect_edges & current_pred_edges)
             false_positive_rate = false_positives / len(incorrect_edges)
-            points.add((false_positive_rate, true_positive_rate))
+            points.append((false_positive_rate, true_positive_rate))
     return points

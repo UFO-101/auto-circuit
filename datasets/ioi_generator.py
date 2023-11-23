@@ -1,4 +1,5 @@
-# Source: https://github.com/callummcdougall/ARENA_2.0/blob/main/chapter1_transformers/exercises/part3_indirect_object_identification/ioi_dataset.py
+# Based on:
+# https://github.com/callummcdougall/ARENA_2.0/blob/main/chapter1_transformers/exercises/part3_indirect_object_identification/ioi_dataset.py # noqa: E501
 #%%
 
 from typing import Union, List, Optional

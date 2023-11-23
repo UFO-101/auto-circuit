@@ -20,7 +20,7 @@ def simple_gradient_prune_scores(
     train_data: DataLoader[PromptPairBatch],
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
 ) -> Dict[Edge, float]:
-    """Prune scores are the integrated gradient of each edge."""
+    """Prune scores by attribution patching."""
     edges: Set[Edge] = model.edges  # type: ignore
     out_slice = model.out_slice
 

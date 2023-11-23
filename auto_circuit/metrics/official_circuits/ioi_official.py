@@ -1,3 +1,5 @@
+# Based on:
+# https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/ioi/utils.py
 from dataclasses import dataclass
 from typing import List, Set
 
@@ -52,6 +54,8 @@ class Conn:
 
 
 def ioi_true_edges(model: t.nn.Module) -> Set[Edge]:
+    assert model.cfg.model_name == "gpt2"  # type: ignore
+
     special_connections: set[Conn] = {
         Conn("INPUT", "previous token", ("q", "k", "v")),
         Conn("INPUT", "duplicate token", ("q", "k", "v")),

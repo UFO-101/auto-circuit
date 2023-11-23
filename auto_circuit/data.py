@@ -7,6 +7,8 @@ import torch.utils.data
 from attr import dataclass
 from torch.utils.data import DataLoader, Dataset
 
+from pathlib import Path
+
 
 @dataclass(frozen=True)
 class PromptPair:
@@ -61,7 +63,7 @@ class PromptDataset(Dataset):
 
 def load_datasets_from_json(
     tokenizer: Any,
-    path: str,
+    path: Path,
     device: str,
     prepend_bos: bool = True,
     batch_size: int = 32,
@@ -94,7 +96,7 @@ def load_datasets_from_json(
         ans_dict: List[Dict] = [tokenizer(a, return_tensors="pt") for a in answer_strs]
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
-        answers = [a["input_ids"].squeeze(-1, -2).to(device) for a in ans_dict]
+        answers = [a["input_ids"].squeeze(-1).to(device) for a in ans_dict]
 
     dataset = PromptDataset(clean_prompts, corrupt_prompts, answers)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)

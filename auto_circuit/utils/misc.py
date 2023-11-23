@@ -1,12 +1,18 @@
 from contextlib import contextmanager
 from functools import reduce
+import os
 from typing import Iterator, Set
+from pathlib import Path
 
 import torch as t
 from torch.utils.hooks import RemovableHandle
 
 from auto_circuit.data import PromptPairBatch
 
+
+def relative_path_to_abs_path(path: str) -> Path:
+    repo_path = Path(__file__).parent.parent.parent.absolute()
+    return repo_path / path
 
 @contextmanager
 def remove_hooks() -> Iterator[Set[RemovableHandle]]:

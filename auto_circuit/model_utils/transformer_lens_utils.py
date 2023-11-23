@@ -39,15 +39,16 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                     weight_head_dim=0,
                 )
             )
-        nodes.add(
-            SrcNode(
-                name=f"MLP {block_idx}",
-                module_name=f"blocks.{block_idx}.mlp",
-                layer=next(layers),
-                idx=next(idxs),
-                weight=f"blocks.{block_idx}.mlp.W_out",
+        if not model.cfg.attn_only:
+            nodes.add(
+                SrcNode(
+                    name=f"MLP {block_idx}",
+                    module_name=f"blocks.{block_idx}.mlp",
+                    layer=next(layers),
+                    idx=next(idxs),
+                    weight=f"blocks.{block_idx}.mlp.W_out",
+                )
             )
-        )
     return nodes
 
 
@@ -75,15 +76,16 @@ def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
                         weight_head_dim=0,
                     )
                 )
-        nodes.add(
-            DestNode(
-                name=f"MLP {block_idx}",
-                module_name=f"blocks.{block_idx}.hook_mlp_in",
-                layer=next(layers),
-                idx=next(idxs),
-                weight=f"blocks.{block_idx}.mlp.W_in",
+        if not model.cfg.attn_only:
+            nodes.add(
+                DestNode(
+                    name=f"MLP {block_idx}",
+                    module_name=f"blocks.{block_idx}.hook_mlp_in",
+                    layer=next(layers),
+                    idx=next(idxs),
+                    weight=f"blocks.{block_idx}.mlp.W_in",
+                )
             )
-        )
     nodes.add(
         DestNode(
             name="Resid End",
@@ -125,15 +127,16 @@ def simple_graph_nodes(
                 idx=next(dest_idxs),
             )
         )
-        src_nodes.add(
-            SrcNode(
-                name=f"MLP {block_idx}",
-                module_name=f"blocks.{block_idx}.mlp",
-                layer=next(layers),
-                idx=next(src_idxs),
-                weight=f"blocks.{block_idx}.mlp.W_out",
+        if not model.cfg.attn_only:
+            src_nodes.add(
+                SrcNode(
+                    name=f"MLP {block_idx}",
+                    module_name=f"blocks.{block_idx}.mlp",
+                    layer=next(layers),
+                    idx=next(src_idxs),
+                    weight=f"blocks.{block_idx}.mlp.W_out",
+                )
             )
-        )
         last_block = block_idx + 1 == model.cfg.n_layers
         dest_nodes.add(
             DestNode(

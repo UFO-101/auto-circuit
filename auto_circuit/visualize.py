@@ -1,4 +1,5 @@
 from collections import defaultdict
+from turtle import mode
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import plotly.graph_objects as go
@@ -20,59 +21,63 @@ from auto_circuit.utils.graph_utils import (
     get_sorted_dest_ins,
     get_sorted_src_outs,
 )
+import plotly.express as px
 
 
 def kl_vs_edges_plot(
-    data: Dict[str, Dict[int, float]],
-    edge_counts: EdgeCounts,
-    patch_type: PatchType,
-    y_axis_title: str,
-    factorized: bool,
-    log_y_axis: bool = True,
+    data: List[Dict[str, Any]],
+    kl_max: float,
 ) -> go.Figure:
-    fig = go.Figure()
-
-    for label, d in data.items():
-        x = list(d.keys())
-        y = list(d.values())
-        x = [max(0.5, x_i) for x_i in x]
-        y = [max(2e-5, y_i) for y_i in y]
-        mode = "lines+markers" if len(d) > 1 else "markers"
-        fig.add_trace(go.Scatter(x=x, y=y, mode=mode, name=label))
-
+    fig = px.line(data, x='X', y='Y', facet_col='Task', color='Algorithm', log_x=True, log_y=True, range_y=[1e-6, kl_max * 2])
     fig.update_layout(
-        title=(
-            f"Task Pruning: {patch_type}"
-            f" ({'factorized' if factorized else 'unfactorized'} model)"
-        ),
-        xaxis_title="Edges",
-        xaxis_type="log" if edge_counts == EdgeCounts.LOGARITHMIC else "linear",
-        yaxis_title=y_axis_title,
-        yaxis_type="log" if log_y_axis else "linear",
+        title=f"Task Pruning: {PatchType.PATH_PATCH}",
+        xaxis_title="Patched Edges",
+        yaxis_title= "KL Divergence",
         template="plotly",
     )
+    fig.update_xaxes(matches=None)
     return fig
+    # for label, d in data.items():
+    #     x = list(d.keys())
+    #     y = list(d.values())
+    #     x = [max(0.5, x_i) for x_i in x]
+    #     y = [max(2e-5, y_i) for y_i in y]
+    #     mode = "lines+markers" if len(d) > 1 else "markers"
+    #     fig.add_trace(go.Scatter(x=x, y=y, mode=mode, name=label, legendgroup=label), row=row, col=col)
+
+    # return fig
 
 
-def roc_plot(title: str, data: Dict[str, Set[Tuple[float, float]]]) -> go.Figure:
-    fig = go.Figure()
-
-    for label, points in data.items():
-        points = sorted(points, key=lambda x: x[0])
-        x, y = zip(*points)
-        fig.add_trace(
-            go.Scatter(x=x, y=y, mode="lines", name=label, line=dict(shape="hv"))
-        )
-
-    fig.update_yaxes(scaleanchor="x", scaleratio=1)
-    fig.update_xaxes(constrain="domain")
+def roc_plot(data: List[Dict[str, Any]]) -> go.Figure:
+    data = sorted(data, key=lambda x: x['X'])
+    fig = px.scatter(data, x='X', y='Y', facet_col='Task', color='Algorithm', range_y=[0, 1])
+    fig.update_traces(line=dict(shape="hv"), mode="lines")
     fig.update_layout(
-        title="ROC Curve: " + title,
-        xaxis_title="False Positive Rate",
+        title=f"Task Pruning: {PatchType.PATH_PATCH}",
+        template="plotly",
         yaxis_title="True Positive Rate",
-        template="plotly",
     )
+    fig.update_xaxes(matches=None, title="False Positive Rate", scaleanchor="y", scaleratio=1)
+    # fig.update_yaxes()
     return fig
+    # fig = go.Figure()
+
+    # for label, points in data.items():
+    #     points = sorted(points, key=lambda x: x[0])
+    #     x, y = zip(*points)
+    #     fig.add_trace(
+    #         go.Scatter(x=x, y=y, mode="lines", name=label, line=dict(shape="hv"))
+    #     )
+
+    # fig.update_yaxes(scaleanchor="x", scaleratio=1)
+    # fig.update_xaxes(constrain="domain")
+    # fig.update_layout(
+    #     title="ROC Curve: " + title,
+    #     xaxis_title="False Positive Rate",
+    #     yaxis_title="True Positive Rate",
+    #     template="plotly",
+    # )
+    # return fig
 
 
 def head(n: str) -> str:

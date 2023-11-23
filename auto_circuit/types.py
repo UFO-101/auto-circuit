@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
+from torch.utils.data import DataLoader
 
 import torch as t
 
@@ -80,3 +81,21 @@ class Edge:
 
     def __str__(self) -> str:
         return self.name
+
+
+@dataclass(frozen=True)
+class Experiment:
+    name: str
+    model: t.nn.Module
+    train_loader: DataLoader
+    test_loader: DataLoader
+    true_edge_func: Callable[..., Set[Edge]]
+    true_edges_attn_only: bool = False
+
+    @property
+    def true_edges(self) -> Set[Edge]:
+        return self.true_edge_func(self.model)
+
+PruneScores = Dict[Edge, float]
+AlgoPruneScores = Dict[str, PruneScores]
+ExperimentPruneScores = Dict[Experiment, AlgoPruneScores]
