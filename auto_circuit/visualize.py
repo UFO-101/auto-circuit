@@ -1,7 +1,7 @@
 from collections import defaultdict
-from turtle import mode
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import plotly.express as px
 import plotly.graph_objects as go
 import pygraphviz as pgv
 import torch as t
@@ -12,72 +12,65 @@ from transformer_lens import HookedTransformerKeyValueCache
 from auto_circuit.types import (
     DestNode,
     Edge,
-    EdgeCounts,
     Node,
-    PatchType,
     SrcNode,
 )
 from auto_circuit.utils.graph_utils import (
     get_sorted_dest_ins,
     get_sorted_src_outs,
 )
-import plotly.express as px
+
+Y_MIN = 1e-6
 
 
-def kl_vs_edges_plot(
+def edge_patching_plot(
     data: List[Dict[str, Any]],
-    kl_max: float,
+    metric_name: str,
+    y_axes_match: bool,
+    kl_max: Optional[float] = None,
 ) -> go.Figure:
-    fig = px.line(data, x='X', y='Y', facet_col='Task', color='Algorithm', log_x=True, log_y=True, range_y=[1e-6, kl_max * 2])
-    fig.update_layout(
-        title=f"Task Pruning: {PatchType.PATH_PATCH}",
-        xaxis_title="Patched Edges",
-        yaxis_title= "KL Divergence",
-        template="plotly",
+    data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"]))
+    fig = px.line(
+        data,
+        x="X",
+        y="Y",
+        facet_col="Task",
+        color="Algorithm",
+        log_x=True,
+        log_y=True,
+        range_y=None if kl_max is None else [Y_MIN, kl_max * 2],
+        facet_col_spacing=0.04,
     )
-    fig.update_xaxes(matches=None)
+    fig.update_layout(
+        title=f"Task Pruning: {metric_name} vs. Patched Edges",
+        yaxis_title=metric_name,
+        template="plotly",
+        width=1300,
+    )
+    fig.update_yaxes(matches=None, showticklabels=True) if not y_axes_match else None
+    fig.update_xaxes(matches=None, title="Patched Edges")
     return fig
-    # for label, d in data.items():
-    #     x = list(d.keys())
-    #     y = list(d.values())
-    #     x = [max(0.5, x_i) for x_i in x]
-    #     y = [max(2e-5, y_i) for y_i in y]
-    #     mode = "lines+markers" if len(d) > 1 else "markers"
-    #     fig.add_trace(go.Scatter(x=x, y=y, mode=mode, name=label, legendgroup=label), row=row, col=col)
-
-    # return fig
 
 
 def roc_plot(data: List[Dict[str, Any]]) -> go.Figure:
-    data = sorted(data, key=lambda x: x['X'])
-    fig = px.scatter(data, x='X', y='Y', facet_col='Task', color='Algorithm', range_y=[0, 1])
+    data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"], x["X"]))
+    fig = px.scatter(data, x="X", y="Y", facet_col="Task", color="Algorithm")
     fig.update_traces(line=dict(shape="hv"), mode="lines")
+    fig.update_xaxes(
+        matches=None,
+        title="False Positive Rate",
+        scaleanchor="y",
+        scaleratio=1,
+        range=[-0.02, 1.02],
+    )
+    fig.update_yaxes(range=[-0.02, 1.02], scaleanchor="x", scaleratio=1)
     fig.update_layout(
-        title=f"Task Pruning: {PatchType.PATH_PATCH}",
+        title="Task Pruning: ROC Curves",
         template="plotly",
         yaxis_title="True Positive Rate",
+        width=1300,
     )
-    fig.update_xaxes(matches=None, title="False Positive Rate", scaleanchor="y", scaleratio=1)
-    # fig.update_yaxes()
     return fig
-    # fig = go.Figure()
-
-    # for label, points in data.items():
-    #     points = sorted(points, key=lambda x: x[0])
-    #     x, y = zip(*points)
-    #     fig.add_trace(
-    #         go.Scatter(x=x, y=y, mode="lines", name=label, line=dict(shape="hv"))
-    #     )
-
-    # fig.update_yaxes(scaleanchor="x", scaleratio=1)
-    # fig.update_xaxes(constrain="domain")
-    # fig.update_layout(
-    #     title="ROC Curve: " + title,
-    #     xaxis_title="False Positive Rate",
-    #     yaxis_title="True Positive Rate",
-    #     template="plotly",
-    # )
-    # return fig
 
 
 def head(n: str) -> str:
@@ -230,6 +223,7 @@ def draw_seq_graph(
         interval_end = interval_start + height
         intervals[seq_idx] = interval_start / total_height, interval_end / total_height
 
+    # Draw the sankey for each token position
     sankeys = []
     for idx, seq_edges in edge_dict.items():
         e_set, vert = set(seq_edges), intervals[idx]

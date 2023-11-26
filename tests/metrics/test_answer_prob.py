@@ -41,7 +41,7 @@ def test_answer_prob(
         micro_model(batch.clean)[micro_model.out_slice] for batch in micro_dataloader
     ]
 
-    answer_probs = measure_answer_prob(
+    answer_prob = measure_answer_prob(
         model=micro_model,
         test_loader=micro_dataloader,
         pruned_outs={0: pruned_out},
@@ -56,7 +56,7 @@ def test_answer_prob(
             ]
             avg_ans_prob.append(sum(probs) / len(probs))
         assert avg_ans_prob is not None
-        assert answer_probs[0] == pytest.approx(sum(avg_ans_prob) / len(avg_ans_prob))
+        assert answer_prob[0][1] == pytest.approx(sum(avg_ans_prob) / len(avg_ans_prob))
 
 
 @pytest.mark.parametrize("seq_len", [None, 3])
@@ -70,7 +70,7 @@ def test_greater_than_answer_prob(
     prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
     pruned_out = [model(batch.clean)[model.out_slice] for batch in dataloader]
 
-    answer_probs = measure_answer_prob(
+    answer_prob = measure_answer_prob(
         model=model,
         test_loader=dataloader,
         pruned_outs={0: pruned_out},
@@ -86,10 +86,17 @@ def test_greater_than_answer_prob(
             avg_ans_probs.append(sum(probs) / len(probs))
         assert avg_ans_probs is not None
         avg_ans_prob = sum(avg_ans_probs) / len(avg_ans_probs)
-        assert answer_probs[0] == pytest.approx(avg_ans_prob, abs=1e-4)
+        assert answer_prob[0][1] == pytest.approx(avg_ans_prob, abs=1e-4)
 
 
 # micro_model = micro_model()
 # dataloader = micro_dataloader(multiple_answers=True, batch_count=2, batch_size=1)
 # test_answer_prob(micro_model, dataloader, seq_len=3)
-# test_greater_than_answer_prob(seq_len=None)
+# test_greater_than_answer_prob(
+#     mini_tl_transformer(), greater_than_gpt2_dataloader(), seq_len=None
+# )
+# test_greater_than_answer_prob(
+#     mini_tl_transformer(),
+#     greater_than_gpt2_dataloader("docstring_prompts"),
+#     seq_len=None,
+# )

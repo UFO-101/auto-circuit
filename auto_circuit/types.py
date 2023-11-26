@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Set, Tuple
-from torch.utils.data import DataLoader
 
 import torch as t
+from torch.utils.data import DataLoader
 
 from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapper
@@ -96,6 +96,12 @@ class Experiment:
     def true_edges(self) -> Set[Edge]:
         return self.true_edge_func(self.model)
 
+
 PruneScores = Dict[Edge, float]
 AlgoPruneScores = Dict[str, PruneScores]
 ExperimentPruneScores = Dict[Experiment, AlgoPruneScores]
+
+Measurements = List[Tuple[int | float, int | float]]
+AlgoMeasurements = Dict[str, Measurements]
+ExperimentMeasurements = Dict[str, AlgoMeasurements]
+MetricMeasurements = Dict[str, ExperimentMeasurements]

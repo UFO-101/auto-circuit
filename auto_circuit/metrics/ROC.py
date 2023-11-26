@@ -17,7 +17,7 @@ def measure_roc(
     correct_edges: Set[Edge],
     head_nodes_only: bool = False,
     group_edges: bool = False,
-) -> List[Tuple[float, float]]:
+) -> List[Tuple[int | float, float]]:
     edges: Set[Edge] = model.edges  # type: ignore
 
     # Filter edges that are not between attention heads

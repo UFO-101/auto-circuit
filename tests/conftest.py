@@ -1,11 +1,10 @@
-import os
-
 import pytest
 import transformer_lens as tl
 from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch, load_datasets_from_json
 from auto_circuit.model_utils.micro_model_utils import MicroModel
+from auto_circuit.utils.misc import repo_path_to_abs_path
 
 DEVICE = "cpu"
 
@@ -21,11 +20,6 @@ cfg = tl.HookedTransformerConfig(
     device=DEVICE,
 )
 mini_tl_model = tl.HookedTransformer(cfg)
-
-
-def repo_path_to_abs_path(path: str) -> str:
-    repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(repo_path, path)
 
 
 @pytest.fixture(scope="session")
@@ -54,10 +48,12 @@ def mini_tl_dataloader() -> DataLoader[PromptPairBatch]:
 
 
 @pytest.fixture(scope="session")
-def greater_than_gpt2_dataloader() -> DataLoader[PromptPairBatch]:
+def greater_than_gpt2_dataloader(
+    dataset: str = "greater_than_gpt2-small_prompts",
+) -> DataLoader[PromptPairBatch]:
     _, test_loader = load_datasets_from_json(
         mini_tl_model.tokenizer,
-        repo_path_to_abs_path("datasets/greater_than_gpt2-small_prompts.json"),
+        repo_path_to_abs_path(f"datasets/{dataset}.json"),
         device=DEVICE,
         prepend_bos=True,
         batch_size=2,

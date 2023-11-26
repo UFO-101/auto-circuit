@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import torch as t
 from torch.utils.data import DataLoader
@@ -16,8 +16,8 @@ def measure_answer_prob(
     test_loader: DataLoader[PromptPairBatch],
     pruned_outs: Dict[int, List[t.Tensor]],
     prob_func: Optional[Literal["log_softmax", "softmax"]] = None,
-) -> Dict[int, float]:
-    probs = {}
+) -> List[Tuple[float | int, float]]:
+    probs = []
     if prob_func == "softmax":
         apply_prob_func = t.nn.functional.softmax
     elif prob_func == "log_softmax":
@@ -31,5 +31,5 @@ def measure_answer_prob(
         for batch_idx, batch in enumerate(test_loader):
             batch_probs = apply_prob_func(pruned_out[batch_idx], dim=-1)
             avg_ans_probs.append(batch_avg_answer_val(batch_probs, batch))
-        probs[edge_count] = t.stack(avg_ans_probs).mean().item()
+        probs.append((edge_count, t.stack(avg_ans_probs).mean().item()))
     return probs

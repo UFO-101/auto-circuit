@@ -1,13 +1,12 @@
 import json
 import random
+from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple
 
 import torch as t
 import torch.utils.data
 from attr import dataclass
 from torch.utils.data import DataLoader, Dataset
-
-from pathlib import Path
 
 
 @dataclass(frozen=True)
