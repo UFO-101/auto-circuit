@@ -1,7 +1,8 @@
 # Based on:
 # https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/ioi/utils.py
+# I added the token positions based on the findings in the paper
 from dataclasses import dataclass
-from typing import List, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import torch as t
 
@@ -50,51 +51,60 @@ IOI_CIRCUIT = {
 class Conn:
     inp: str
     out: str
-    qkv: tuple[str, ...]
+    qkv: List[Tuple[Optional[str], int]]
 
 
-def ioi_true_edges(model: t.nn.Module) -> Set[Edge]:
+def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edge]:
     assert model.cfg.model_name == "gpt2"  # type: ignore
 
-    special_connections: set[Conn] = {
-        Conn("INPUT", "previous token", ("q", "k", "v")),
-        Conn("INPUT", "duplicate token", ("q", "k", "v")),
-        Conn("INPUT", "s2 inhibition", ("q",)),
-        Conn("INPUT", "negative", ("k", "v")),
-        Conn("INPUT", "name mover", ("k", "v")),
-        Conn("INPUT", "backup name mover", ("k", "v")),
-        Conn("previous token", "induction", ("k", "v")),
-        Conn("induction", "s2 inhibition", ("k", "v")),
-        Conn("duplicate token", "s2 inhibition", ("k", "v")),
-        Conn("s2 inhibition", "negative", ("q",)),
-        Conn("s2 inhibition", "name mover", ("q",)),
-        Conn("s2 inhibition", "backup name mover", ("q",)),
-        Conn("negative", "OUTPUT", ()),
-        Conn("name mover", "OUTPUT", ()),
-        Conn("backup name mover", "OUTPUT", ()),
-    }
-    edges_present: List[str] = []
+    special_connections: List[Conn] = [
+        Conn("INPUT", "previous token", [("q", 5), ("k", 4), ("v", 4)]),
+        Conn("INPUT", "duplicate token", [("q", 10), ("k", 4), ("v", 4)]),
+        Conn("INPUT", "s2 inhibition", [("q", 14)]),
+        Conn("INPUT", "negative", [("k", 2), ("v", 2)]),
+        Conn("INPUT", "name mover", [("k", 2), ("v", 2)]),
+        Conn("INPUT", "backup name mover", [("k", 2), ("v", 2)]),
+        Conn("previous token", "induction", [("k", 5), ("v", 5)]),
+        Conn("induction", "s2 inhibition", [("k", 10), ("v", 10)]),
+        Conn("duplicate token", "s2 inhibition", [("k", 10), ("v", 10)]),
+        Conn("s2 inhibition", "negative", [("q", 14)]),
+        Conn("s2 inhibition", "name mover", [("q", 14)]),
+        Conn("s2 inhibition", "backup name mover", [("q", 14)]),
+        Conn("negative", "OUTPUT", [(None, 14)]),
+        Conn("name mover", "OUTPUT", [(None, 14)]),
+        Conn("backup name mover", "OUTPUT", [(None, 14)]),
+    ]
+    edges_present: Dict[str, int] = {}
+    n_layers: int = model.cfg.n_layers  # type: ignore
     for conn in special_connections:
-        edge_src_names, edge_dest_names = [], []
+        edge_src_names, edge_dests = [f"MLP {i}" for i in range(n_layers)], []
         if conn.inp == "INPUT":
             edge_src_names = ["Resid Start"]
         else:
             for (layer, head) in IOI_CIRCUIT[conn.inp]:
                 edge_src_names.append(f"A{layer}.{head}")
         if conn.out == "OUTPUT":
-            edge_dest_names = ["Resid End"]
+            assert len(conn.qkv) == 1
+            final_tok_idx = conn.qkv[0][1]
+            edge_dests.append(("Resid End", final_tok_idx))
+            edge_dests.extend([(f"MLP {i}", final_tok_idx) for i in range(n_layers)])
         else:
             for (layer, head) in IOI_CIRCUIT[conn.out]:
                 for qkv in conn.qkv:
-                    edge_dest_names.append(f"A{layer}.{head}.{qkv.upper()}")
+                    assert qkv[0] is not None
+                    edge_dests.append((f"A{layer}.{head}.{qkv[0].upper()}", qkv[1]))
+                    edge_dests.extend([(f"MLP {i}", qkv[1]) for i in range(n_layers)])
 
         for src_name in edge_src_names:
-            for dest_name in edge_dest_names:
-                edges_present.append(f"{src_name}->{dest_name}")
+            for dest_name, tok_pos in edge_dests:
+                edges_present[f"{src_name}->{dest_name}"] = tok_pos
 
     edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
     for edge in edges:
-        if edge.name in edges_present:
-            true_edges.add(edge)
+        if edge.name in edges_present.keys():
+            if token_positions:
+                true_edges.add(Edge(edge.src, edge.dest, edges_present[edge.name]))
+            else:
+                true_edges.add(edge)
     return true_edges

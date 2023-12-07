@@ -5,7 +5,7 @@ repos:
       - id: trailing-whitespace
       - id: check-yaml
       - id: check-added-large-files
-        args: ['--maxkb=600']
+        args: ['--maxkb=2000']
       - id: end-of-file-fixer
       - id: pretty-format-json
         args: [ --autofix, --no-sort-keys ]

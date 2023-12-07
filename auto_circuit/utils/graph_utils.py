@@ -193,13 +193,21 @@ def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn, dropout_p: float = 0.0):
 
 def edge_counts_util(
     edges: Set[Edge],
-    test_counts: TestEdges,
+    test_counts: Optional[TestEdges] = None,  # None means default
     prune_scores: Optional[Dict[Edge, float]] = None,
-    zero_edges: bool = True,
-    all_edges: bool = True,
+    zero_edges: Optional[bool] = None,  # None means default
+    all_edges: Optional[bool] = None,  # None means default
 ) -> List[int]:
     n_edges = len(edges)
 
+    # Work out default setting for test_counts
+    if test_counts is None:
+        if prune_scores is not None and len(set(prune_scores.values())) < n_edges / 2:
+            test_counts = EdgeCounts.GROUPS
+        else:
+            test_counts = EdgeCounts.LOGARITHMIC if n_edges > 200 else EdgeCounts.ALL
+
+    # Calculate the test counts
     if test_counts == EdgeCounts.ALL:
         counts_list = [n for n in range(n_edges + 1)]
     elif test_counts == EdgeCounts.LOGARITHMIC:
@@ -218,6 +226,11 @@ def edge_counts_util(
     else:
         raise NotImplementedError(f"Unknown test_counts: {test_counts}")
 
+    # Work out default setting for zero_edges and all_edges
+    zero_edges = True if len(counts_list) > 1 and zero_edges is None else zero_edges
+    all_edges = True if len(counts_list) > 1 and all_edges is None else all_edges
+
+    # Add zero and all edges if necessary
     if zero_edges and 0 not in counts_list:
         counts_list = [0] + counts_list
     if all_edges and n_edges not in counts_list:

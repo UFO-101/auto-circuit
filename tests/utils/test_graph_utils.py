@@ -30,7 +30,7 @@ def test_groups_edge_counts(micro_model: MicroModel):
     edges: Set[Edge] = model.edges  # type: ignore
     edge_list = list(edges)
 
-    counts: List[int] = edge_counts_util(edges, EdgeCounts.GROUPS, {})
+    counts: List[int] = edge_counts_util(edges, EdgeCounts.GROUPS, {}, True, True)
     assert counts == [0, len(edges)]
 
     counts: List[int] = edge_counts_util(edges, EdgeCounts.GROUPS, {}, False, False)

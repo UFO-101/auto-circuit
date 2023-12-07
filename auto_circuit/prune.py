@@ -2,12 +2,12 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 import torch as t
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import (
     Edge,
     PatchType,
+    PrunedOutputs,
     SrcNode,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
@@ -16,27 +16,28 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
-from auto_circuit.visualize import draw_graph, draw_seq_graph
+from auto_circuit.visualize import draw_seq_graph
 
 
 def run_pruned(
     model: t.nn.Module,
-    data_loader: DataLoader[PromptPairBatch],
+    dataloader: PromptDataLoader,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
     patch_type: PatchType = PatchType.PATH_PATCH,
     render_graph: bool = False,
-    render_patched_edge_only: bool = False,
-    seq_labels: Optional[List[str]] = None,
+    render_prune_scores: bool = False,
+    render_patched_edge_only: bool = True,
+    render_top_n: int = 50,
     render_file_path: Optional[str] = None,
-) -> Dict[int, List[t.Tensor]]:
+) -> PrunedOutputs:
     out_slice = model.out_slice
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
     prune_scores = dict(
         sorted(prune_scores.items(), key=lambda x: abs(x[1]), reverse=True)
     )
 
-    for batch_idx, batch in enumerate(batch_pbar := tqdm(data_loader)):
+    for batch_idx, batch in enumerate(batch_pbar := tqdm(dataloader)):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
         if patch_type == PatchType.TREE_PATCH:
             batch_input = batch.clean
@@ -58,6 +59,22 @@ def run_pruned(
         patched_edge_val = 0.0 if patch_type == PatchType.TREE_PATCH else 1.0
         set_all_masks(model, val=1.0 if patch_type == PatchType.TREE_PATCH else 0.0)
         with patch_mode(model, curr_src_outs, patch_src_outs):
+            if render_graph:
+                # draw_graph(model, batch_input)
+                draw_seq_graph(
+                    model,
+                    batch_input,
+                    # Get the top 50 prune scores
+                    prune_scores=dict(
+                        sorted(
+                            prune_scores.items(), key=lambda x: abs(x[1]), reverse=True
+                        )[:render_top_n]
+                    ),
+                    show_prune_scores=render_prune_scores,
+                    show_all_edges=not render_patched_edge_only,
+                    seq_labels=dataloader.seq_labels,
+                    file_path=render_file_path,
+                )
             for edge_idx, edge in enumerate(edge_pbar := tqdm(prune_scores.keys())):
                 edge_pbar.set_description(f"Prune Edge {edge}", refresh=False)
                 n_edge = edge_idx + 1
@@ -66,15 +83,5 @@ def run_pruned(
                     with t.inference_mode():
                         model_output = model(batch_input)
                     pruned_outs[n_edge].append(model_output[out_slice].detach().clone())
-            if render_graph:
-                draw_graph(model, batch_input)
-                draw_seq_graph(
-                    model,
-                    batch_input,
-                    prune_scores,
-                    render_patched_edge_only,
-                    seq_labels=seq_labels,
-                    file_path=render_file_path,
-                )
         del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
     return pruned_outs

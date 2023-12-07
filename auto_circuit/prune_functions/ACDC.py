@@ -5,10 +5,9 @@ from typing import Dict, List, Set
 
 import torch as t
 from ordered_set import OrderedSet
-from torch.utils.data import DataLoader
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
-from auto_circuit.data import PromptPairBatch
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune import run_pruned
 from auto_circuit.types import (
     Edge,
@@ -26,7 +25,7 @@ from auto_circuit.visualize import draw_graph, draw_seq_graph
 
 def acdc_prune_scores(
     model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
+    train_data: PromptDataLoader,
     tao_exps: List[int] = list(range(-5, -1)),
     tao_bases: List[int] = [1, 3, 5, 7, 9],
     test_mode: bool = False,
@@ -133,7 +132,7 @@ def acdc_prune_scores(
                     print("Test mode: running pruned model") if render else None
                     test_out = run_pruned(
                         model=test_model,
-                        data_loader=train_data,
+                        dataloader=train_data,
                         test_edge_counts=[n_edges := len(tree)],
                         prune_scores=tree,
                         patch_type=PatchType.TREE_PATCH,

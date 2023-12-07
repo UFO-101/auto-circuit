@@ -3,9 +3,8 @@ from typing import Set
 
 import torch as t
 import transformer_lens as tl
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_functions.random_edges import random_prune_scores
 from auto_circuit.types import Edge, PatchType
@@ -16,7 +15,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 def test_kl_vs_edges(
     mini_tl_transformer: tl.HookedTransformer,
-    mini_tl_dataloader: DataLoader[PromptPairBatch],
+    mini_tl_dataloader: PromptDataLoader,
 ):
     """Test that experiments satisfy basic requirements with a real model."""
     model = mini_tl_transformer
@@ -33,7 +32,7 @@ def test_kl_vs_edges(
     test_edge_counts = edge_counts_util(edges, [0.0, 5, 1.0])
     pruned_outs = run_pruned(
         model=model,
-        data_loader=test_loader,
+        dataloader=test_loader,
         test_edge_counts=test_edge_counts,
         prune_scores=prune_scores,
         patch_type=PatchType.PATH_PATCH,

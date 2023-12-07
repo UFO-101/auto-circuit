@@ -136,6 +136,7 @@ BAC_TEMPLATES = [
 ]
 
 BABA_TEMPLATES = [
+    "When [B] and [A] went to the [PLACE], [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] were working at the [PLACE]. [B] decided to give a [OBJECT] to [A]",
@@ -673,6 +674,9 @@ class IOIDataset:
         self.s_tokenIDs = [
             self.tokenizer.encode(" " + prompt["S"])[0] for prompt in self.ioi_prompts
         ]
+        self.s_token_strs = [
+            " " + prompt["S"] for prompt in self.ioi_prompts
+        ]
 
         self.tokenized_prompts = []
 
@@ -754,6 +758,7 @@ import json
 N = 1000
 ioi_dataset = IOIDataset(
     prompt_type="mixed",
+    # prompt_type="ABBA",
     N=N,
     tokenizer=None,
     prepend_bos=False,
@@ -766,21 +771,30 @@ print([prompt["text"] for prompt in ioi_dataset.ioi_prompts])
 # https://colab.research.google.com/drive/1M4F9SU_vHUUCQkhmtWnmY2eomOJu5B5s#scrollTo=Srst_LcHl6mS
 
 abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ, BAB->XYZ")
-print([prompt["text"] for prompt in abc_dataset.ioi_prompts])
+print(ioi_dataset.s_tokenIDs)
+# abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ")
+# print([prompt["text"] for prompt in abc_dataset.ioi_prompts])
 
 prompt_dicts = []
-for clean_prompt, corrupt_prompt in zip(ioi_dataset.ioi_prompts, abc_dataset.ioi_prompts):
+for i, (clean_prompt, corrupt_prompt) in enumerate(zip(ioi_dataset.ioi_prompts, abc_dataset.ioi_prompts)):
     prompt_dict = {
         "clean": " ".join(clean_prompt["text"].split()[:-1]),
         "corrupt": " ".join(corrupt_prompt["text"].split()[:-1]),
         # We don't need the space but these are more common tokens (lower indices)
-        "answers": [" " + clean_prompt["text"].split()[-1]]
+        "answers": [" " + clean_prompt["text"].split()[-1]],
+        "wrong_answers": [ioi_dataset.s_token_strs[i]]
     }
     prompt_dicts.append(prompt_dict)
 
+for i in range(3):
+    print()
+    print("Clean:", prompt_dicts[i]["clean"])
+    print("Corrupt:", prompt_dicts[i]["corrupt"])
+    print("Answers:", prompt_dicts[i]["answers"])
+    print("Wrong answers:", prompt_dicts[i]["wrong_answers"])
 data_json = {"prompts": prompt_dicts}
 
-with open("indirect_object_identification.json", "w") as f:
+with open("ioi_prompts.json", "w") as f:
     json.dump(data_json, f)
 
 # %%

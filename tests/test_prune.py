@@ -4,10 +4,9 @@ from typing import Optional, Set
 
 import pytest
 import torch as t
-from torch.utils.data import DataLoader
 
 from auto_circuit.data import (
-    PromptPairBatch,
+    PromptDataLoader,
 )
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.prune import run_pruned
@@ -20,7 +19,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 @pytest.mark.parametrize("seq_len", [None, 3])
 def test_pruning(
     micro_model: MicroModel,
-    micro_dataloader: DataLoader[PromptPairBatch],
+    micro_dataloader: PromptDataLoader,
     seq_len: Optional[int],
     show_graphs: bool = False,
 ):
@@ -52,7 +51,7 @@ def test_pruning(
 
     pruned_outs = run_pruned(
         model=model,
-        data_loader=test_loader,
+        dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
         patch_type=PatchType.PATH_PATCH,
@@ -74,7 +73,7 @@ def test_pruning(
 
 def test_prune_sequence(
     micro_model: MicroModel,
-    micro_dataloader: DataLoader[PromptPairBatch],
+    micro_dataloader: PromptDataLoader,
     show_graphs: bool = False,
 ):
     """Test pruning different positions in the sequence."""
@@ -105,13 +104,12 @@ def test_prune_sequence(
 
     pruned_outs = run_pruned(
         model=model,
-        data_loader=test_loader,
+        dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
         patch_type=PatchType.PATH_PATCH,
         render_graph=show_graphs,
         render_patched_edge_only=True,
-        seq_labels=["A", "B", "C"],
         render_file_path="tree_patching.png",
     )
     assert t.allclose(pruned_outs[0][0], corrupt_out, atol=1e-3)

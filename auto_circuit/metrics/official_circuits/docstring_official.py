@@ -1,37 +1,44 @@
 # Based on:
 # https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/docstring/utils.py  # noqa: E501
-from typing import List, Set
+# I added the token positions based on the findings in the paper
+from typing import Dict, List, Set
 
 import torch as t
 
 from auto_circuit.types import Edge
 
 
-def docstring_true_edges(model: t.nn.Module) -> Set[Edge]:
-    """the manual graph, from Stefan"""
+def docstring_true_edges(
+    model: t.nn.Module, token_positions: bool = False
+) -> Set[Edge]:
+    """
+    the manual graph, from Stefan
+    !!! Note: !!!
+    The sequence positions assume prompts of length 40, as in docstring_prompts.json
+    """
     assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"  # type: ignore
 
-    edges_present: List[str] = []
-    edges_present.append("A0.5->A1.4.V")
-    edges_present.append("Resid Start->A0.5.V")
-    edges_present.append("Resid Start->A2.0.Q")
-    edges_present.append("A0.5->A2.0.Q")
-    edges_present.append("Resid Start->A2.0.K")
-    edges_present.append("A0.5->A2.0.K")
-    edges_present.append("A1.4->A2.0.V")
-    edges_present.append("Resid Start->A1.4.V")
-    edges_present.append("Resid Start->A1.2.Q")
-    edges_present.append("Resid Start->A1.2.K")
-    edges_present.append("A0.5->A1.2.Q")
-    edges_present.append("A0.5->A1.2.K")
+    edges_present: Dict[str, List[int]] = {}
+    edges_present["A0.5->A1.4.V"] = [13]
+    edges_present["Resid Start->A0.5.V"] = [13, 15, 34]
+    edges_present["Resid Start->A2.0.Q"] = [15]
+    edges_present["A0.5->A2.0.Q"] = [15]
+    edges_present["Resid Start->A2.0.K"] = [14]
+    edges_present["A0.5->A2.0.K"] = [13]  # Not entirely sure about this one
+    edges_present["A1.4->A2.0.V"] = [14]
+    edges_present["Resid Start->A1.2.K"] = [11, 13, 27, 34]
+    edges_present["Resid Start->A1.4.V"] = [13]
+    edges_present["Resid Start->A1.2.Q"] = [27, 34]
+    edges_present["A0.5->A1.2.Q"] = [34]
+    edges_present["A0.5->A1.2.K"] = [13, 34]
 
     for layer_3_head in ["0", "6"]:
-        edges_present.append(f"A3.{layer_3_head}->Resid End")
-        edges_present.append(f"A1.4->A3.{layer_3_head}.Q")
-        edges_present.append(f"Resid Start->A3.{layer_3_head}.V")
-        edges_present.append(f"A0.5->A3.{layer_3_head}.V")
-        edges_present.append(f"A2.0->A3.{layer_3_head}.K")
-        edges_present.append(f"A1.2->A3.{layer_3_head}.K")
+        edges_present[f"A3.{layer_3_head}->Resid End"] = [40]
+        edges_present[f"A1.4->A3.{layer_3_head}.Q"] = [40]
+        edges_present[f"Resid Start->A3.{layer_3_head}.V"] = [15]
+        edges_present[f"A0.5->A3.{layer_3_head}.V"] = [15]
+        edges_present[f"A2.0->A3.{layer_3_head}.K"] = [15]
+        edges_present[f"A1.2->A3.{layer_3_head}.K"] = [34]
 
     # reflects the value in the docstring appendix of the manual circuit as of 12th June
     assert len(edges_present) == 24, len(edges_present)
@@ -39,6 +46,10 @@ def docstring_true_edges(model: t.nn.Module) -> Set[Edge]:
     edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
     for edge in edges:
-        if edge.name in edges_present:
-            true_edges.add(edge)
+        if edge.name in edges_present.keys():
+            if token_positions:
+                for tok_pos in edges_present[edge.name]:
+                    true_edges.add(Edge(edge.src, edge.dest, tok_pos))
+            else:
+                true_edges.add(edge)
     return true_edges

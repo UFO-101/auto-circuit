@@ -46,14 +46,40 @@ def percent_gpu_mem_used(total_gpu_mib: int = 49000) -> str:
     )
 
 
-def batch_avg_answer_val(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
-    if isinstance(batch.answers, t.Tensor):
-        return t.gather(vals, dim=1, index=batch.answers).mean()
+def batch_avg_answer_val(
+    vals: t.Tensor, batch: PromptPairBatch, wrong_answer: bool = False
+) -> t.Tensor:
+    answers = batch.answers if not wrong_answer else batch.wrong_answers
+    if isinstance(answers, t.Tensor):
+        return t.gather(vals, dim=1, index=answers).mean()
     else:
-        assert isinstance(batch.answers, list)
+        assert isinstance(answers, list)
         answer_probs = []
-        for prompt_idx, prompt_answers in enumerate(batch.answers):
+        for prompt_idx, prompt_answers in enumerate(answers):
             answer_probs.append(
                 t.gather(vals[prompt_idx], dim=-1, index=prompt_answers).mean()
             )
         return t.stack(answer_probs).mean()
+
+
+def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+    answers = batch.answers
+    wrong_answers = batch.wrong_answers
+    if isinstance(answers, t.Tensor) and isinstance(wrong_answers, t.Tensor):
+        ans_avg = t.gather(vals, dim=1, index=answers).mean()
+        wrong_ans_avg = t.gather(vals, dim=1, index=wrong_answers).mean()
+        return ans_avg - wrong_ans_avg
+    else:
+        assert isinstance(answers, list) and isinstance(wrong_answers, list)
+        answer_probs = []
+        wrong_answers_probs = []
+        for prompt_idx, prompt_answers in enumerate(answers):
+            answer_probs.append(
+                t.gather(vals[prompt_idx], dim=-1, index=prompt_answers).mean()
+            )
+            wrong_answers_probs.append(
+                t.gather(
+                    vals[prompt_idx], dim=-1, index=wrong_answers[prompt_idx]
+                ).mean()
+            )
+        return t.stack(answer_probs).mean() - t.stack(wrong_answers_probs).mean()

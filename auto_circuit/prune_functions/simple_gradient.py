@@ -12,13 +12,15 @@ from auto_circuit.utils.graph_utils import (
     set_all_masks,
     train_mask_mode,
 )
-from auto_circuit.utils.misc import batch_avg_answer_val
+from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def simple_gradient_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
+    answer_diff: bool = False,
+    mask_val: float = 0.5,
 ) -> Dict[Edge, float]:
     """Prune scores by attribution patching."""
     edges: Set[Edge] = model.edges  # type: ignore
@@ -29,7 +31,7 @@ def simple_gradient_prune_scores(
         patch_outs = get_sorted_src_outs(model, batch.clean)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
-    set_all_masks(model, val=0.5)
+    set_all_masks(model, val=mask_val)
     with train_mask_mode(model):
         for batch in train_data:
             patch_src_outs = src_outs_dict[batch.key].clone().detach()
@@ -47,7 +49,10 @@ def simple_gradient_prune_scores(
                     token_vals = numerator / denominator.detach()
                 else:
                     raise ValueError(f"Unknown grad_function: {grad_function}")
-                loss = batch_avg_answer_val(token_vals, batch)
+                if answer_diff:
+                    loss = batch_avg_answer_diff(token_vals, batch)
+                else:
+                    loss = batch_avg_answer_val(token_vals, batch)
                 loss.backward()
 
     prune_scores = {}

@@ -182,10 +182,14 @@ def get_year_data(num_examples, model):
             template.format(noun=NOUNS[nouns_perm[i]], year1=zero_one_year) + yr[:2]
         )
         answers = [str(y) for y in range(int(yr[2:]) + 1, 100)]
+        wrong_answers = [
+            ("0" if y <= 9 else "") + str(y) for y in range(0, int(yr[2:]) + 1)
+        ]
         prompt_dict = {
             "clean": clean,
             "corrupt": corrupt,
             "answers": answers,
+            "wrong_answers": wrong_answers,
         }
         prompt_dicts.append(prompt_dict)
     return prompt_dicts

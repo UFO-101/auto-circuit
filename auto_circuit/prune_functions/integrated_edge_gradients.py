@@ -13,13 +13,14 @@ from auto_circuit.utils.graph_utils import (
     set_all_masks,
     train_mask_mode,
 )
-from auto_circuit.utils.misc import batch_avg_answer_val
+from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def integrated_edge_gradients_prune_scores(
     model: t.nn.Module,
     train_data: DataLoader[PromptPairBatch],
     samples: int = 50,
+    answer_diff: bool = False,
 ) -> Dict[Edge, float]:
     """Prune scores are the integrated gradient of each edge."""
     out_slice = model.out_slice
@@ -40,7 +41,10 @@ def integrated_edge_gradients_prune_scores(
                 with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
                     model_out = model(batch.corrupt)[out_slice]
                     masked_logprobs = log_softmax(model_out, dim=-1)
-                    loss = batch_avg_answer_val(masked_logprobs, batch)
+                    if answer_diff:
+                        loss = batch_avg_answer_diff(masked_logprobs, batch)
+                    else:
+                        loss = batch_avg_answer_val(masked_logprobs, batch)
                     loss.backward()
 
     prune_scores = {}

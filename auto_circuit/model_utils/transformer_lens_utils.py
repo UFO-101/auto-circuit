@@ -43,7 +43,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
             nodes.add(
                 SrcNode(
                     name=f"MLP {block_idx}",
-                    module_name=f"blocks.{block_idx}.mlp",
+                    module_name=f"blocks.{block_idx}.hook_mlp_out",
                     layer=next(layers),
                     idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_out",

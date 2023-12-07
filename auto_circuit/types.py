@@ -5,8 +5,11 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 import torch as t
 from torch.utils.data import DataLoader
 
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapper
+
+Y_MIN = 1e-6
 
 
 class EdgeCounts(Enum):
@@ -84,24 +87,36 @@ class Edge:
 
 
 @dataclass(frozen=True)
-class Experiment:
+class Task:
     name: str
     model: t.nn.Module
     train_loader: DataLoader
     test_loader: DataLoader
     true_edge_func: Callable[..., Set[Edge]]
-    true_edges_attn_only: bool = False
+    token_circuit: bool = False
 
     @property
     def true_edges(self) -> Set[Edge]:
-        return self.true_edge_func(self.model)
+        if self.token_circuit:
+            return self.true_edge_func(self.model, True)
+        else:
+            return self.true_edge_func(self.model)
+
+
+Measurements = List[Tuple[int | float, int | float]]
+PrunedOutputs = Dict[int, List[t.Tensor]]
+PruneAlgo = Callable[[t.nn.Module, PromptDataLoader, TestEdges], PrunedOutputs]
+
+
+@dataclass(frozen=True)
+class Metric:
+    metric_func: Callable[[Task, Optional[PrunedOutputs]], Measurements]
 
 
 PruneScores = Dict[Edge, float]
 AlgoPruneScores = Dict[str, PruneScores]
-ExperimentPruneScores = Dict[Experiment, AlgoPruneScores]
+ExperimentPruneScores = Dict[str, AlgoPruneScores]
 
-Measurements = List[Tuple[int | float, int | float]]
 AlgoMeasurements = Dict[str, Measurements]
-ExperimentMeasurements = Dict[str, AlgoMeasurements]
-MetricMeasurements = Dict[str, ExperimentMeasurements]
+TaskMeasurements = Dict[str, AlgoMeasurements]
+MetricMeasurements = Dict[str, TaskMeasurements]

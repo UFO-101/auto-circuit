@@ -1170,6 +1170,7 @@ for i in range(N_PROMPTS):
         "clean": prompt.clean_prompt,
         "corrupt": prompt.corrupt_prompt["random_random"],
         "answers": prompt.correct_answers,
+        "wrong_answers": prompt.wrong_answers,
     }
     prompt_dicts.append(prompt_dict)
 

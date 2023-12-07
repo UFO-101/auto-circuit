@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from auto_circuit.data import (
     PromptPairBatch,
 )
-from auto_circuit.metrics.answer_prob import measure_answer_prob
+from auto_circuit.metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.utils.graph_utils import prepare_model
 
@@ -41,11 +41,11 @@ def test_answer_prob(
         micro_model(batch.clean)[micro_model.out_slice] for batch in micro_dataloader
     ]
 
-    answer_prob = measure_answer_prob(
+    answer_prob = measure_answer_val(
         model=micro_model,
         test_loader=micro_dataloader,
         pruned_outs={0: pruned_out},
-        prob_func=None,
+        prob_func="logits",
     )
     pruned_out = t.stack(pruned_out)
     for batch_idx, batch in enumerate(micro_dataloader):
@@ -70,11 +70,11 @@ def test_greater_than_answer_prob(
     prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
     pruned_out = [model(batch.clean)[model.out_slice] for batch in dataloader]
 
-    answer_prob = measure_answer_prob(
+    answer_prob = measure_answer_val(
         model=model,
         test_loader=dataloader,
         pruned_outs={0: pruned_out},
-        prob_func=None,
+        prob_func="logits",
     )
     pruned_out = t.stack(pruned_out)
     for batch_idx, batch in enumerate(dataloader):
@@ -100,3 +100,6 @@ def test_greater_than_answer_prob(
 #     greater_than_gpt2_dataloader("docstring_prompts"),
 #     seq_len=None,
 # )
+# model = mini_tl_transformer()
+# print(model.tokenizer)
+# prompts = greater_than_gpt2_dataloader("docstring_prompts")

@@ -3,9 +3,8 @@ from typing import Any
 
 import pytest
 import torch as t
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune_functions.ACDC import acdc_prune_scores
 from auto_circuit.utils.graph_utils import prepare_model
 
@@ -19,7 +18,7 @@ from auto_circuit.utils.graph_utils import prepare_model
 )
 def test_acdc(
     model: t.nn.Module,
-    dataloader: DataLoader[PromptPairBatch],
+    dataloader: PromptDataLoader,
     request: Any,
     show_graphs: bool = False,  # Useful for debugging
 ):

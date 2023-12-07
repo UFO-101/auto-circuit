@@ -1,9 +1,10 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import torch as t
 from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptPairBatch
+from auto_circuit.types import Measurements
 
 
 def measure_kl_div(
@@ -11,7 +12,7 @@ def measure_kl_div(
     test_loader: DataLoader[PromptPairBatch],
     pruned_outs: Dict[int, List[t.Tensor]],
     compare_to_clean: bool = True,
-) -> List[Tuple[float | int, float]]:
+) -> Measurements:
     kl_divs = []
     out_slice = model.out_slice
     # Measure KL divergence

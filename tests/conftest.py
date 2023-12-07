@@ -49,16 +49,16 @@ def mini_tl_dataloader() -> DataLoader[PromptPairBatch]:
 
 @pytest.fixture(scope="session")
 def greater_than_gpt2_dataloader(
-    dataset: str = "greater_than_gpt2-small_prompts",
+    dataset: str = "greaterthan_gpt2-small_prompts",
 ) -> DataLoader[PromptPairBatch]:
     _, test_loader = load_datasets_from_json(
         mini_tl_model.tokenizer,
         repo_path_to_abs_path(f"datasets/{dataset}.json"),
         device=DEVICE,
         prepend_bos=True,
-        batch_size=2,
-        train_test_split=[2, 2],
-        length_limit=4,
+        batch_size=200,
+        train_test_split=[200, 200],
+        length_limit=400,
     )
     return test_loader
 
