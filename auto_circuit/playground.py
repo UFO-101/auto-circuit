@@ -60,8 +60,8 @@ def get_most_similar_embeddings(
     show_answer_rank = answer is not None
     answer = " cheese" if answer is None else answer
     unembeded = model.unembed(resid.unsqueeze(0).unsqueeze(0))
-    answer_token = model.to_tokens(answer, prepend_bos_override=False).squeeze()
-    answer_str_token = model.to_str_tokens(answer, prepend_bos_override=False)
+    answer_token = model.to_tokens(answer, prepend_bos=False).squeeze()
+    answer_str_token = model.to_str_tokens(answer, prepend_bos=False)
     assert len(answer_str_token) == 1
     logits = unembeded.squeeze()
     probs = logits.softmax(dim=-1)

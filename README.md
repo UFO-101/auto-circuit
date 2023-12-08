@@ -3,18 +3,6 @@ A library for testing automatic circuit discovery algorithms.
 
 ## Getting Started
 - Install [poetry](https://python-poetry.org/docs/#installation)
-- Install [graphviz](https://graphviz.org/download/)
-    - Linux:
-        ```
-        sudo apt-get update && sudo apt-get install libgl1-mesa-glx graphviz build-essential graphviz-dev
-        ```
-    - Mac:
-        ```
-        brew install graphviz
-        export CFLAGS="-I$(brew --prefix graphviz)/include"
-        export LDFLAGS="-L$(brew --prefix graphviz)/lib"
-        ```
-        Make sure to set these environment variables in your shell config.
 - Run `poetry install --with dev` to install dependencies
 
 Poetry is configured to use system packages. This can be helpful when working on a cluster with PyTorch already available. To change this set `options.system-site-packages` to `false` in [poetry.toml](poetry.toml).

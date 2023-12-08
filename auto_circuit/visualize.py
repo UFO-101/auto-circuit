@@ -4,9 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import plotly.express as px
 import plotly.graph_objects as go
-import pygraphviz as pgv
 import torch as t
-from IPython.display import display
 from ordered_set import OrderedSet
 from transformer_lens import HookedTransformerKeyValueCache
 
@@ -181,45 +179,6 @@ def t_fmt(x: Any, idx: Any = None, replace_line_break: str = "\n") -> str:
     if (arr := x[idx].squeeze()).ndim == 1:
         return f"[{', '.join([f'{v:.2f}'.rstrip('0') for v in arr.tolist()[:2]])} ...]"
     return str(x[idx]).lstrip("tensor(").rstrip(")").replace("\n", replace_line_break)
-
-
-def draw_graph(
-    model: t.nn.Module,
-    input: t.Tensor,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
-    display_ipython: bool = True,
-    file_path: Optional[str] = None,
-) -> None:
-    edges: Set[Edge] = model.edges  # type: ignore
-    output_idx = slice(None)
-    G = pgv.AGraph(strict=False, directed=True)
-
-    src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input, kv_cache)
-    dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input, kv_cache)
-    node_ins: Dict[str, t.Tensor] = dict(
-        [(head(k.name), v) for k, v in dest_ins.items()]
-    )
-    node_lbls = defaultdict(str, node_ins)
-
-    for e in edges:
-        label = src_outs[e.src]
-        if patched_edge := (e.patch_mask(model)[e.patch_idx].item() == 1.0):
-            label = e.dest.module(model).patch_src_outs[e.src.idx]  # type: ignore
-        G.add_edge(
-            head(e.src.name) + f"\n{t_fmt(node_lbls[head(e.src.name)], output_idx)}",
-            head(e.dest.name) + f"\n{t_fmt(node_lbls[head(e.dest.name)], output_idx)}",
-            label=t_fmt(label, output_idx),
-            color="red" if patched_edge else "black",
-        )
-
-    if display_ipython or file_path:
-        G.node_attr.update(fontsize="7")
-        G.edge_attr.update(fontsize="7")
-        G.layout(prog="dot")  # neato
-    if display_ipython:
-        display(G)
-    if file_path:
-        G.draw(file_path)
 
 
 def net_viz(

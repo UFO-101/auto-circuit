@@ -60,7 +60,6 @@ def run_pruned(
         set_all_masks(model, val=1.0 if patch_type == PatchType.TREE_PATCH else 0.0)
         with patch_mode(model, curr_src_outs, patch_src_outs):
             if render_graph:
-                # draw_graph(model, batch_input)
                 draw_seq_graph(
                     model,
                     batch_input,

@@ -7,23 +7,14 @@ readme = "README.md"
 packages = [{include = "auto_circuit"}]
 
 [tool.poetry.dependencies]
-python = "~3.10"
-# This needs to be commented/uncommented until Poetry is fixed.
-# Poetry can use system packages using 'virtualenvs.options.system-site-packages' in
-# poetry.toml. This is useful because PyTorch is already installed on my devbox and
-# installing with Poetry doesn't work. But it doesn't currently detect that torch is
-# already installed and tries to install it anyway. TransformerLens has torch as dep.
-# See: https://github.com/python-poetry/poetry/pull/8359
-# Todo: Fix is merged, so delete this on next poetry release.
-torch = "^2.0.1"
-# Todo: Change this on next release of TransformerLens.
-transformer-lens = {git = "https://github.com/UFO-101/TransformerLens.git@small-improvements"}
+python = "^3.10"
+torch = "^2.1.1"
+transformer-lens = "^1.11.0"
 einops = "^0.6.1"
-pygraphviz = "^1.11"
 ordered-set = "^4.1.0"
-plotly = "^5.18.0"
 tqdm = {git = "https://github.com/UFO-101/tqdm.git"}
-kaleido = "0.2.1"
+plotly = "^5.18.0"
+kaleido = "0.2.1"  # Improved renderer for plotly
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.3"

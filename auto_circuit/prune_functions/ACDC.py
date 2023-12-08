@@ -20,7 +20,7 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
-from auto_circuit.visualize import draw_graph, draw_seq_graph
+from auto_circuit.visualize import draw_seq_graph
 
 
 def acdc_prune_scores(
@@ -126,7 +126,6 @@ def acdc_prune_scores(
                     print("ACDC model, with out=", out) if render else None
                     tree = dict([(e, 1.0) for e in edges - (removed_edges | {edge})])
                     if render:
-                        draw_graph(model, clean_batch, kv_cache)
                         draw_seq_graph(model, clean_batch, tree, kv_cache=kv_cache)
 
                     print("Test mode: running pruned model") if render else None
