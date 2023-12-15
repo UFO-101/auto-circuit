@@ -2,10 +2,8 @@ from typing import Dict, Literal, Set
 
 import torch as t
 from torch.nn.functional import log_softmax
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
-from auto_circuit.types import Edge
+from auto_circuit.types import Edge, PruneScores, Task
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     patch_mode,
@@ -16,27 +14,27 @@ from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def simple_gradient_prune_scores(
-    model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
+    task: Task,
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
     answer_diff: bool = False,
     mask_val: float = 0.5,
-) -> Dict[Edge, float]:
+) -> PruneScores:
     """Prune scores by attribution patching."""
+    model = task.model
     edges: Set[Edge] = model.edges  # type: ignore
     out_slice = model.out_slice
 
     src_outs_dict: Dict[int, t.Tensor] = {}
-    for batch in train_data:
-        patch_outs = get_sorted_src_outs(model, batch.clean)
+    for batch in task.train_loader:
+        patch_outs = get_sorted_src_outs(model, batch.corrupt)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     set_all_masks(model, val=mask_val)
     with train_mask_mode(model):
-        for batch in train_data:
+        for batch in task.train_loader:
             patch_src_outs = src_outs_dict[batch.key].clone().detach()
             with patch_mode(model, t.zeros_like(patch_src_outs), patch_src_outs):
-                logits = model(batch.corrupt)[out_slice]
+                logits = model(batch.clean)[out_slice]
                 if grad_function == "logit":
                     token_vals = logits
                 elif grad_function == "prob":

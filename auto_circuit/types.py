@@ -3,13 +3,10 @@ from enum import Enum
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import torch as t
-from torch.utils.data import DataLoader
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapper
-
-Y_MIN = 1e-6
 
 
 class EdgeCounts(Enum):
@@ -22,7 +19,7 @@ TestEdges = EdgeCounts | List[int | float]
 
 
 class PatchType(Enum):
-    PATH_PATCH = 1
+    EDGE_PATCH = 1
     TREE_PATCH = 2
 
     def __str__(self) -> str:
@@ -90,8 +87,8 @@ class Edge:
 class Task:
     name: str
     model: t.nn.Module
-    train_loader: DataLoader
-    test_loader: DataLoader
+    train_loader: PromptDataLoader
+    test_loader: PromptDataLoader
     true_edge_func: Callable[..., Set[Edge]]
     token_circuit: bool = False
 
@@ -105,18 +102,41 @@ class Task:
 
 Measurements = List[Tuple[int | float, int | float]]
 PrunedOutputs = Dict[int, List[t.Tensor]]
-PruneAlgo = Callable[[t.nn.Module, PromptDataLoader, TestEdges], PrunedOutputs]
+PruneScores = Dict[Edge, float]
+
+
+@dataclass(frozen=True)
+class PruneAlgo:
+    name: str
+    func: Callable[[Task], PruneScores]
+    short_name: Optional[str] = None
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, PruneAlgo):
+            return False
+        return self.name == __value.name and self.func == __value.func
 
 
 @dataclass(frozen=True)
 class Metric:
-    metric_func: Callable[[Task, Optional[PrunedOutputs]], Measurements]
+    name: str
+    metric_func: Callable[
+        [Task, Optional[PruneScores], Optional[PrunedOutputs]], Measurements
+    ]
+    log_x: bool = False
+    log_y: bool = False
+    lower_better: bool = False
+    y_axes_match: bool = False  # Whether to use the same y-axis for all tasks
+    y_min: Optional[float] = None
+
+    def _post_init(self) -> None:
+        if self.log_y:
+            assert self.y_min is not None
 
 
-PruneScores = Dict[Edge, float]
-AlgoPruneScores = Dict[str, PruneScores]
-ExperimentPruneScores = Dict[str, AlgoPruneScores]
+AlgoPruneScores = Dict[PruneAlgo, PruneScores]
+TaskPruneScores = Dict[Task, AlgoPruneScores]
 
-AlgoMeasurements = Dict[str, Measurements]
-TaskMeasurements = Dict[str, AlgoMeasurements]
-MetricMeasurements = Dict[str, TaskMeasurements]
+AlgoMeasurements = Dict[PruneAlgo, Measurements]
+TaskMeasurements = Dict[Task, AlgoMeasurements]
+MetricMeasurements = Dict[Metric, TaskMeasurements]

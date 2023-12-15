@@ -9,6 +9,14 @@ MaskFn = Optional[Literal["hard_concrete", "sigmoid"]]
 left, right, temp = -0.1, 1.1, 2 / 3
 
 
+def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
+    mask = mask.repeat(batch_size, *([1] * mask.ndim))
+    u = t.zeros_like(mask).uniform_().clamp(0.0001, 0.9999)
+    s = t.sigmoid((u.log() - (1 - u).log() + mask) / temp)
+    s_bar = s * (right - left) + left
+    return s_bar.clamp(min=0.0, max=1.0)
+
+
 class PatchWrapper(t.nn.Module):
     def __init__(
         self,
@@ -47,13 +55,6 @@ class PatchWrapper(t.nn.Module):
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
         self.src_slice = slice(prev_src_count) if prev_src_count else None
 
-    def sample_hard_concrete(self, mask: t.Tensor, batch_size: int) -> t.Tensor:
-        mask = mask.repeat(batch_size, *([1] * mask.ndim))
-        u = t.zeros_like(mask).uniform_().clamp(0.0001, 0.9999)
-        s = t.sigmoid((u.log() - (1 - u).log() + mask) / temp)
-        s_bar = s * (right - left) + left
-        return s_bar.clamp(min=0.0, max=1.0)
-
     def sigmoid_mask(self, mask: t.Tensor) -> t.Tensor:
         return t.sigmoid(mask)
 
@@ -67,7 +68,7 @@ class PatchWrapper(t.nn.Module):
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately
             if self.mask_fn == "hard_concrete":
-                mask = self.sample_hard_concrete(self.patch_mask, arg_0.size(0))
+                mask = sample_hard_concrete(self.patch_mask, arg_0.size(0))
                 batch_str = "batch"  # Sample distribution for each batch element
             elif self.mask_fn == "sigmoid":
                 mask = self.sigmoid_mask(self.patch_mask)

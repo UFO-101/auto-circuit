@@ -6,8 +6,8 @@ import transformer_lens as tl
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune import run_pruned
-from auto_circuit.prune_functions.random_edges import random_prune_scores
-from auto_circuit.types import Edge, PatchType
+from auto_circuit.prune_algos.random_edges import random_prune_scores
+from auto_circuit.types import Edge, PatchType, Task
 from auto_circuit.utils.graph_utils import edge_counts_util, prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -22,20 +22,21 @@ def test_kl_vs_edges(
     prepare_model(model, factorized=True, device="cpu", slice_output=True)
     edges: Set[Edge] = model.edges  # type: ignore
     test_loader = mini_tl_dataloader
+    task = Task("test_kl_vs_edges", model, test_loader, test_loader, lambda: set())
 
     test_input = next(iter(test_loader))
     with t.inference_mode():
         clean_out = model(test_input.clean)[:, -1]
         corrupt_out = model(test_input.corrupt)[:, -1]
 
-    prune_scores = random_prune_scores(model, test_loader)
+    prune_scores = random_prune_scores(task)
     test_edge_counts = edge_counts_util(edges, [0.0, 5, 1.0])
     pruned_outs = run_pruned(
         model=model,
         dataloader=test_loader,
         test_edge_counts=test_edge_counts,
         prune_scores=prune_scores,
-        patch_type=PatchType.PATH_PATCH,
+        patch_type=PatchType.EDGE_PATCH,
         render_graph=False,
     )
     assert t.allclose(corrupt_out, pruned_outs[0][0], atol=1e-3)

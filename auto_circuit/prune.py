@@ -24,33 +24,41 @@ def run_pruned(
     dataloader: PromptDataLoader,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],
-    patch_type: PatchType = PatchType.PATH_PATCH,
+    patch_type: PatchType = PatchType.EDGE_PATCH,
+    reverse_clean_corrupt: bool = False,
     render_graph: bool = False,
     render_prune_scores: bool = False,
     render_patched_edge_only: bool = True,
     render_top_n: int = 50,
     render_file_path: Optional[str] = None,
 ) -> PrunedOutputs:
+    """Run the model with the given pruned edges.
+    Tree Patching runs the clean input and patches corrupt activations into every edge
+    _not_ in the circuit.
+    Edge Patching runs the corrupt input and patches clean activations into every edge
+    _in_ the circuit.
+    Unless reverse_clean_corrupt is True, in which case clean and corrupt are swapped.
+    """
     out_slice = model.out_slice
     pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
-    prune_scores = dict(
-        sorted(prune_scores.items(), key=lambda x: abs(x[1]), reverse=True)
+    edges: List[Edge] = list(
+        sorted(prune_scores.keys(), key=lambda x: abs(prune_scores[x]), reverse=True)
     )
 
     for batch_idx, batch in enumerate(batch_pbar := tqdm(dataloader)):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
-        if patch_type == PatchType.TREE_PATCH:
+        if (patch_type == PatchType.TREE_PATCH and not reverse_clean_corrupt) or (
+            patch_type == PatchType.EDGE_PATCH and reverse_clean_corrupt
+        ):
             batch_input = batch.clean
             patch_outs = get_sorted_src_outs(model, batch.corrupt)
-        elif patch_type == PatchType.PATH_PATCH:
+        elif (patch_type == PatchType.EDGE_PATCH and not reverse_clean_corrupt) or (
+            patch_type == PatchType.TREE_PATCH and reverse_clean_corrupt
+        ):
             batch_input = batch.corrupt
             patch_outs = get_sorted_src_outs(model, batch.clean)
         else:
             raise NotImplementedError
-
-        if 0 in test_edge_counts:
-            with t.inference_mode():
-                pruned_outs[0].append(model(batch_input)[out_slice])
 
         patch_outs: Dict[SrcNode, t.Tensor]
         patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
@@ -74,13 +82,14 @@ def run_pruned(
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,
                 )
-            for edge_idx, edge in enumerate(edge_pbar := tqdm(prune_scores.keys())):
-                edge_pbar.set_description(f"Prune Edge {edge}", refresh=False)
-                n_edge = edge_idx + 1
-                edge.patch_mask(model).data[edge.patch_idx] = patched_edge_val
-                if n_edge in test_edge_counts:
+            for edge_idx in (edge_pbar := tqdm(range(len(edges) + 1))):
+                if edge_idx in test_edge_counts:
                     with t.inference_mode():
-                        model_output = model(batch_input)
-                    pruned_outs[n_edge].append(model_output[out_slice].detach().clone())
+                        model_output = model(batch_input)[out_slice]
+                    pruned_outs[edge_idx].append(model_output.detach().clone())
+                if edge_idx < len(edges):
+                    edge = edges[edge_idx]
+                    edge_pbar.set_description_str(f"Prune Edge {edge}", refresh=False)
+                    edge.patch_mask(model).data[edge.patch_idx] = patched_edge_val
         del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
     return pruned_outs

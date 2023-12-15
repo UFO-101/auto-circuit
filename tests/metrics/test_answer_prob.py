@@ -4,13 +4,11 @@ from typing import Optional
 
 import pytest
 import torch as t
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import (
-    PromptPairBatch,
-)
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
+from auto_circuit.types import Task
 from auto_circuit.utils.graph_utils import prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -32,7 +30,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 )
 def test_answer_prob(
     micro_model: MicroModel,
-    micro_dataloader: DataLoader[PromptPairBatch],
+    micro_dataloader: PromptDataLoader,
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
@@ -40,10 +38,17 @@ def test_answer_prob(
     pruned_out = [
         micro_model(batch.clean)[micro_model.out_slice] for batch in micro_dataloader
     ]
+    task = Task(
+        "test_answer_prob",
+        micro_model,
+        micro_dataloader,
+        micro_dataloader,
+        lambda: set(),
+    )
 
     answer_prob = measure_answer_val(
-        model=micro_model,
-        test_loader=micro_dataloader,
+        task,
+        prune_scores=None,
         pruned_outs={0: pruned_out},
         prob_func="logits",
     )
@@ -60,19 +65,22 @@ def test_answer_prob(
 
 
 @pytest.mark.parametrize("seq_len", [None, 3])
-def test_greater_than_answer_prob(
+def test_greaterthan_answer_prob(
     mini_tl_transformer: t.nn.Module,
-    greater_than_gpt2_dataloader: DataLoader[PromptPairBatch],
+    greater_than_gpt2_dataloader: PromptDataLoader,
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
     model, dataloader = mini_tl_transformer, greater_than_gpt2_dataloader
     prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
     pruned_out = [model(batch.clean)[model.out_slice] for batch in dataloader]
+    task = Task(
+        "test_greaterthan_answer_prob", model, dataloader, dataloader, lambda: set()
+    )
 
     answer_prob = measure_answer_val(
-        model=model,
-        test_loader=dataloader,
+        task,
+        prune_scores=None,
         pruned_outs={0: pruned_out},
         prob_func="logits",
     )

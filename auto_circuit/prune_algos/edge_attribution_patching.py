@@ -1,14 +1,12 @@
 # This is supposed to be an exact replication of the technique introduced in
 # Attribution Patching Outperforms Automated Circuit Discovery (https://arxiv.org/abs/2310.10348)
 
-from typing import Dict, Set
+from typing import Set
 
 import torch as t
 import transformer_lens as tl
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
-from auto_circuit.types import Edge
+from auto_circuit.types import Edge, PruneScores, Task
 from auto_circuit.utils.graph_utils import (
     set_all_masks,
 )
@@ -16,11 +14,11 @@ from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def edge_attribution_patching_prune_scores(
-    model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
+    task: Task,
     answer_diff: bool = True,
-) -> Dict[Edge, float]:
+) -> PruneScores:
     """Prune scores by Edge Attribution patching."""
+    model = task.model
     assert isinstance(model, tl.HookedTransformer)
     edges: Set[Edge] = model.edges  # type: ignore
     out_slice = model.out_slice
@@ -28,7 +26,7 @@ def edge_attribution_patching_prune_scores(
     set_all_masks(model, val=0.0)
     model.train()
     model.zero_grad()
-    for batch in train_data:
+    for batch in task.train_loader:
 
         clean_grad_cache = {}
 

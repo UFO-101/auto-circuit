@@ -1,18 +1,19 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Dict, List, Set
+from typing import Callable, Dict, List, Optional, Set
 
 import torch as t
 from ordered_set import OrderedSet
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
-from auto_circuit.data import PromptDataLoader
-from auto_circuit.prune import run_pruned
 from auto_circuit.types import (
     Edge,
     PatchType,
+    PrunedOutputs,
+    PruneScores,
     SrcNode,
+    Task,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
@@ -20,17 +21,17 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
-from auto_circuit.visualize import draw_seq_graph
 
 
 def acdc_prune_scores(
-    model: t.nn.Module,
-    train_data: PromptDataLoader,
+    task: Task,
     tao_exps: List[int] = list(range(-5, -1)),
     tao_bases: List[int] = [1, 3, 5, 7, 9],
     test_mode: bool = False,
+    run_pruned_ref: Optional[Callable[..., PrunedOutputs]] = None,
     show_graphs: bool = False,
-) -> Dict[Edge, float]:
+    draw_seq_graph_ref: Optional[Callable[..., None]] = None,
+) -> PruneScores:
     """Run the ACDC algorithm from the paper 'Towards Automated Circuit Discovery for
     Mechanistic Interpretability' (https://arxiv.org/abs/2304.14997).
 
@@ -41,6 +42,7 @@ def acdc_prune_scores(
     score are pruned together.
 
     Note: only the first batch of train_data is used."""
+    model = task.model
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
     edge_set: Set[Edge] = model.edges  # type: ignore
@@ -54,7 +56,7 @@ def acdc_prune_scores(
     ):
         pbar_tao.set_description_str("ACDC \u03C4={:.7f}".format(tao), refresh=True)
 
-        train_batch = next(iter(train_data))
+        train_batch = next(iter(task.train_loader))
         clean_batch, corrupt_batch = train_batch.clean, train_batch.corrupt
 
         patch_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, corrupt_batch)
@@ -118,7 +120,7 @@ def acdc_prune_scores(
                 out_logprobs = t.nn.functional.log_softmax(out, dim=-1)
 
                 if test_mode:
-                    assert test_model is not None
+                    assert test_model is not None and run_pruned_ref is not None
                     render = show_graphs and (
                         random() < 0.02 or len(edges) < 20 or True
                     )
@@ -126,12 +128,13 @@ def acdc_prune_scores(
                     print("ACDC model, with out=", out) if render else None
                     tree = dict([(e, 1.0) for e in edges - (removed_edges | {edge})])
                     if render:
-                        draw_seq_graph(model, clean_batch, tree, kv_cache=kv_cache)
+                        assert draw_seq_graph_ref is not None
+                        draw_seq_graph_ref(model, clean_batch, tree, kv_cache=kv_cache)
 
                     print("Test mode: running pruned model") if render else None
-                    test_out = run_pruned(
+                    test_out = run_pruned_ref(
                         model=test_model,
-                        dataloader=train_data,
+                        dataloader=task.train_loader,
                         test_edge_counts=[n_edges := len(tree)],
                         prune_scores=tree,
                         patch_type=PatchType.TREE_PATCH,

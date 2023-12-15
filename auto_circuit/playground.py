@@ -242,7 +242,7 @@ get_most_similar_embeddings(model, layernorm_out_weight)
 
 #%%
 # ---------- Config ----------
-experiment_type = PatchType.PATH_PATCH
+experiment_type = PatchType.EDGE_PATCH
 factorized = True
 # pig_baseline, pig_samples = BaselineWeights.ZERO, 50
 default_edge_count_type = EdgeCounts.LOGARITHMIC

@@ -54,7 +54,7 @@ def test_pruning(
         dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
-        patch_type=PatchType.PATH_PATCH,
+        patch_type=PatchType.EDGE_PATCH,
         render_graph=show_graphs,
         render_patched_edge_only=False,
     )
@@ -107,7 +107,7 @@ def test_prune_sequence(
         dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
-        patch_type=PatchType.PATH_PATCH,
+        patch_type=PatchType.EDGE_PATCH,
         render_graph=show_graphs,
         render_patched_edge_only=True,
         render_file_path="tree_patching.png",
