@@ -92,7 +92,7 @@ torch.manual_seed(0)
 random.seed(0)
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
-device = "cuda" if t.cuda.is_available() else "cpu"
+device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 print("device", device)
 model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
 # model = tl.HookedTransformer.from_pretrained("attn-only-4l", device=device)

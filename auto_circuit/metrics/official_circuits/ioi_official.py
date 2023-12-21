@@ -46,29 +46,6 @@ IOI_CIRCUIT = {
     ],
 }
 
-ALL_HEADS = [head for head_type in IOI_CIRCUIT.values() for head in head_type]
-
-
-def include_mlp_edge(edge: Edge) -> bool:
-    src_head = (
-        None
-        if edge.src.head_idx is None
-        else (int(edge.src.name[1]), edge.src.head_idx)
-    )
-    dest_head = (
-        None
-        if edge.dest.head_idx is None
-        else (int(edge.dest.name[1]), edge.dest.head_idx)
-    )
-    src_mlp_or_start = "MLP" in edge.src.name or edge.src.name == "Resid Start"
-    dest_mlp_or_end = "MLP" in edge.dest.name or edge.dest.name == "Resid End"
-    src_attn_in_circuit = src_head in ALL_HEADS
-    dest_attn_in_circuit = dest_head in ALL_HEADS
-    src_and_dest_mlp_or_endpoint = src_mlp_or_start and dest_mlp_or_end
-    src_mlp_dest_attn = src_mlp_or_start and dest_attn_in_circuit
-    src_attn_dest_mlp = src_attn_in_circuit and dest_mlp_or_end
-    return src_and_dest_mlp_or_endpoint or src_mlp_dest_attn or src_attn_dest_mlp
-
 
 @dataclass(frozen=True)
 class Conn:
@@ -99,11 +76,9 @@ def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edg
     ]
     edges_present: Dict[str, int] = {}
     for conn in special_connections:
-        # edge_src_names, edge_dests = [f"MLP {i}" for i in range(n_layers)], []
         edge_src_names, edge_dests = [], []
         if conn.inp == "INPUT":
             edge_src_names = ["Resid Start"]
-            # edge_src_names.extend([f"MLP {i}" for i in range(n_layers)])
         else:
             for (layer, head) in IOI_CIRCUIT[conn.inp]:
                 edge_src_names.append(f"A{layer}.{head}")
@@ -111,29 +86,28 @@ def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edg
             assert len(conn.qkv) == 1
             final_tok_idx = conn.qkv[0][1]
             edge_dests.append(("Resid End", final_tok_idx))
-            # edge_dests.extend([(f"MLP {i}", final_tok_idx) for i in range(n_layers)])
         else:
             for (layer, head) in IOI_CIRCUIT[conn.out]:
                 for qkv in conn.qkv:
                     assert qkv[0] is not None
                     edge_dests.append((f"A{layer}.{head}.{qkv[0].upper()}", qkv[1]))
-                    # edge_dests.extend([(f"MLP {i}", qkv[1]) for i in range(n_layers)])
 
-        # Connect all MLPS in between
-        src_layer = (
-            0
-            if conn.inp == "INPUT"
-            else min([layer for (layer, _) in IOI_CIRCUIT[conn.inp]])
-        )
-        dest_layer = (
-            conn.qkv[0][1]
-            if conn.out == "OUTPUT"
-            else max([layer for (layer, _) in IOI_CIRCUIT[conn.out]])
-        )
+        # Connect all MLPS in between heads in the circuit
+        # (in the IOI paper they allow activations to flow through MLPs,
+        # which is equalivent to including all MLPs in between two nodes.)
+        if conn.inp == "INPUT":
+            src_layer = 0
+        else:
+            src_layer = min([layer for (layer, _) in IOI_CIRCUIT[conn.inp]])
+
+        if conn.out == "OUTPUT":
+            dest_layer = conn.qkv[0][1]
+        else:
+            dest_layer = max([layer for (layer, _) in IOI_CIRCUIT[conn.out]])
         dest_tok_idxs = [tok_idx for (_, tok_idx) in conn.qkv]
-        for layer in range(
-            src_layer, dest_layer
-        ):  # Src layer is inclusive because MLP comes after ATTN
+
+        # Src layer is inclusive because MLP comes after ATTN
+        for layer in range(src_layer, dest_layer):
             for tok_idx in dest_tok_idxs:
                 edge_src_names.append(f"MLP {layer}")
                 edge_dests.append((f"MLP {layer}", tok_idx))
@@ -145,11 +119,6 @@ def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edg
     edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
     for edge in edges:
-        # if not token_positions and include_mlp_edge(edge):
-        # INCLUDE ALL MLP EDGES CONNECTING TO OTHER MLPS OR ATTN HEADS IN CIRCUIT
-        #     true_edges.add(edge)
-        # if not token_positions and "MLP" in edge.name:  # INCLUDE ALL MLP EDGES
-        #     true_edges.add(edge)
         if edge.name in edges_present.keys():
             if token_positions:
                 true_edges.add(Edge(edge.src, edge.dest, edges_present[edge.name]))

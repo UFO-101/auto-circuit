@@ -1,6 +1,7 @@
 from typing import Set
 
-from auto_circuit.types import Edge, PruneScores, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PruneScores
 
 
 def ground_truth_prune_scores(task: Task) -> PruneScores:

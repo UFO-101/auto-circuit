@@ -2,38 +2,39 @@ import os
 from typing import Set
 
 import torch as t
-import transformer_lens as tl
 
-from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.random_edges import random_prune_scores
-from auto_circuit.types import Edge, PatchType, Task
-from auto_circuit.utils.graph_utils import edge_counts_util, prepare_model
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PatchType
+from auto_circuit.utils.graph_utils import edge_counts_util
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 
-def test_kl_vs_edges(
-    mini_tl_transformer: tl.HookedTransformer,
-    mini_tl_dataloader: PromptDataLoader,
-):
+def test_kl_vs_edges():
     """Test that experiments satisfy basic requirements with a real model."""
-    model = mini_tl_transformer
-    prepare_model(model, factorized=True, device="cpu", slice_output=True)
-    edges: Set[Edge] = model.edges  # type: ignore
-    test_loader = mini_tl_dataloader
-    task = Task("test_kl_vs_edges", model, test_loader, test_loader, lambda: set())
+    task = Task(
+        key="test_kl_vs_edges",
+        name="test_kl_vs_edges",
+        batch_size=1,
+        batch_count=1,
+        token_circuit=False,
+        _model_def="attn-only-4l",
+        _dataset_name="mini_prompts",
+    )
+    edges: Set[Edge] = task.model.edges  # type: ignore
 
-    test_input = next(iter(test_loader))
+    test_input = next(iter(task.test_loader))
     with t.inference_mode():
-        clean_out = model(test_input.clean)[:, -1]
-        corrupt_out = model(test_input.corrupt)[:, -1]
+        clean_out = task.model(test_input.clean)[:, -1]
+        corrupt_out = task.model(test_input.corrupt)[:, -1]
 
     prune_scores = random_prune_scores(task)
     test_edge_counts = edge_counts_util(edges, [0.0, 5, 1.0])
     pruned_outs = run_pruned(
-        model=model,
-        dataloader=test_loader,
+        model=task.model,
+        dataloader=task.test_loader,
         test_edge_counts=test_edge_counts,
         prune_scores=prune_scores,
         patch_type=PatchType.EDGE_PATCH,

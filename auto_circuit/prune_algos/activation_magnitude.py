@@ -2,7 +2,8 @@ from typing import Dict, Set
 
 import torch as t
 
-from auto_circuit.types import Edge, PruneScores, SrcNode, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PruneScores, SrcNode
 from auto_circuit.utils.graph_utils import get_sorted_src_outs
 
 

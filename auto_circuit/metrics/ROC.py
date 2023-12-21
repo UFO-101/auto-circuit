@@ -1,6 +1,7 @@
 from typing import List, Optional, Set, Tuple
 
-from auto_circuit.types import Edge, Measurements, PrunedOutputs, PruneScores, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, Measurements, PrunedOutputs, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
 

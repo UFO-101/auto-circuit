@@ -2,7 +2,8 @@ from typing import Set
 
 import torch as t
 
-from auto_circuit.types import Edge, PruneScores, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PruneScores
 
 
 def random_prune_scores(task: Task) -> PruneScores:

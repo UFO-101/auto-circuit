@@ -66,8 +66,6 @@ def test_pruning(
 
 # micro_model = micro_model()
 # micro_dataloader = micro_dataloader()
-# mini_tl_dataloader = mini_tl_dataloader()
-# mini_tl_transformer = mini_tl_transformer()
 # test_pruning(micro_model, micro_dataloader, seq_len=None, show_graphs=True)
 
 

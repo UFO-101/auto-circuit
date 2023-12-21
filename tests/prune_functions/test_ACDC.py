@@ -4,36 +4,38 @@ from typing import Any
 import pytest
 import torch as t
 
-from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.ACDC import acdc_prune_scores
-from auto_circuit.types import Task
+from auto_circuit.tasks import Task
 from auto_circuit.utils.graph_utils import prepare_model
 from auto_circuit.visualize import draw_seq_graph
 
 
 @pytest.mark.parametrize(
-    "model, dataloader",
+    "model, dataloader_name",
     [
-        ("micro_model", "micro_dataloader"),
-        ("mini_tl_transformer", "mini_tl_dataloader"),
+        ("micro_model", "micro_model_inputs"),
+        ("mini_tl_transformer", "mini_prompts"),
     ],
 )
 def test_acdc(
     model: t.nn.Module,
-    dataloader: PromptDataLoader,
+    dataloader_name: str,
     request: Any,
     show_graphs: bool = False,  # Useful for debugging
 ):
     fixture_model = request.getfixturevalue(model) if request else model
-    prepare_model(fixture_model, factorized=True, slice_output=True, device="cpu")
-    fixture_dataloader = request.getfixturevalue(dataloader) if request else dataloader
+    prepare_model(
+        fixture_model, factorized=True, slice_output=True, device=t.device("cpu")
+    )
     task = Task(
-        "test_acdc",
-        fixture_model,
-        fixture_dataloader,
-        fixture_dataloader,
-        lambda: set(),
+        key="test_acdc",
+        name="test_acdc",
+        batch_size=1,
+        batch_count=1,
+        token_circuit=False,
+        _model_def=fixture_model,
+        _dataset_name=dataloader_name,
     )
     acdc_prune_scores(
         task=task,
@@ -48,6 +50,4 @@ def test_acdc(
 
 # model = micro_model()
 # model = mini_tl_transformer()
-# dataloader = micro_dataloader()
-# dataloader = mini_tl_dataloader()
 # test_acdc(model, dataloader, request=None, show_graphs=True)

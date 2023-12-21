@@ -6,7 +6,8 @@ from typing import Set
 import torch as t
 import transformer_lens as tl
 
-from auto_circuit.types import Edge, PruneScores, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PruneScores
 from auto_circuit.utils.graph_utils import (
     set_all_masks,
 )

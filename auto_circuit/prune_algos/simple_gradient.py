@@ -3,7 +3,8 @@ from typing import Dict, Literal, Set
 import torch as t
 from torch.nn.functional import log_softmax
 
-from auto_circuit.types import Edge, PruneScores, Task
+from auto_circuit.tasks import Task
+from auto_circuit.types import Edge, PruneScores
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     patch_mode,

@@ -8,35 +8,30 @@ import plotly.graph_objects as go
 import torch as t
 
 from auto_circuit.metrics.metrics import (
-    ANSWER_LOGIT_METRIC,
-    ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
-    CORRUPT_KL_DIV_METRIC,
-    LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
+    METRIC_DICT,
     ROC_METRIC,
+    Metric,
 )
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
-    CIRCUIT_PROBING_PRUNE_ALGO,
-    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
-    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
+    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    PRUNE_ALGO_DICT,
+    RANDOM_PRUNE_ALGO,
+    PruneAlgo,
 )
 from auto_circuit.tasks import (
-    DOCSTRING_COMPONENT_CIRCUIT_TASK,
     DOCSTRING_TOKEN_CIRCUIT_TASK,
-    GREATERTHAN_COMPONENT_CIRCUIT_TASK,
-    IOI_COMPONENT_CIRCUIT_TASK,
+    TASK_DICT,
+    Task,
 )
 from auto_circuit.types import (
     AlgoPruneScores,
     Edge,
-    Metric,
     MetricMeasurements,
     PatchType,
-    PruneAlgo,
-    Task,
     TaskPruneScores,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
@@ -52,8 +47,8 @@ def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
         prune_scores_dict: AlgoPruneScores = {}
         for prune_algo in (prune_score_pbar := tqdm(prune_algos)):
             prune_score_pbar.set_description_str(f"Prune scores: {prune_algo.name}")
-            prune_scores_dict[prune_algo] = prune_algo.func(task)
-        task_prune_scores[task] = prune_scores_dict
+            prune_scores_dict[prune_algo.key] = prune_algo.func(task)
+        task_prune_scores[task.key] = prune_scores_dict
     return task_prune_scores
 
 
@@ -64,12 +59,14 @@ def measure_circuit_metrics(
     reverse_clean_corrupt: bool = False,
 ) -> MetricMeasurements:
     measurements: MetricMeasurements = defaultdict(lambda: defaultdict(dict))
-    for task, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
+    for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
+        task = TASK_DICT[task_key]
         task_pbar.set_description_str(f"Task: {task.name}")
         model = task.model
         edges: Set[Edge] = model.edges  # type: ignore
         test_loader = task.test_loader
-        for algo, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
+        for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
+            algo = PRUNE_ALGO_DICT[algo_key]
             algo_pbar.set_description_str(f"Pruning with {algo.name}")
             pruned_outs = run_pruned(
                 model=model,
@@ -86,7 +83,7 @@ def measure_circuit_metrics(
             for metric in (metric_pbar := tqdm(metrics)):
                 metric_pbar.set_description_str(f"Measuring {metric.name}")
                 measurement = metric.metric_func(task, prune_scores, pruned_outs)
-                measurements[metric][task][algo] = measurement
+                measurements[metric.key][task.key][algo.key] = measurement
             del pruned_outs
             t.cuda.empty_cache()
     return measurements
@@ -94,11 +91,17 @@ def measure_circuit_metrics(
 
 def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
     figs = []
-    for metric, task_measurements in measurements.items():
-
+    for metric_key, task_measurements in measurements.items():
+        token_circuit = TASK_DICT[list(task_measurements.keys())[0]].token_circuit
+        metric = METRIC_DICT[metric_key]
         data, y_max = [], 0.0
-        for task, algo_measurements in task_measurements.items():
-            for algo, points in algo_measurements.items():
+        for task_key, algo_measurements in task_measurements.items():
+            task = TASK_DICT[task_key]
+            # Assert all tasks have the same token_circuit value
+            assert task.token_circuit == token_circuit
+
+            for algo_key, points in algo_measurements.items():
+                algo = PRUNE_ALGO_DICT[algo_key]
                 if len(points) > 1:
                     for x, y in points:
                         data.append(
@@ -112,10 +115,6 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
                             }
                         )
                         y_max = max(y_max, y)
-
-        # Assert all tasks have the same token_circuit value
-        assert len(set([task.token_circuit for task in task_measurements.keys()])) == 1
-        token_circuit = list(task_measurements.keys())[0].token_circuit
 
         if metric == ROC_METRIC:
             figs.append(roc_plot(data, task_measurements))
@@ -147,28 +146,27 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
     return tuple(figs)
 
 
-TOKEN_CIRCUIT_TASKS: List[Task] = [
+TASKS: List[Task] = [
+    # Token Circuits
     # IOI_TOKEN_CIRCUIT_TASK,
     DOCSTRING_TOKEN_CIRCUIT_TASK,
-]
-
-COMPONENT_CIRCUIT_TASKS: List[Task] = [
-    IOI_COMPONENT_CIRCUIT_TASK,
-    DOCSTRING_COMPONENT_CIRCUIT_TASK,
-    GREATERTHAN_COMPONENT_CIRCUIT_TASK,
+    # Component Circuits
+    # IOI_COMPONENT_CIRCUIT_TASK,
+    # DOCSTRING_COMPONENT_CIRCUIT_TASK,
+    # GREATERTHAN_COMPONENT_CIRCUIT_TASK,
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
     GROUND_TRUTH_PRUNE_ALGO,
     # ACT_MAG_PRUNE_ALGO,
-    # RANDOM_PRUNE_ALGO,
+    RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
     # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
-    # LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
     # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
-    CIRCUIT_PROBING_PRUNE_ALGO,
+    # CIRCUIT_PROBING_PRUNE_ALGO,
     # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     # CIRCUIT_TREE_PROBING_PRUNE_ALGO
 ]
@@ -176,16 +174,16 @@ PRUNE_ALGOS: List[PruneAlgo] = [
 METRICS: List[Metric] = [
     ROC_METRIC,
     CLEAN_KL_DIV_METRIC,
-    CORRUPT_KL_DIV_METRIC,
-    ANSWER_PROB_METRIC,
-    ANSWER_LOGIT_METRIC,
-    LOGIT_DIFF_METRIC,
+    # CORRUPT_KL_DIV_METRIC,
+    # ANSWER_PROB_METRIC,
+    # ANSWER_LOGIT_METRIC,
+    # LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
 ]
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 metric_measurements: MetricMeasurements = defaultdict(lambda: defaultdict(dict))
-task_prune_scores = run_prune_funcs(TOKEN_CIRCUIT_TASKS, PRUNE_ALGOS)
+task_prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
 metric_measurements = measure_circuit_metrics(
     METRICS, task_prune_scores, PatchType.TREE_PATCH, reverse_clean_corrupt=False
 )
@@ -223,57 +221,6 @@ if load:
         loaded_measurements = pickle.load(f)
     # merge with existing metric_measurements
     same_idx = defaultdict(int)
-    # for metric, loaded_task_measurements in loaded_measurements.items():
-    #     corresponding_metrics = list(filter(lambda m: m.name == metric.name,
-    # metric_measurements.keys()))
-    #     corresponding_task_measurements = metric_measurements[
-    # corresponding_metrics[same_idx[metric.name]]]
-    #     same_idx[metric.name] += 1
-    #     for task, loaded_algo_measurements in loaded_task_measurements.items():
-    #         try:
-    #             corresponding_task = next(filter(lambda t: t.name == task.name,
-    # corresponding_task_measurements.keys()))
-    #             corresponding_algo_measurements =
-    # corresponding_task_measurements[corresponding_task]
-    #             loaded_measurements[metric][task][LOGPROB_DIFF_GRAD_PRUNE_ALGO] =
-    # corresponding_algo_measurements[LOGPROB_DIFF_GRAD_PRUNE_ALGO]
-    #         except StopIteration:
-    #             continue
-    #         for algo, points in loaded_algo_measurements.items():
-    #             if algo.name == "Edge Attribution Patching":
-    #                 del loaded_measurements[metric][task][algo]
-    #                 break
-    for metric, loaded_task_measurements in loaded_measurements.items():
-        corresponding_metrics = list(
-            filter(lambda m: m.name == metric.name, metric_measurements.keys())
-        )
-        corresponding_task_measurements = metric_measurements[
-            corresponding_metrics[same_idx[metric.name]]
-        ]
-        same_idx[metric.name] += 1
-        for task, loaded_algo_measurements in loaded_task_measurements.items():
-            try:
-                corresponding_task = next(
-                    filter(
-                        lambda t: t.name == task.name,
-                        corresponding_task_measurements.keys(),
-                    )
-                )
-                corresponding_algo_measurements = corresponding_task_measurements[
-                    corresponding_task
-                ]
-                loaded_measurements[metric][task][
-                    SUBNETWORK_TREE_PROBING_PRUNE_ALGO
-                ] = corresponding_algo_measurements[SUBNETWORK_TREE_PROBING_PRUNE_ALGO]
-                loaded_measurements[metric][task][
-                    CIRCUIT_TREE_PROBING_PRUNE_ALGO
-                ] = corresponding_algo_measurements[CIRCUIT_TREE_PROBING_PRUNE_ALGO]
-            except StopIteration:
-                continue
-            # for algo, points in loaded_algo_measurements.items():
-            #     if algo.name == "Edge Attribution Patching":
-            #         del loaded_measurements[metric][task][algo]
-            #         break
     metric_measurements = loaded_measurements
 
 # experiment_steps: Dict[str, Callable] = {
@@ -289,23 +236,3 @@ for i, fig in enumerate(figs):
     # fig.write_image(str(folder / f"new {i}.pdf"))
 
 #%%
-for metric, task_measurements in metric_measurements.items():
-    for task, algo_measurements in task_measurements.items():
-        for algo, points in algo_measurements.items():
-            if algo.name == "GT":
-                metric_measurements[metric][task][GROUND_TRUTH_PRUNE_ALGO] = points
-                del metric_measurements[metric][task][algo]
-                break
-#%%
-
-count = 0
-#%%
-for metric, task_measurements in metric_measurements.items():
-    if metric.name == "KL Divergence":
-        del metric_measurements[metric]
-        if count == 0:
-            metric_measurements[CLEAN_KL_DIV_METRIC] = task_measurements
-            count += 1
-        else:
-            metric_measurements[CORRUPT_KL_DIV_METRIC] = task_measurements
-        break

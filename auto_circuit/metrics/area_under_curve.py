@@ -2,12 +2,12 @@ import math
 from typing import Dict, Optional
 
 from auto_circuit.types import (
+    AlgoKey,
     AlgoMeasurements,
     Measurements,
-    Metric,
+    MetricKey,
     MetricMeasurements,
-    PruneAlgo,
-    Task,
+    TaskKey,
     TaskMeasurements,
 )
 
@@ -47,7 +47,7 @@ def algo_measurements_auc(
     log_x: bool,
     log_y: bool,
     y_min: Optional[float] = None,
-) -> Dict[PruneAlgo, float]:
+) -> Dict[AlgoKey, float]:
     algo_measurements_auc = {}
     for algo, measurements in algo_measurements.items():
         if len(measurements) > 1:
@@ -62,17 +62,17 @@ def task_measurements_auc(
     log_x: bool,
     log_y: bool,
     y_min: Optional[float] = None,
-) -> Dict[Task, Dict[PruneAlgo, float]]:
+) -> Dict[TaskKey, Dict[AlgoKey, float]]:
     return {
-        task: algo_measurements_auc(algo_measurements, log_x, log_y, y_min)
-        for task, algo_measurements in task_measurements.items()
+        task_key: algo_measurements_auc(algo_measurements, log_x, log_y, y_min)
+        for task_key, algo_measurements in task_measurements.items()
     }
 
 
 def metric_measurements_auc(
     points: MetricMeasurements, log_x: bool, log_y: bool, y_min: Optional[float] = None
-) -> Dict[Metric, Dict[Task, Dict[PruneAlgo, float]]]:
+) -> Dict[MetricKey, Dict[TaskKey, Dict[AlgoKey, float]]]:
     return {
-        metric: task_measurements_auc(task_measurements, log_x, log_y, y_min)
-        for metric, task_measurements in points.items()
+        metric_key: task_measurements_auc(task_measurements, log_x, log_y, y_min)
+        for metric_key, task_measurements in points.items()
     }

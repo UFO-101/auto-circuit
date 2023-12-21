@@ -7,13 +7,13 @@ import torch as t
 from ordered_set import OrderedSet
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
+from auto_circuit.tasks import Task
 from auto_circuit.types import (
     Edge,
     PatchType,
     PrunedOutputs,
     PruneScores,
     SrcNode,
-    Task,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (

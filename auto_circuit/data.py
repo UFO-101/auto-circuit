@@ -92,7 +92,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
 def load_datasets_from_json(
     tokenizer: Any,
     path: Path,
-    device: str,
+    device: t.device,
     prepend_bos: bool = True,
     batch_size: int = 32,
     train_test_split: Sequence[int | float] = [0.9, 0.1],

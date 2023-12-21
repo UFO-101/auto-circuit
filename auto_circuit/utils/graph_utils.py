@@ -32,7 +32,7 @@ def prepare_model(
     factorized: bool,
     slice_output: bool = False,
     seq_len: Optional[int] = None,
-    device: str = "cpu",
+    device: t.device = t.device("cpu"),
 ) -> None:
     srcs, nodes, seq_dim = graph_edges(model, factorized, seq_len)
     make_model_patchable(model, srcs, nodes, device, seq_len, seq_dim)
@@ -84,7 +84,7 @@ def make_model_patchable(
     model: t.nn.Module,
     src_nodes: Set[SrcNode],
     nodes: Set[Node],
-    device: str,
+    device: t.device,
     seq_len: Optional[int] = None,
     seq_dim: Optional[int] = None,
 ):

@@ -11,15 +11,17 @@ from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.metrics.area_under_curve import task_measurements_auc
 from auto_circuit.prune_algos.prune_algos import (
+    PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
 )
+from auto_circuit.tasks import TASK_DICT
 from auto_circuit.types import (
+    AlgoKey,
     DestNode,
     Edge,
     Node,
-    PruneAlgo,
     SrcNode,
-    Task,
+    TaskKey,
     TaskMeasurements,
 )
 from auto_circuit.utils.graph_utils import (
@@ -91,9 +93,10 @@ def edge_patching_plot(
             entrywidth=0.67,
         ),
     )
-    task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0].name))
+    task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
     for task_idx, algo_measurements in enumerate(task_measurements.values()):
-        for algo, measurements in algo_measurements.items():
+        for algo_key, measurements in algo_measurements.items():
+            algo = PRUNE_ALGO_DICT[algo_key]
             pos = "middle right" if algo.short_name == "GT" else "middle left"
             if len(measurements) == 1:
                 x, y = measurements[0]
@@ -122,9 +125,10 @@ def roc_plot(
     data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"], x["X"]))
     fig = px.scatter(data, x="X", y="Y", facet_col="Task", color="Algorithm")
     fig.update_traces(line=dict(shape="hv"), mode="lines")
-    task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0].name))
+    task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
     for task_idx, algo_measurements in enumerate(task_measurements.values()):
-        for algo, measurements in algo_measurements.items():
+        for algo_key, measurements in algo_measurements.items():
+            algo = PRUNE_ALGO_DICT[algo_key]
             if len(measurements) == 1:
                 x, y = measurements[0]
                 fig.add_scattergl(
@@ -177,13 +181,17 @@ def average_auc_plot(
     inverse: bool,
 ) -> go.Figure:
     """A bar chart of the average AUC for each algorithm across all tasks."""
-    task_algo_aucs: Dict[Task, Dict[PruneAlgo, float]] = task_measurements_auc(
+    task_algo_aucs: Dict[TaskKey, Dict[AlgoKey, float]] = task_measurements_auc(
         task_measurements, log_x, log_y, y_min
     )
     data, totals = [], defaultdict(float)
-    for task, algo_aucs in task_algo_aucs.items():
-        for algo, auc in reversed(algo_aucs.items()):
-            normalized_auc = auc / (algo_aucs[RANDOM_PRUNE_ALGO] * len(task_algo_aucs))
+    for task_key, algo_aucs in task_algo_aucs.items():
+        task = TASK_DICT[task_key]
+        for algo_key, auc in reversed(algo_aucs.items()):
+            algo = PRUNE_ALGO_DICT[algo_key]
+            normalized_auc = auc / (
+                algo_aucs[RANDOM_PRUNE_ALGO.key] * len(task_algo_aucs)
+            )
             if inverse:
                 normalized_unit = 1 / len(task_algo_aucs)
                 normalized_auc = normalized_unit + (normalized_unit - normalized_auc)

@@ -5,46 +5,50 @@ from typing import Optional
 import pytest
 import torch as t
 
-from auto_circuit.data import PromptDataLoader
 from auto_circuit.metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
-from auto_circuit.types import Task
+from auto_circuit.tasks import Task
 from auto_circuit.utils.graph_utils import prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 
 @pytest.mark.parametrize(
-    "micro_dataloader, seq_len",
+    "multiple_answers, batch_count, batch_size, seq_len",
     [
-        ({"multiple_answers": False, "batch_count": 1, "batch_size": 1}, None),
-        ({"multiple_answers": False, "batch_count": 1, "batch_size": 2}, 3),
-        ({"multiple_answers": False, "batch_count": 3, "batch_size": 1}, None),
-        ({"multiple_answers": False, "batch_count": 4, "batch_size": 4}, 3),
-        ({"multiple_answers": True, "batch_count": 1, "batch_size": 1}, None),
-        ({"multiple_answers": True, "batch_count": 1, "batch_size": 3}, 3),
-        ({"multiple_answers": True, "batch_count": 2, "batch_size": 1}, None),
-        ({"multiple_answers": True, "batch_count": 5, "batch_size": 7}, 3),
+        (False, 1, 1, None),
+        (False, 1, 2, 3),
+        (False, 3, 1, None),
+        (False, 4, 4, 3),
+        (True, 1, 1, None),
+        (True, 1, 3, 3),
+        (True, 2, 1, None),
+        (True, 5, 7, 3),
     ],
-    indirect=["micro_dataloader"],
 )
 def test_answer_prob(
     micro_model: MicroModel,
-    micro_dataloader: PromptDataLoader,
+    multiple_answers: bool,
+    batch_count: int,
+    batch_size: int,
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
     prepare_model(micro_model, factorized=True, seq_len=seq_len, slice_output=True)
-    pruned_out = [
-        micro_model(batch.clean)[micro_model.out_slice] for batch in micro_dataloader
-    ]
+    dataset = f"micro_model_inputs{'_multiple_answers' if multiple_answers else ''}"
     task = Task(
-        "test_answer_prob",
-        micro_model,
-        micro_dataloader,
-        micro_dataloader,
-        lambda: set(),
+        key="test_answer_prob",
+        name="test_answer_prob",
+        batch_size=batch_size,
+        batch_count=batch_count,
+        token_circuit=seq_len is not None,
+        _model_def=micro_model,
+        _dataset_name=dataset,
     )
+
+    pruned_out = [
+        micro_model(batch.clean)[micro_model.out_slice] for batch in task.test_loader
+    ]
 
     answer_prob = measure_answer_val(
         task,
@@ -53,7 +57,7 @@ def test_answer_prob(
         prob_func="logits",
     )
     pruned_out = t.stack(pruned_out)
-    for batch_idx, batch in enumerate(micro_dataloader):
+    for batch_idx, batch in enumerate(task.test_loader):
         avg_ans_prob = []
         for prompt_idx, prompt_answers in enumerate(batch.answers):
             probs = [
@@ -67,16 +71,21 @@ def test_answer_prob(
 @pytest.mark.parametrize("seq_len", [None, 3])
 def test_greaterthan_answer_prob(
     mini_tl_transformer: t.nn.Module,
-    greater_than_gpt2_dataloader: PromptDataLoader,
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
-    model, dataloader = mini_tl_transformer, greater_than_gpt2_dataloader
+    model = mini_tl_transformer
     prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
-    pruned_out = [model(batch.clean)[model.out_slice] for batch in dataloader]
     task = Task(
-        "test_greaterthan_answer_prob", model, dataloader, dataloader, lambda: set()
+        key="test_greaterthan_answer_prob",
+        name="test_greaterthan_answer_prob",
+        batch_size=200,
+        batch_count=1,
+        token_circuit=seq_len is not None,
+        _model_def=mini_tl_transformer,
+        _dataset_name="greaterthan_gpt2-small_prompts",
     )
+    pruned_out = [model(batch.clean)[model.out_slice] for batch in task.test_loader]
 
     answer_prob = measure_answer_val(
         task,
@@ -85,7 +94,7 @@ def test_greaterthan_answer_prob(
         prob_func="logits",
     )
     pruned_out = t.stack(pruned_out)
-    for batch_idx, batch in enumerate(dataloader):
+    for batch_idx, batch in enumerate(task.test_loader):
         avg_ans_probs = []
         for prompt_idx, prompt_answers in enumerate(batch.answers):
             probs = [
@@ -98,16 +107,13 @@ def test_greaterthan_answer_prob(
 
 
 # micro_model = micro_model()
-# dataloader = micro_dataloader(multiple_answers=True, batch_count=2, batch_size=1)
 # test_answer_prob(micro_model, dataloader, seq_len=3)
 # test_greater_than_answer_prob(
-#     mini_tl_transformer(), greater_than_gpt2_dataloader(), seq_len=None
+#     mini_tl_transformer(), seq_len=None
 # )
 # test_greater_than_answer_prob(
 #     mini_tl_transformer(),
-#     greater_than_gpt2_dataloader("docstring_prompts"),
 #     seq_len=None,
 # )
 # model = mini_tl_transformer()
 # print(model.tokenizer)
-# prompts = greater_than_gpt2_dataloader("docstring_prompts")
