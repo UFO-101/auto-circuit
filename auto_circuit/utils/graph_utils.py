@@ -3,8 +3,7 @@ import math
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from functools import partial
-from itertools import accumulate, chain
-from itertools import product as p
+from itertools import accumulate, chain, product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 import torch as t
@@ -23,30 +22,57 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.misc import module_by_name, remove_hooks, set_module_by_name
 from auto_circuit.utils.patch_wrapper import MaskFn, PatchWrapper
+from auto_circuit.utils.patchable_model import PatchableModel
 
 #%%
 
 
-def prepare_model(
+def patchable_model(
     model: t.nn.Module,
     factorized: bool,
     slice_output: bool = False,
     seq_len: Optional[int] = None,
     device: t.device = t.device("cpu"),
-) -> None:
-    srcs, nodes, seq_dim = graph_edges(model, factorized, seq_len)
-    make_model_patchable(model, srcs, nodes, device, seq_len, seq_dim)
-    out_slice = tuple([slice(None)] * seq_dim + [-1]) if slice_output else slice(None)
-    setattr(model, "out_slice", out_slice)
+) -> PatchableModel:
+    nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
+        model, factorized, seq_len
+    )
+    wrappers, src_wrappers, dest_wrappers = make_model_patchable(
+        model, srcs, nodes, device, seq_len, seq_dim
+    )
+    out_slice: Tuple[slice | int, ...] = (
+        tuple([slice(None)] * seq_dim + [-1]) if slice_output else (slice(None),)
+    )
+    return PatchableModel(
+        nodes=nodes,
+        srcs=srcs,
+        dests=dests,
+        edge_dict=edge_dict,
+        edges=edges,
+        seq_dim=seq_dim,
+        seq_len=seq_len,
+        wrappers=wrappers,
+        src_wrappers=src_wrappers,
+        dest_wrappers=dest_wrappers,
+        out_slice=out_slice,
+        wrapped_model=model,
+    )
 
 
-# Todo: Make a PatchableModel class that wraps the model
 def graph_edges(
     model: t.nn.Module, factorized: bool, seq_len: Optional[int] = None
-) -> Tuple[Set[SrcNode], Set[Node], int]:
+) -> Tuple[
+    Set[Node],
+    Set[SrcNode],
+    Set[DestNode],
+    Dict[int | None, List[Edge]],
+    Set[Edge],
+    int,
+    Optional[int],
+]:
     """Get the edges of the computation graph of the model."""
     seq_dim = 1
-    edges: Dict[Optional[int], List[Edge]] = defaultdict(list)
+    edge_dict: Dict[Optional[int], List[Edge]] = defaultdict(list)
     if not factorized:
         if isinstance(model, MicroModel):
             srcs, dests = mm_utils.simple_graph_nodes(model)
@@ -54,10 +80,9 @@ def graph_edges(
             srcs, dests = tl_utils.simple_graph_nodes(model)
         else:
             raise NotImplementedError(model)
-        for s in [None] if seq_len is None else range(seq_len):
-            edges[s] = [
-                Edge(*e, s) for e in p(srcs, dests) if e[0].layer + 1 == e[1].layer
-            ]
+        for i in [None] if seq_len is None else range(seq_len):
+            pairs = product(srcs, dests)
+            edge_dict[i] = [Edge(s, d, i) for s, d in pairs if s.layer + 1 == d.layer]
     else:
         if isinstance(model, MicroModel):
             srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
@@ -67,17 +92,13 @@ def graph_edges(
             dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
         else:
             raise NotImplementedError(model)
-        for s in [None] if seq_len is None else range(seq_len):
-            edges[s] = [Edge(*e, s) for e in p(srcs, dests) if e[0].layer < e[1].layer]
+        for i in [None] if seq_len is None else range(seq_len):
+            pairs = product(srcs, dests)
+            edge_dict[i] = [Edge(s, d, i) for s, d in pairs if s.layer < d.layer]
     nodes: Set[Node] = set(srcs | dests)
-    setattr(model, "nodes", nodes)
-    setattr(model, "srcs", srcs)
-    setattr(model, "dests", dests)
-    setattr(model, "edge_dict", edges)
-    setattr(model, "edges", set(list(chain.from_iterable(edges.values()))))
-    setattr(model, "seq_dim", seq_dim)
-    setattr(model, "seq_len", seq_len)
-    return srcs, nodes, seq_dim
+    edges = set(list(chain.from_iterable(edge_dict.values())))
+
+    return nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len
 
 
 def make_model_patchable(
@@ -87,7 +108,7 @@ def make_model_patchable(
     device: t.device,
     seq_len: Optional[int] = None,
     seq_dim: Optional[int] = None,
-):
+) -> Tuple[Set[PatchWrapper], Set[PatchWrapper], Set[PatchWrapper]]:
     node_dict: Dict[str, Set[Node]] = defaultdict(set)
     [node_dict[node.module_name].add(node) for node in nodes]
     wrappers, src_wrappers, dest_wrappers = set(), set(), set()
@@ -130,18 +151,16 @@ def make_model_patchable(
         src_wrappers.add(wrapper) if is_src else None
         dest_wrappers.add(wrapper) if is_dest else None
 
-    setattr(model, "wrappers", wrappers)
-    setattr(model, "src_wrappers", src_wrappers)
-    setattr(model, "dest_wrappers", dest_wrappers)
+    return wrappers, src_wrappers, dest_wrappers
 
 
 @contextmanager
 def patch_mode(
-    model: t.nn.Module,
+    model: PatchableModel,
     curr_src_outs: t.Tensor,
     patch_src_outs: t.Tensor,
 ):
-    for wrapper in model.wrappers:  # type: ignore
+    for wrapper in model.wrappers:
         wrapper.patch_mode = True
         wrapper.curr_src_outs = curr_src_outs
         if wrapper.is_dest:
@@ -149,7 +168,7 @@ def patch_mode(
     try:
         yield
     finally:
-        for wrapper in model.wrappers:  # type: ignore
+        for wrapper in model.wrappers:
             wrapper.patch_mode = False
             wrapper.curr_src_outs = None
             if wrapper.is_dest:
@@ -157,38 +176,38 @@ def patch_mode(
         del curr_src_outs, patch_src_outs
 
 
-def set_all_masks(model: t.nn.Module, val: float) -> None:
-    for wrapper in model.wrappers:  # type: ignore
+def set_all_masks(model: PatchableModel, val: float) -> None:
+    for wrapper in model.wrappers:
         if wrapper.is_dest:
             t.nn.init.constant_(wrapper.patch_mask, val)
 
 
 @contextmanager
-def train_mask_mode(model: t.nn.Module) -> Iterator[List[t.nn.Parameter]]:
+def train_mask_mode(model: PatchableModel) -> Iterator[List[t.nn.Parameter]]:
     model.eval()
     model.zero_grad()
     parameters: List[t.nn.Parameter] = []
-    for wrapper in model.dest_wrappers:  # type: ignore
+    for wrapper in model.dest_wrappers:
         parameters.append(wrapper.patch_mask)
         wrapper.train()
     try:
         yield parameters
     finally:
-        for wrapper in model.dest_wrappers:  # type: ignore
+        for wrapper in model.dest_wrappers:
             wrapper.eval()
 
 
 @contextmanager
-def mask_fn_mode(model: t.nn.Module, mask_fn: MaskFn, dropout_p: float = 0.0):
-    for wrapper in model.dest_wrappers:  # type: ignore
+def mask_fn_mode(model: PatchableModel, mask_fn: MaskFn, dropout_p: float = 0.0):
+    for wrapper in model.dest_wrappers:
         wrapper.mask_fn = mask_fn
-        wrapper.dropout_layer.p = dropout_p
+        wrapper.dropout_layer.p = dropout_p  # type: ignore
     try:
         yield
     finally:
-        for wrapper in model.dest_wrappers:  # type: ignore
+        for wrapper in model.dest_wrappers:
             wrapper.mask_fn = None
-            wrapper.dropout_layer.p = 0.0
+            wrapper.dropout_layer.p = 0.0  # type: ignore
 
 
 def edge_counts_util(
@@ -240,7 +259,7 @@ def edge_counts_util(
 
 
 def src_out_hook(
-    model: t.nn.Module,
+    module: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     out: t.Tensor,
     src: SrcNode,
@@ -251,17 +270,20 @@ def src_out_hook(
 
 
 def get_sorted_src_outs(
-    model: t.nn.Module,
+    model: PatchableModel,
     input: t.Tensor,
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[SrcNode, t.Tensor]:
     src_outs: Dict[SrcNode, t.Tensor] = {}
     with remove_hooks() as handles:
-        for node in model.srcs:  # type: ignore
+        for node in model.srcs:
             hook_fn = partial(src_out_hook, src=node, src_outs=src_outs)
             handles.add(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
-            if isinstance(model, HookedTransformer) and kv_cache is not None:
+            if (
+                isinstance(model.wrapped_model, HookedTransformer)
+                and kv_cache is not None
+            ):
                 model(input, past_kv_cache=kv_cache)
             else:
                 model(input)
@@ -271,7 +293,7 @@ def get_sorted_src_outs(
 
 
 def dest_in_hook(
-    model: t.nn.Module,
+    module: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     output: t.Tensor,
     dest: DestNode,
@@ -288,17 +310,20 @@ def dest_in_hook(
 
 
 def get_sorted_dest_ins(
-    model: t.nn.Module,
+    model: PatchableModel,
     input: t.Tensor,
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[DestNode, t.Tensor]:
     dest_ins: Dict[DestNode, t.Tensor] = {}
     with remove_hooks() as handles:
-        for node in model.dests:  # type: ignore
+        for node in model.dests:
             hook_fn = partial(dest_in_hook, dest=node, dest_ins=dest_ins)
             handles.add(node.module(model).module.register_forward_hook(hook_fn))
         with t.inference_mode():
-            if isinstance(model, HookedTransformer) and kv_cache is not None:
+            if (
+                isinstance(model.wrapped_model, HookedTransformer)
+                and kv_cache is not None
+            ):
                 model(input, past_kv_cache=kv_cache)
             else:
                 model(input)

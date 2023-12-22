@@ -16,11 +16,12 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.visualize import draw_seq_graph
 
 
 def run_pruned(
-    model: t.nn.Module,
+    model: PatchableModel,
     dataloader: PromptDataLoader,
     test_edge_counts: List[int],
     prune_scores: Dict[Edge, float],

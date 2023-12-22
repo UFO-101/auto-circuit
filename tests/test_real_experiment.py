@@ -1,12 +1,11 @@
 import os
-from typing import Set
 
 import torch as t
 
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.random_edges import random_prune_scores
 from auto_circuit.tasks import Task
-from auto_circuit.types import Edge, PatchType
+from auto_circuit.types import PatchType
 from auto_circuit.utils.graph_utils import edge_counts_util
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -23,7 +22,6 @@ def test_kl_vs_edges():
         _model_def="attn-only-4l",
         _dataset_name="mini_prompts",
     )
-    edges: Set[Edge] = task.model.edges  # type: ignore
 
     test_input = next(iter(task.test_loader))
     with t.inference_mode():
@@ -31,7 +29,7 @@ def test_kl_vs_edges():
         corrupt_out = task.model(test_input.corrupt)[:, -1]
 
     prune_scores = random_prune_scores(task)
-    test_edge_counts = edge_counts_util(edges, [0.0, 5, 1.0])
+    test_edge_counts = edge_counts_util(task.model.edges, [0.0, 5, 1.0])
     pruned_outs = run_pruned(
         model=task.model,
         dataloader=task.test_loader,
@@ -42,4 +40,4 @@ def test_kl_vs_edges():
     )
     assert t.allclose(corrupt_out, pruned_outs[0][0], atol=1e-3)
     assert not t.allclose(clean_out, pruned_outs[5][0], atol=1e-3)
-    assert t.allclose(clean_out, pruned_outs[len(edges)][0], atol=1e-3)
+    assert t.allclose(clean_out, pruned_outs[len(task.model.edges)][0], atol=1e-3)

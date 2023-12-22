@@ -7,12 +7,11 @@ import torch as t
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.ACDC import acdc_prune_scores
 from auto_circuit.tasks import Task
-from auto_circuit.utils.graph_utils import prepare_model
 from auto_circuit.visualize import draw_seq_graph
 
 
 @pytest.mark.parametrize(
-    "model, dataloader_name",
+    "model, dataset_name",
     [
         ("micro_model", "micro_model_inputs"),
         ("mini_tl_transformer", "mini_prompts"),
@@ -20,14 +19,11 @@ from auto_circuit.visualize import draw_seq_graph
 )
 def test_acdc(
     model: t.nn.Module,
-    dataloader_name: str,
+    dataset_name: str,
     request: Any,
     show_graphs: bool = False,  # Useful for debugging
 ):
     fixture_model = request.getfixturevalue(model) if request else model
-    prepare_model(
-        fixture_model, factorized=True, slice_output=True, device=t.device("cpu")
-    )
     task = Task(
         key="test_acdc",
         name="test_acdc",
@@ -35,7 +31,7 @@ def test_acdc(
         batch_count=1,
         token_circuit=False,
         _model_def=fixture_model,
-        _dataset_name=dataloader_name,
+        _dataset_name=dataset_name,
     )
     acdc_prune_scores(
         task=task,
@@ -49,5 +45,7 @@ def test_acdc(
 
 
 # model = micro_model()
+# dataset_name = "micro_model_inputs"
 # model = mini_tl_transformer()
-# test_acdc(model, dataloader, request=None, show_graphs=True)
+# dataset_name = "mini_prompts"
+# test_acdc(model, dataset_name, request=None, show_graphs=True)

@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict
 
 import torch as t
 
@@ -9,14 +9,12 @@ from auto_circuit.utils.graph_utils import get_sorted_src_outs
 
 def activation_magnitude_prune_scores(task: Task) -> PruneScores:
     """Prune scores are the mean activation magnitude of each edge."""
-    edges: Set[Edge] = task.model.edges  # type: ignore
+    model = task.model
     act_dict: Dict[Edge, t.Tensor] = {}
     with t.inference_mode():
         for batch in task.train_loader:
-            src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(
-                task.model, batch.clean
-            )
-            for edge in edges:
+            src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, batch.clean)
+            for edge in model.edges:
                 if edge in act_dict:
                     act_dict[edge] += src_outs[edge.src]
                 else:

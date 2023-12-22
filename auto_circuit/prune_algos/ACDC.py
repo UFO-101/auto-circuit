@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional
 
 import torch as t
 from ordered_set import OrderedSet
@@ -45,9 +45,8 @@ def acdc_prune_scores(
     model = task.model
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
-    edge_set: Set[Edge] = model.edges  # type: ignore
     edges: OrderedSet[Edge] = OrderedSet(
-        sorted(edge_set, key=lambda x: x.dest.layer, reverse=True)
+        sorted(model.edges, key=lambda x: x.dest.layer, reverse=True)
     )
 
     prune_scores = dict([(edge, float("inf")) for edge in edges])
@@ -65,7 +64,7 @@ def acdc_prune_scores(
         with t.inference_mode():
             clean_out = model(clean_batch)[out_slice]
             kv_cache, toks, short_embd, attn_mask, resids = None, None, None, None, []
-            if isinstance(model, HookedTransformer):
+            if isinstance(model.wrapped_model, HookedTransformer):
                 print("train_batch.diverge_idx:", train_batch.diverge_idx)
                 common_prefix_batch = clean_batch[:, : train_batch.diverge_idx]
                 kv_cache = HookedTransformerKeyValueCache.init_cache(
@@ -105,7 +104,7 @@ def acdc_prune_scores(
 
                 edge.patch_mask(model).data[edge.patch_idx] = 1.0
                 with t.inference_mode():
-                    if isinstance(model, HookedTransformer):
+                    if isinstance(model.wrapped_model, HookedTransformer):
                         start_layer = int(edge.dest.module_name.split(".")[1])
                         out = model(
                             resids[start_layer],

@@ -3,9 +3,8 @@
 
 from typing import List, Optional, Set
 
-import torch as t
-
 from auto_circuit.types import Edge
+from auto_circuit.utils.patchable_model import PatchableModel
 
 CIRCUIT = {
     # "input": [None], # special case input
@@ -39,8 +38,8 @@ def idx_to_nodes(layer_idx: int, head_idx: Optional[int], src_nodes: bool) -> Li
             return [(f"A{layer_idx}.{head_idx}.{letter}") for letter in "QKV"]
 
 
-def greaterthan_true_edges(model: t.nn.Module) -> Set[Edge]:
-    assert model.cfg.model_name == "gpt2"  # type: ignore
+def greaterthan_true_edges(model: PatchableModel) -> Set[Edge]:
+    assert model.cfg.model_name == "gpt2"
 
     edges_present: List[str] = []
 
@@ -97,9 +96,8 @@ def greaterthan_true_edges(model: t.nn.Module) -> Set[Edge]:
         for mlp_sender_layer in range(0, layer_idx):
             edges_present.append(f"MLP {mlp_sender_layer}->A{layer_idx}.{head_idx}.Q")
 
-    edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
-    for edge in edges:
+    for edge in model.edges:
         if edge.name in edges_present:
             true_edges.add(edge)
     return true_edges

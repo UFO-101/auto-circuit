@@ -1,10 +1,10 @@
-from typing import Dict, Literal, Set
+from typing import Dict, Literal
 
 import torch as t
 from torch.nn.functional import log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import Edge, PruneScores
+from auto_circuit.types import PruneScores
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
     patch_mode,
@@ -22,7 +22,6 @@ def simple_gradient_prune_scores(
 ) -> PruneScores:
     """Prune scores by attribution patching."""
     model = task.model
-    edges: Set[Edge] = model.edges  # type: ignore
     out_slice = model.out_slice
 
     src_outs_dict: Dict[int, t.Tensor] = {}
@@ -55,7 +54,7 @@ def simple_gradient_prune_scores(
                 loss.backward()
 
     prune_scores = {}
-    for edge in edges:
+    for edge in task.model.edges:
         grad = edge.patch_mask(model).grad
         assert grad is not None
         prune_scores[edge] = grad[edge.patch_idx]

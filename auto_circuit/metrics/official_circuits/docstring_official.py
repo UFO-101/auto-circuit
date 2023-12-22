@@ -3,20 +3,19 @@
 # I added the token positions based on the findings in the paper
 from typing import Dict, List, Set
 
-import torch as t
-
 from auto_circuit.types import Edge
+from auto_circuit.utils.patchable_model import PatchableModel
 
 
 def docstring_true_edges(
-    model: t.nn.Module, token_positions: bool = False
+    model: PatchableModel, token_positions: bool = False
 ) -> Set[Edge]:
     """
     the manual graph, from Stefan
     !!! Note: !!!
     The sequence positions assume prompts of length 40, as in docstring_prompts.json
     """
-    assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"  # type: ignore
+    assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"
 
     edges_present: Dict[str, List[int]] = {}
     edges_present["A0.5->A1.4.V"] = [13]
@@ -43,9 +42,8 @@ def docstring_true_edges(
     # reflects the value in the docstring appendix of the manual circuit as of 12th June
     assert len(edges_present) == 24, len(edges_present)
 
-    edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
-    for edge in edges:
+    for edge in model.edges:
         if edge.name in edges_present.keys():
             if token_positions:
                 for tok_pos in edges_present[edge.name]:

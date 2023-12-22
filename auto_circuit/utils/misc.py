@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from functools import reduce
 from pathlib import Path
-from typing import Iterator, Set
+from typing import Any, Iterator, Set
 
 import torch as t
 from torch.utils.hooks import RemovableHandle
@@ -24,16 +24,16 @@ def remove_hooks() -> Iterator[Set[RemovableHandle]]:
             handle.remove()
 
 
-def module_by_name(model: t.nn.Module, module_name: str) -> t.nn.Module:
-    return reduce(getattr, [model] + module_name.split("."))  # type: ignore
+def module_by_name(model: Any, module_name: str) -> t.nn.Module:
+    init_mod = [model.wrapped_model] if hasattr(model, "wrapped_model") else [model]
+    return reduce(getattr, init_mod + module_name.split("."))  # type: ignore
 
 
-def set_module_by_name(
-    model: t.nn.Module, module_name: str, new_module: t.nn.Module
-) -> None:
+def set_module_by_name(model: Any, module_name: str, new_module: t.nn.Module) -> None:
     parent = model
+    init_mod = [model.wrapped_model] if hasattr(model, "wrapped_model") else [model]
     if "." in module_name:
-        parent = reduce(getattr, [model] + module_name.split(".")[:-1])  # type: ignore
+        parent = reduce(getattr, init_mod + module_name.split(".")[:-1])  # type: ignore
     setattr(parent, module_name.split(".")[-1], new_module)
 
 

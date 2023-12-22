@@ -1,10 +1,10 @@
-from typing import Dict, Set
+from typing import Dict
 
 import torch as t
 from torch.nn.functional import log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import Edge, PruneScores
+from auto_circuit.types import PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
@@ -23,7 +23,6 @@ def integrated_edge_gradients_prune_scores(
     """Prune scores are the integrated gradient of each edge."""
     model = task.model
     out_slice = model.out_slice
-    edges: Set[Edge] = model.edges  # type: ignore
 
     src_outs_dict: Dict[int, t.Tensor] = {}
     for batch in task.train_loader:
@@ -47,7 +46,7 @@ def integrated_edge_gradients_prune_scores(
                     loss.backward()
 
     prune_scores = {}
-    for edge in edges:
+    for edge in task.model.edges:
         grad = edge.patch_mask(model).grad
         assert grad is not None
         prune_scores[edge] = grad[edge.patch_idx].item()

@@ -13,8 +13,9 @@ from auto_circuit.metrics.official_circuits.greaterthan_official import (
 )
 from auto_circuit.metrics.official_circuits.ioi_official import ioi_true_edges
 from auto_circuit.types import Edge, TaskKey
-from auto_circuit.utils.graph_utils import prepare_model
+from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
+from auto_circuit.utils.patchable_model import PatchableModel
 
 MODEL_CACHE: Dict[str, t.nn.Module] = {}
 DATASET_CACHE: Dict[str, Tuple[PromptDataLoader, PromptDataLoader]] = {}
@@ -40,7 +41,7 @@ class Task:
         return self._true_edges
 
     @property
-    def model(self) -> t.nn.Module:
+    def model(self) -> PatchableModel:
         self.init_task() if not self.__init_complete__ else None
         return self._model
 
@@ -56,11 +57,11 @@ class Task:
 
     def init_task(self):
         if isinstance(self._model_def, t.nn.Module):
-            self._model = self._model_def
-            self.device: t.device = next(self._model.parameters()).device
+            model = self._model_def
+            self.device: t.device = next(model.parameters()).device
         elif self._model_def in MODEL_CACHE:
-            self._model = MODEL_CACHE[self._model_def]
-            self.device: t.device = next(self._model.parameters()).device
+            model = MODEL_CACHE[self._model_def]
+            self.device: t.device = next(model.parameters()).device
         else:
             device_str = "cuda" if t.cuda.is_available() else "cpu"
             self.device: t.device = t.device(device_str)
@@ -73,13 +74,12 @@ class Task:
             assert model.tokenizer is not None
             model.eval()
             MODEL_CACHE[self._model_def] = model
-            self._model = model
 
         if self._dataset_name in DATASET_CACHE:
             self._train_loader, self._test_loader = DATASET_CACHE[self._dataset_name]
         else:
             dataloader_len = self.batch_size * self.batch_count
-            tknr = self._model.tokenizer if hasattr(self._model, "tokenizer") else None
+            tknr = model.tokenizer if hasattr(model, "tokenizer") else None
             train_loader, test_loader = load_datasets_from_json(
                 tokenizer=tknr,
                 path=repo_path_to_abs_path(f"datasets/{self._dataset_name}.json"),
@@ -95,13 +95,7 @@ class Task:
             self._train_loader, self._test_loader = (train_loader, test_loader)
 
         seq_len = self._train_loader.seq_len
-        prepare_model(
-            self._model,
-            factorized=True,
-            slice_output=True,
-            seq_len=seq_len,
-            device=self.device,
-        )
+        self._model = patchable_model(model, True, True, seq_len, self.device)
 
         if self._true_edge_func is not None:
             if self.token_circuit:

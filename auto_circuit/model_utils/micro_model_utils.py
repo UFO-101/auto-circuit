@@ -10,11 +10,11 @@ from auto_circuit.types import DestNode, SrcNode
 class Block(t.nn.Module):
     """Trivial linear layer with input and output of size 2."""
 
-    def __init__(self, weights: t.Tensor):
-        super(Block, self).__init__()
-        self.weights = weights  # shape: (2, 2)
+    def __init__(self):
+        super().__init__()
         self.head_inputs = t.nn.Identity()
         self.head_outputs = t.nn.Identity()
+        self.weights = t.nn.Parameter(t.tensor([[1.0, 2.0], [3.0, 4.0]]))
 
     def forward(self, x: t.Tensor) -> t.Tensor:  # shape: (batch, resid)
         x = einops.repeat(x, "b s r -> b s h r", h=2)
@@ -28,13 +28,12 @@ class MicroModel(t.nn.Module):
     """A model trivial with three layers of simple operations."""
 
     def __init__(self, n_layers: int = 2):
-        super(MicroModel, self).__init__()
+        super().__init__()
         self.input = t.nn.Identity()
         self.n_layers = n_layers
         self.blocks, self.resids = t.nn.ModuleList(), t.nn.ModuleList()
-        self.weights = t.tensor([[1.0, 2.0], [3.0, 4.0]])
         for _ in range(n_layers):
-            self.blocks.append(Block(weights=self.weights))
+            self.blocks.append(Block())
             self.resids.append(t.nn.Identity())
         self.output = t.nn.Identity()
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch as t
 
@@ -36,7 +36,7 @@ class Node:
     weight: Optional[str] = None
     weight_head_dim: Optional[int] = None
 
-    def module(self, model: t.nn.Module) -> PatchWrapper:
+    def module(self, model: Any) -> PatchWrapper:
         patch_wrapper = module_by_name(model, self.module_name)
         assert isinstance(patch_wrapper, PatchWrapper)
         return patch_wrapper
@@ -72,7 +72,7 @@ class Edge:
         head_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
         return tuple(seq_idx + head_idx + [self.src.idx])
 
-    def patch_mask(self, model: t.nn.Module) -> t.nn.Parameter:
+    def patch_mask(self, model: Any) -> t.nn.Parameter:
         return self.dest.module(model).patch_mask
 
     def __repr__(self) -> str:

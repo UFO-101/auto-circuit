@@ -8,7 +8,6 @@ import torch as t
 from auto_circuit.metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.tasks import Task
-from auto_circuit.utils.graph_utils import prepare_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -34,7 +33,6 @@ def test_answer_prob(
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
-    prepare_model(micro_model, factorized=True, seq_len=seq_len, slice_output=True)
     dataset = f"micro_model_inputs{'_multiple_answers' if multiple_answers else ''}"
     task = Task(
         key="test_answer_prob",
@@ -45,10 +43,9 @@ def test_answer_prob(
         _model_def=micro_model,
         _dataset_name=dataset,
     )
+    model = task.model
 
-    pruned_out = [
-        micro_model(batch.clean)[micro_model.out_slice] for batch in task.test_loader
-    ]
+    pruned_out = [model(batch.clean)[model.out_slice] for batch in task.test_loader]
 
     answer_prob = measure_answer_val(
         task,
@@ -74,8 +71,6 @@ def test_greaterthan_answer_prob(
     seq_len: Optional[int],
 ):
     """Check the measure_answer_prob metric works by passing simple pruned_outs."""
-    model = mini_tl_transformer
-    prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
     task = Task(
         key="test_greaterthan_answer_prob",
         name="test_greaterthan_answer_prob",
@@ -85,6 +80,7 @@ def test_greaterthan_answer_prob(
         _model_def=mini_tl_transformer,
         _dataset_name="greaterthan_gpt2-small_prompts",
     )
+    model = task.model
     pruned_out = [model(batch.clean)[model.out_slice] for batch in task.test_loader]
 
     answer_prob = measure_answer_val(

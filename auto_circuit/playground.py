@@ -17,7 +17,7 @@ import auto_circuit.utils.graph_utils
 #     BaselineWeights,
 # )
 from auto_circuit.types import Edge, EdgeCounts, PatchType
-from auto_circuit.utils.graph_utils import prepare_model
+from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import percent_gpu_mem_used, repo_path_to_abs_path
 
 
@@ -259,10 +259,8 @@ train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
     length_limit=64,
     pad=True,
 )
-prepare_model(
-    model, factorized=factorized, slice_output=True, seq_len=None, device=device
-)
-edges: Set[Edge] = model.edges  # type: ignore
+model = patchable_model(model, factorized, True, None, device)
+edges: Set[Edge] = model.edges
 prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
 # ----------------------------
 

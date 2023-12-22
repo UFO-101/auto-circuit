@@ -1,10 +1,9 @@
-from typing import Dict, Set
+from typing import Dict
 
 import torch as t
 import transformer_lens as tl
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch
+from auto_circuit.tasks import Task
 from auto_circuit.types import Edge
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
@@ -14,20 +13,18 @@ from auto_circuit.utils.misc import batch_avg_answer_diff
 
 
 def integrated_edge_attribution_prune_scores(
-    model: t.nn.Module,
-    train_data: DataLoader[PromptPairBatch],
+    task: Task,
     samples: int = 50,
 ) -> Dict[Edge, float]:
     """Prune scores by Edge Attribution patching."""
-    assert isinstance(model, tl.HookedTransformer)
-    edges: Set[Edge] = model.edges  # type: ignore
+    model = task.model
+    assert isinstance(model.wrapped_model, tl.HookedTransformer)
     out_slice = model.out_slice
 
     set_all_masks(model, val=0.0)
     model.train()
     model.zero_grad()
-    for batch in train_data:
-
+    for batch in task.train_loader:
         clean_grad_cache = {}
 
         def backward_cache_hook(act: t.Tensor, hook: tl.hook_points.HookPoint):
@@ -61,7 +58,7 @@ def integrated_edge_attribution_prune_scores(
         logits, clean_cache = model.run_with_cache(batch.clean, return_type="logits")
 
         prune_scores = {}
-        for edge in edges:
+        for edge in task.model.edges:
             if edge.dest.head_idx is None:
                 grad = clean_grad_cache[edge.dest.module_name]
             else:

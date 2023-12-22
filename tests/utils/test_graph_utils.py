@@ -5,16 +5,15 @@ import transformer_lens as tl
 
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.types import Edge, EdgeCounts
-from auto_circuit.utils.graph_utils import edge_counts_util, prepare_model
+from auto_circuit.utils.graph_utils import edge_counts_util, patchable_model
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 
 def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
-    model = mini_tl_transformer
-    edges: Set[Edge] = model.edges  # type: ignore
-    prepare_model(model, factorized=True)
-    n_model_edges = len(model.edges)  # type: ignore
+    model = patchable_model(mini_tl_transformer, factorized=True)
+    edges: Set[Edge] = model.edges
+    n_model_edges = len(model.edges)
 
     none_and_all = [0.0, 0.5, 1.0]
     edge_counts = edge_counts_util(edges, none_and_all)
@@ -25,9 +24,8 @@ def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
 
 
 def test_groups_edge_counts(micro_model: MicroModel):
-    model = micro_model
-    prepare_model(model, factorized=True)
-    edges: Set[Edge] = model.edges  # type: ignore
+    model = patchable_model(micro_model, factorized=True)
+    edges: Set[Edge] = model.edges
     edge_list = list(edges)
 
     counts: List[int] = edge_counts_util(edges, EdgeCounts.GROUPS, {}, True, True)

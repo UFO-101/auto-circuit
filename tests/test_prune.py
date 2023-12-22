@@ -1,6 +1,6 @@
 #%%
 import os
-from typing import Optional, Set
+from typing import Optional
 
 import pytest
 import torch as t
@@ -10,8 +10,9 @@ from auto_circuit.data import (
 )
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.prune import run_pruned
-from auto_circuit.types import Edge, PatchType
-from auto_circuit.utils.graph_utils import prepare_model
+from auto_circuit.types import PatchType
+from auto_circuit.utils.graph_utils import patchable_model
+from auto_circuit.utils.patchable_model import PatchableModel
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -27,8 +28,7 @@ def test_pruning(
     where the correct output can be worked out by hand.
 
     To visualize, set render_graph=True in run_pruned."""
-    model = micro_model
-    prepare_model(model, factorized=True, seq_len=seq_len, slice_output=True)
+    model: PatchableModel = patchable_model(micro_model, True, True, seq_len=seq_len)
     test_loader = micro_dataloader
 
     test_input = next(iter(test_loader))
@@ -39,8 +39,7 @@ def test_pruning(
     assert t.allclose(clean_out[:, -1], t.tensor([[25.0, 49.0]]))
     assert t.allclose(corrupt_out[:, -1], t.tensor([[-25.0, -49.0]]))
 
-    edges: Set[Edge] = model.edges  # type: ignore
-    edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in edges])
+    edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in model.edges])
 
     seq_idx = None if seq_len is None else seq_len - 1
     prune_scores = {
@@ -75,17 +74,15 @@ def test_prune_sequence(
     show_graphs: bool = False,
 ):
     """Test pruning different positions in the sequence."""
-    model = micro_model
-    prepare_model(model, factorized=True, seq_len=3, slice_output=False)
+    model: PatchableModel = patchable_model(micro_model, True, False, seq_len=3)
     test_loader = micro_dataloader
 
     test_input = next(iter(test_loader))
     with t.inference_mode():
-        corrupt_out = model(test_input.corrupt)
+        corrupt_out = model(test_input.corrupt)[model.out_slice]
     # assert t.allclose(clean_out[:, -1], t.tensor([[25.0, 49.0]]))
 
-    edges: Set[Edge] = model.edges  # type: ignore
-    edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in edges])
+    edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in model.edges])
 
     prune_scores = {
         edge_dict[(2, "Block 0 Head 1->Output")]: 3.0,

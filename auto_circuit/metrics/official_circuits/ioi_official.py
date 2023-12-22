@@ -4,9 +4,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
-import torch as t
-
 from auto_circuit.types import Edge
+from auto_circuit.utils.patchable_model import PatchableModel
 
 IOI_CIRCUIT = {
     "name mover": [
@@ -54,8 +53,8 @@ class Conn:
     qkv: List[Tuple[Optional[str], int]]
 
 
-def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edge]:
-    assert model.cfg.model_name == "gpt2"  # type: ignore
+def ioi_true_edges(model: PatchableModel, token_positions: bool = False) -> Set[Edge]:
+    assert model.cfg.model_name == "gpt2"
 
     special_connections: List[Conn] = [
         Conn("INPUT", "previous token", [("q", 5), ("k", 4), ("v", 4)]),
@@ -116,9 +115,8 @@ def ioi_true_edges(model: t.nn.Module, token_positions: bool = False) -> Set[Edg
             for dest_name, tok_pos in edge_dests:
                 edges_present[f"{src_name}->{dest_name}"] = tok_pos
 
-    edges: Set[Edge] = model.edges  # type: ignore
     true_edges: Set[Edge] = set()
-    for edge in edges:
+    for edge in model.edges:
         if edge.name in edges_present.keys():
             if token_positions:
                 true_edges.add(Edge(edge.src, edge.dest, edges_present[edge.name]))

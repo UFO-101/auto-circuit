@@ -2,7 +2,7 @@
 import pickle
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
 import plotly.graph_objects as go
 import torch as t
@@ -29,7 +29,6 @@ from auto_circuit.tasks import (
 )
 from auto_circuit.types import (
     AlgoPruneScores,
-    Edge,
     MetricMeasurements,
     PatchType,
     TaskPruneScores,
@@ -62,16 +61,14 @@ def measure_circuit_metrics(
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
         task = TASK_DICT[task_key]
         task_pbar.set_description_str(f"Task: {task.name}")
-        model = task.model
-        edges: Set[Edge] = model.edges  # type: ignore
         test_loader = task.test_loader
         for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
             algo = PRUNE_ALGO_DICT[algo_key]
             algo_pbar.set_description_str(f"Pruning with {algo.name}")
             pruned_outs = run_pruned(
-                model=model,
+                model=task.model,
                 dataloader=test_loader,
-                test_edge_counts=edge_counts_util(edges, prune_scores=prune_scores),
+                test_edge_counts=edge_counts_util(task.model.edges, None, prune_scores),
                 prune_scores=prune_scores,
                 patch_type=patch_type,
                 reverse_clean_corrupt=reverse_clean_corrupt,

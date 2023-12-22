@@ -4,14 +4,14 @@
 # https://arxiv.org/abs/2104.03514
 
 import math
-from typing import Dict, Set
+from typing import Dict
 
 import plotly.graph_objects as go
 import torch as t
 from torch.nn.functional import kl_div, log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import Edge, PruneScores
+from auto_circuit.types import PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
@@ -46,8 +46,7 @@ def subnetwork_probing_prune_scores(
     """Prune scores are the mean activation magnitude of each edge."""
     model = task.model
     out_slice = model.out_slice
-    edges: Set[Edge] = model.edges  # type: ignore
-    true_size, total_edges = len(task.true_edges), len(edges)
+    true_size, total_edges = len(task.true_edges), len(model.edges)
     inv_size = total_edges - true_size if tree_optimisation else true_size
 
     clean_logprobs: Dict[str, t.Tensor] = {}
@@ -122,11 +121,17 @@ def subnetwork_probing_prune_scores(
 
     if tree_optimisation:
         ps = dict(
-            [(e, max_val - e.patch_mask(model)[e.patch_idx].item()) for e in edges]
+            [
+                (e, max_val - e.patch_mask(model)[e.patch_idx].item())
+                for e in model.edges
+            ]
         )
     else:
         ps = dict(
-            [(e, min_val + e.patch_mask(model)[e.patch_idx].item()) for e in edges]
+            [
+                (e, min_val + e.patch_mask(model)[e.patch_idx].item())
+                for e in model.edges
+            ]
         )
     if regularize_to_true_circuit_size:
         sorted_ps = sorted(ps.items(), key=lambda x: x[1], reverse=True)

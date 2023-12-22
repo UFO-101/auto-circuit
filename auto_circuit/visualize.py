@@ -29,6 +29,7 @@ from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
 )
 from auto_circuit.utils.misc import repo_path_to_abs_path
+from auto_circuit.utils.patchable_model import PatchableModel
 
 # Define a colorblind-friendly palette
 color_palette = [
@@ -258,7 +259,7 @@ def t_fmt(x: Any, idx: Any = None, replace_line_break: str = "\n") -> str:
 
 
 def net_viz(
-    model: t.nn.Module,
+    model: PatchableModel,
     seq_edges: Set[Edge],
     input: t.Tensor,
     prune_scores: Dict[Edge, float],
@@ -268,8 +269,8 @@ def net_viz(
     show_all_edges: bool = False,
     kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> go.Sankey:
-    nodes: OrderedSet[Node] = OrderedSet(model.nodes)  # type: ignore
-    seq_dim: int = model.seq_dim  # type: ignore
+    nodes: OrderedSet[Node] = OrderedSet(model.nodes)
+    seq_dim: int = model.seq_dim
     seq_sl = (-1 if input.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
     label_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
 
@@ -336,7 +337,7 @@ def net_viz(
 
 
 def draw_seq_graph(
-    model: t.nn.Module,
+    model: PatchableModel,
     input: t.Tensor,
     prune_scores: Dict[Edge, float],
     show_prune_scores: bool = False,  # Show edges batched on mask or prune scores
@@ -347,19 +348,16 @@ def draw_seq_graph(
     display_ipython: bool = True,
     file_path: Optional[str] = None,
 ) -> None:
-    nodes: Set[Node] = model.nodes  # type: ignore
-    edge_dict: Dict[Optional[int], List[Edge]] = model.edge_dict  # type: ignore
-    n_layers = max([n.layer for n in nodes])
-    seq_len: Optional[int] = model.seq_len  # type: ignore
+    n_layers = max([n.layer for n in model.nodes])
 
     # Calculate the vertical interval for each sub-diagram
     total_prune_score = sum([abs(v) for v in prune_scores.values()])
     sankey_heights: Dict[Optional[int], float] = defaultdict(float)
     for edge, score in prune_scores.items():
         sankey_heights[edge.seq_idx] += abs(score)
-    for seq_idx in edge_dict:
+    for seq_idx in model.edge_dict:
         if seq_idx not in sankey_heights and show_all_seq_pos:
-            sankey_heights[seq_idx] = total_prune_score / (len(edge_dict) * 2)
+            sankey_heights[seq_idx] = total_prune_score / (len(model.edge_dict) * 2)
     margin_height: float = total_prune_score / ((n_figs := len(sankey_heights)) * 2)
     total_height = sum(sankey_heights.values()) + margin_height * (n_figs - 1)
     intervals, interval_start = {}, total_height
@@ -373,7 +371,7 @@ def draw_seq_graph(
     # Draw the sankey for each token position
     sankeys = []
     for seq_idx, vert_interval in intervals.items():
-        edge_set = set(edge_dict[seq_idx])
+        edge_set = set(model.edge_dict[seq_idx])
         viz = net_viz(
             model,
             edge_set,
@@ -396,7 +394,7 @@ def draw_seq_graph(
     for fig_idx, seq_idx in enumerate(intervals.keys()) if seq_labels else []:
         assert seq_labels is not None
         seq_label = seq_labels[seq_idx]
-        assert seq_len is not None
+        assert model.seq_len is not None
         y_range: Tuple[float, float] = fig.data[fig_idx].domain["y"]  # type: ignore
         fig.add_annotation(
             x=0.05,

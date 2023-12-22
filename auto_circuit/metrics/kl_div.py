@@ -16,13 +16,12 @@ def measure_kl_div(
     """Measure KL divergence between the default model and the pruned model."""
     assert pruned_outs is not None
     kl_divs = []
-    model = task.model
-    out_slice = model.out_slice
+    out_slice = task.model.out_slice
     with t.inference_mode():
         default_outs = []
         for batch in task.test_loader:
             default_batch = batch.clean if compare_to_clean else batch.corrupt
-            default_outs.append(model(default_batch)[out_slice])
+            default_outs.append(task.model(default_batch)[out_slice])
     default_logprobs = t.nn.functional.log_softmax(t.cat(default_outs), dim=-1)
 
     for edge_count, pruned_out in (pruned_out_pbar := tqdm(pruned_outs.items())):
