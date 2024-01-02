@@ -19,7 +19,7 @@ def edge_attribution_patching_prune_scores(
 ) -> PruneScores:
     """Prune scores by Edge Attribution patching."""
     model = task.model
-    assert isinstance(model.wrapped_model, tl.HookedTransformer)
+    assert model.is_transformer
     out_slice = model.out_slice
 
     set_all_masks(model, val=0.0)

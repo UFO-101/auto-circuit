@@ -9,26 +9,37 @@ from auto_circuit.utils.misc import repo_path_to_abs_path
 
 DEVICE = t.device("cpu")
 
-cfg = tl.HookedTransformerConfig(
-    d_vocab=50257,
-    n_layers=2,
-    d_model=4,  # DON'T SET THIS TO 2 OR LAYERNORM WILL RUIN EVERYTHING
-    n_ctx=64,
-    n_heads=2,
-    d_head=2,
-    act_fn="gelu",
-    tokenizer_name="gpt2",
-    device=str(DEVICE),
-)
-mini_tl_model = tl.HookedTransformer(cfg)
-
 
 @pytest.fixture(scope="session")
 def mini_tl_transformer() -> tl.HookedTransformer:
+    cfg = tl.HookedTransformerConfig(
+        d_vocab=50257,
+        n_layers=2,
+        d_model=4,  # DON'T SET THIS TO 2 OR LAYERNORM WILL RUIN EVERYTHING
+        n_ctx=64,
+        n_heads=2,
+        d_head=2,
+        act_fn="gelu",
+        tokenizer_name="gpt2",
+        device=str(DEVICE),
+    )
+    mini_tl_model = tl.HookedTransformer(cfg)
     model = mini_tl_model
     model.init_weights()
 
     model.cfg.use_attn_result = True
+    model.cfg.use_split_qkv_input = True
+    model.cfg.use_hook_mlp_in = True
+    return model
+
+
+@pytest.fixture(scope="session")
+def gpt2() -> tl.HookedTransformer:
+    model = tl.HookedTransformer.from_pretrained(
+        "gpt2", center_writing_weights=False, device=str(DEVICE)
+    )
+    model.cfg.use_attn_result = True
+    model.cfg.use_attn_in = True
     model.cfg.use_split_qkv_input = True
     model.cfg.use_hook_mlp_in = True
     return model

@@ -3,32 +3,34 @@ import json
 from random import choice
 from typing import Any, Dict, List, Tuple
 
+import transformer_lens as tl
+
 CLEAN_PROMPT_ANIMAL = "cows"  # "squirrels"  # "birds" # "mice"
 ANSWER = " grass"  # " nuts"  # " worms" # " cheese"
 
-ANIMALS = [
-    "cats",
-    "dogs",
-    "monkeys",
-    "fish",
-    "horses",
-    "rabbits",
-    "turtles",
-    "elephants",
-    "lions",
-    "tigers",
-    "bears",
-    "snakes",
-    "pigs",
-    "ducks",
-    "chickens",
-    "goats",
-    "sheep",
-    "frogs",
-    "deer",
-    "sharks",
-    "whales",
-]
+ANIMALS = {
+    "cats": "mice",
+    "dogs": "bones",
+    "monkeys": "bananas",
+    "fish": "worms",
+    "horses": "hay",
+    "rabbits": "carrots",
+    "turtles": "lettuce",
+    "elephants": "peanuts",
+    "lions": "prey",
+    "tigers": "prey",
+    "bears": "fish",
+    "snakes": "mice",
+    "pigs": "corn",
+    "ducks": "bread",
+    "chickens": "corn",
+    # "goats": "grass",
+    # "sheep": "grass",
+    "frogs": "flies",
+    # "deer": "grass",
+    "sharks": "fish",
+    "whales": "fish",
+}
 
 ASKER_TUPLES: List[Tuple[str, str]] = [
     ("Tom", "his"),
@@ -86,20 +88,28 @@ def generate_prompts(N: int, short: bool = True) -> Dict[str, Any]:
         clean_prompt = prompt_generator(
             CLEAN_PROMPT_ANIMAL, choice(ASKER_TUPLES), choice(RESPONDERS)
         )
+        corrupt_animal, corrupt_answer = choice(list(ANIMALS.items()))
         corrupt_prompt = prompt_generator(
-            choice(ANIMALS), choice(ASKER_TUPLES), choice(RESPONDERS)
+            corrupt_animal, choice(ASKER_TUPLES), choice(RESPONDERS)
         )
         prompts.append(
-            {"clean": clean_prompt, "corrupt": corrupt_prompt, "answers": [ANSWER]}
+            {
+                "clean": clean_prompt,
+                "corrupt": corrupt_prompt,
+                "answers": [ANSWER],
+                "wrong_answers": [" " + corrupt_answer],
+            }
         )
     return {"prompts": prompts}
 
 
 #%%
-with open("animal_diet_long_prompts.json", "w") as f:
-    json.dump(generate_prompts(1000, short=False), f)
+with open("animal_diet_short_prompts.json", "w") as f:
+    json.dump(generate_prompts(1000, short=True), f)
 #%%
-
-# TOKENS_WITH_SPACE = [" " + word for word in ANIMALS]
-# tokens = model.tokenizer(TOKENS_WITH_SPACE)['input_ids']
-# [print(anim, tokens[i]) for i, anim in enumerate(TOKENS_WITH_SPACE)]
+model = tl.HookedTransformer.from_pretrained("gpt2")
+ANIMALS_WITH_SPACE = [" " + animal for animal in ANIMALS.keys()]
+WRONG_ANSWERS_WITH_SPACE = [" " + animal for animal in ANIMALS.values()]
+for word_list in [ANIMALS_WITH_SPACE, WRONG_ANSWERS_WITH_SPACE]:
+    tokens = model.tokenizer(word_list)["input_ids"]  # type: ignore
+    [print(anim, tokens[i]) for i, anim in enumerate(word_list)]  # type: ignore

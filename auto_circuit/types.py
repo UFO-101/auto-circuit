@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import torch as t
 
@@ -15,6 +15,7 @@ class EdgeCounts(Enum):
 
 
 TestEdges = EdgeCounts | List[int | float]
+AutoencoderInput = Literal["mlp_post_act", "resid_delta_mlp"]
 
 
 class PatchType(Enum):

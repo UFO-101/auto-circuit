@@ -1,9 +1,12 @@
 #%%
+import json
 import os
 import random
 from typing import Dict, Optional, Set
 
+import blobfile as bf
 import numpy as np
+import plotly.figure_factory as ff
 import torch as t
 import torch.backends.mps
 import transformer_lens as tl
@@ -22,6 +25,7 @@ from auto_circuit.utils.misc import percent_gpu_mem_used, repo_path_to_abs_path
 
 
 def rotation_matrix(x: t.Tensor, y: t.Tensor) -> t.Tensor:
+    # Based on: https://math.stackexchange.com/questions/598750/finding-the-rotation-matrix-in-n-dimensions
     # Check that neither x or y is a zero vector
     assert t.all(x != 0), "x is a zero vector"
     assert t.all(y != 0), "y is a zero vector"
@@ -263,5 +267,26 @@ model = patchable_model(model, factorized, True, None, device)
 edges: Set[Edge] = model.edges
 prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
 # ----------------------------
-
 #%%
+# Resid_delta_mlp, Layer 3 are the most interpretable
+layer_index = 3  # in range(12)
+autoencoder_input = ["mlp_post_act", "resid_delta_mlp"][1]
+feature_idx = 7687
+weight_file = f"az://openaipublic/sparse-autoencoder/gpt2-small/{autoencoder_input}/autoencoders/{layer_index}.pt"
+feature_file = f"az://openaipublic/sparse-autoencoder/gpt2-small/{autoencoder_input}/collated_activations/{layer_index}/{feature_idx}.json"
+
+bf.stat(weight_file)
+#%%
+
+with bf.BlobFile(weight_file, mode="rb") as f:
+    data = json.load(f)
+
+examples = data["most_positive_activation_records"]
+# examples = data["random_sample"]
+cell_vals = [d["activations"] for d in examples]
+text = [d["tokens"] for d in examples]
+fig = ff.create_annotated_heatmap(cell_vals, annotation_text=text, colorscale="Viridis")
+prompt_len = min([len(acts) for acts in cell_vals])
+fig.layout.width = 95 * prompt_len  # type: ignore
+fig.layout.height = 32 * len(cell_vals)  # type: ignore
+fig.show()

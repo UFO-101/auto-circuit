@@ -9,8 +9,10 @@ from typing import Dict, Iterator, List, Optional, Set, Tuple
 import torch as t
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
+import auto_circuit.model_utils.autoencoder_transformer as sae_utils
 import auto_circuit.model_utils.micro_model_utils as mm_utils
 import auto_circuit.model_utils.transformer_lens_utils as tl_utils
+from auto_circuit.model_utils.autoencoder_transformer import AutoencoderTransformer
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.types import (
     DestNode,
@@ -43,6 +45,9 @@ def patchable_model(
     out_slice: Tuple[slice | int, ...] = (
         tuple([slice(None)] * seq_dim + [-1]) if slice_output else (slice(None),)
     )
+    is_tl_transformer = isinstance(model, HookedTransformer)
+    is_autoencoder_transformer = isinstance(model, AutoencoderTransformer)
+    is_transformer = is_tl_transformer or is_autoencoder_transformer
     return PatchableModel(
         nodes=nodes,
         srcs=srcs,
@@ -55,6 +60,7 @@ def patchable_model(
         src_wrappers=src_wrappers,
         dest_wrappers=dest_wrappers,
         out_slice=out_slice,
+        is_transformer=is_transformer,
         wrapped_model=model,
     )
 
@@ -90,6 +96,9 @@ def graph_edges(
         elif isinstance(model, HookedTransformer):
             srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
             dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
+        elif isinstance(model, AutoencoderTransformer):
+            srcs: Set[SrcNode] = sae_utils.factorized_src_nodes(model)
+            dests: Set[DestNode] = sae_utils.factorized_dest_nodes(model)
         else:
             raise NotImplementedError(model)
         for i in [None] if seq_len is None else range(seq_len):
@@ -280,10 +289,7 @@ def get_sorted_src_outs(
             hook_fn = partial(src_out_hook, src=node, src_outs=src_outs)
             handles.add(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
-            if (
-                isinstance(model.wrapped_model, HookedTransformer)
-                and kv_cache is not None
-            ):
+            if model.is_transformer and kv_cache is not None:
                 model(input, past_kv_cache=kv_cache)
             else:
                 model(input)
@@ -320,10 +326,7 @@ def get_sorted_dest_ins(
             hook_fn = partial(dest_in_hook, dest=node, dest_ins=dest_ins)
             handles.add(node.module(model).module.register_forward_hook(hook_fn))
         with t.inference_mode():
-            if (
-                isinstance(model.wrapped_model, HookedTransformer)
-                and kv_cache is not None
-            ):
+            if model.is_transformer and kv_cache is not None:
                 model(input, past_kv_cache=kv_cache)
             else:
                 model(input)

@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional
 
 import torch as t
 from ordered_set import OrderedSet
-from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
+from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.tasks import Task
 from auto_circuit.types import (
@@ -64,7 +64,7 @@ def acdc_prune_scores(
         with t.inference_mode():
             clean_out = model(clean_batch)[out_slice]
             kv_cache, toks, short_embd, attn_mask, resids = None, None, None, None, []
-            if isinstance(model.wrapped_model, HookedTransformer):
+            if model.is_transformer:
                 print("train_batch.diverge_idx:", train_batch.diverge_idx)
                 common_prefix_batch = clean_batch[:, : train_batch.diverge_idx]
                 kv_cache = HookedTransformerKeyValueCache.init_cache(
@@ -104,7 +104,7 @@ def acdc_prune_scores(
 
                 edge.patch_mask(model).data[edge.patch_idx] = 1.0
                 with t.inference_mode():
-                    if isinstance(model.wrapped_model, HookedTransformer):
+                    if model.is_transformer:
                         start_layer = int(edge.dest.module_name.split(".")[1])
                         out = model(
                             resids[start_layer],

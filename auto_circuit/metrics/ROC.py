@@ -14,6 +14,8 @@ def measure_roc(
     """Measure ROC curve."""
     assert prune_scores is not None
     correct_edges = task.true_edges
+    if correct_edges is None:
+        raise ValueError("This task does not have a true edge function")
 
     test_edge_counts = edge_counts_util(task.model.edges, prune_scores=prune_scores)
 

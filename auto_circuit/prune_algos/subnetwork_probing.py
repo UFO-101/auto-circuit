@@ -46,7 +46,8 @@ def subnetwork_probing_prune_scores(
     """Prune scores are the mean activation magnitude of each edge."""
     model = task.model
     out_slice = model.out_slice
-    true_size, total_edges = len(task.true_edges), len(model.edges)
+    true_size = 100 if task.true_edges is None else len(task.true_edges)
+    total_edges = len(model.edges)
     inv_size = total_edges - true_size if tree_optimisation else true_size
 
     clean_logprobs: Dict[str, t.Tensor] = {}

@@ -2,13 +2,17 @@
 import pickle
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import List, Tuple
 
 import plotly.graph_objects as go
 import torch as t
 
 from auto_circuit.metrics.metrics import (
+    ANSWER_LOGIT_METRIC,
+    ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
+    LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
     METRIC_DICT,
     ROC_METRIC,
@@ -16,14 +20,16 @@ from auto_circuit.metrics.metrics import (
 )
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
-    GROUND_TRUTH_PRUNE_ALGO,
+    CIRCUIT_PROBING_PRUNE_ALGO,
+    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
+    SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     PruneAlgo,
 )
 from auto_circuit.tasks import (
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
@@ -146,35 +152,38 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
 TASKS: List[Task] = [
     # Token Circuits
     # IOI_TOKEN_CIRCUIT_TASK,
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    # DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # IOI_COMPONENT_CIRCUIT_TASK,
     # DOCSTRING_COMPONENT_CIRCUIT_TASK,
     # GREATERTHAN_COMPONENT_CIRCUIT_TASK,
+    # IOI_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    # GREATERTHAN_AUTOENCODER_COMPONENT_CIRCUIT_TASK
+    ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
-    GROUND_TRUTH_PRUNE_ALGO,
+    # GROUND_TRUTH_PRUNE_ALGO,
     # ACT_MAG_PRUNE_ALGO,
     RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
-    # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
+    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
-    # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
-    # CIRCUIT_PROBING_PRUNE_ALGO,
+    SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
+    CIRCUIT_PROBING_PRUNE_ALGO,
     # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     # CIRCUIT_TREE_PROBING_PRUNE_ALGO
 ]
 
 METRICS: List[Metric] = [
-    ROC_METRIC,
+    # ROC_METRIC,
     CLEAN_KL_DIV_METRIC,
     # CORRUPT_KL_DIV_METRIC,
-    # ANSWER_PROB_METRIC,
-    # ANSWER_LOGIT_METRIC,
-    # LOGIT_DIFF_METRIC,
+    ANSWER_PROB_METRIC,
+    ANSWER_LOGIT_METRIC,
+    LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
 ]
 
@@ -191,7 +200,7 @@ load = False
 if save:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
-    repo_path = f".measurement_cache/seq-circuit-{dt_string}.pkl"
+    repo_path = f".measurement_cache/autoencoder-circuit-{dt_string}.pkl"
     # repo_path = ".measurement_cache/token_pos_tree_patch_2.pkl"
     with open(repo_path_to_abs_path(repo_path), "wb") as f:
         pickle.dump(dict(metric_measurements), f)
@@ -228,7 +237,7 @@ if load:
 figs = measurement_figs(metric_measurements)
 for i, fig in enumerate(figs):
     fig.show()
-    # folder: Path = repo_path_to_abs_path("figures-11")
+    folder: Path = repo_path_to_abs_path("figures-12")
     # Save figure as pdf in figures folder
     # fig.write_image(str(folder / f"new {i}.pdf"))
 

@@ -88,9 +88,8 @@ class PatchWrapper(t.nn.Module):
             if self.head_dim is None:
                 src_out = out
             else:
-                src_out = t.stack(out.split(1, dim=self.head_dim)).squeeze(
-                    self.head_dim + 1
-                )
+                squeeze_dim = self.head_dim if self.head_dim < 0 else self.head_dim + 1
+                src_out = t.stack(out.split(1, dim=self.head_dim)).squeeze(squeeze_dim)
             self.curr_src_outs[self.src_idxs] = src_out
 
         return out

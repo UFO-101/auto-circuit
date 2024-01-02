@@ -10,7 +10,7 @@ class PatchableModel(t.nn.Module):
     nodes: Set[Node]
     srcs: Set[SrcNode]
     dests: Set[DestNode]
-    edge_dict: Dict[int | None, List[Edge]]
+    edge_dict: Dict[int | None, List[Edge]]  # Key is token position or None for all
     edges: Set[Edge]
     seq_dim: int
     seq_len: Optional[int]
@@ -18,6 +18,7 @@ class PatchableModel(t.nn.Module):
     src_wrappers: Set[PatchWrapper]
     dest_wrappers: Set[PatchWrapper]
     out_slice: Tuple[slice | int, ...]
+    is_transformer: bool
     wrapped_model: t.nn.Module
 
     def __init__(
@@ -33,6 +34,7 @@ class PatchableModel(t.nn.Module):
         src_wrappers: Set[PatchWrapper],
         dest_wrappers: Set[PatchWrapper],
         out_slice: Tuple[slice | int, ...],
+        is_transformer: bool,
         wrapped_model: t.nn.Module,
     ) -> None:
         super().__init__()
@@ -47,6 +49,7 @@ class PatchableModel(t.nn.Module):
         self.src_wrappers = src_wrappers
         self.dest_wrappers = dest_wrappers
         self.out_slice = out_slice
+        self.is_transformer = is_transformer
         self.wrapped_model = wrapped_model
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
@@ -69,6 +72,19 @@ class PatchableModel(t.nn.Module):
     @property
     def input_to_embed(self) -> Any:
         return self.wrapped_model.input_to_embed
+
+    @property
+    def blocks(self) -> Any:
+        return self.wrapped_model.blocks
+
+    def to_tokens(self) -> Any:
+        return self.wrapped_model.to_tokens
+
+    def to_str_tokens(self) -> Any:
+        return self.wrapped_model.to_str_tokens
+
+    def to_string(self, *args: Any, **kwargs: Any) -> Any:
+        return self.wrapped_model.to_string(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.wrapped_model.__str__()

@@ -113,7 +113,7 @@ SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=1000,
+        epochs=100,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         dropout_p=0.0,
@@ -126,7 +126,7 @@ CIRCUIT_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=100,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         dropout_p=0.0,
