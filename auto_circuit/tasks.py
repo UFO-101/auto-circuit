@@ -22,7 +22,7 @@ from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
 
 MODEL_CACHE: Dict[Any, t.nn.Module] = {}
-DATASET_CACHE: Dict[str, Tuple[PromptDataLoader, PromptDataLoader]] = {}
+DATASET_CACHE: Dict[Any, Tuple[PromptDataLoader, PromptDataLoader]] = {}
 
 
 @dataclass
@@ -36,7 +36,8 @@ class Task:
     _dataset_name: str
     _true_edge_func: Optional[Callable[..., Set[Edge]]] = None
     autoencoder_input: Optional[AutoencoderInput] = None
-    autoencoder_latent_threshold: Optional[float] = None
+    autoencoder_max_latents: Optional[int] = None
+    autoencoder_pythia_size: Optional[str] = None
     autoencoder_prune_with_corrupt: Optional[bool] = None
     __init_complete__: bool = False
 
@@ -64,16 +65,23 @@ class Task:
         if self.autoencoder_input is not None:
             # We prune autoencoders using the dataset, so we cache the dataset name
             assert isinstance(self._model_def, str)
-            cache_key = (self._model_def, self.autoencoder_input, self._dataset_name)
+            model_cache_key = (
+                self._model_def,
+                self.autoencoder_input,
+                self.autoencoder_max_latents,
+                self.autoencoder_pythia_size,
+                self.autoencoder_prune_with_corrupt,
+                self._dataset_name,
+            )
         else:
-            cache_key = self._model_def
+            model_cache_key = self._model_def
 
         using_cached_model = False
         if isinstance(self._model_def, t.nn.Module):
             model = self._model_def
             self.device: t.device = next(model.parameters()).device
-        elif cache_key in MODEL_CACHE:
-            model = MODEL_CACHE[cache_key]
+        elif model_cache_key in MODEL_CACHE:
+            model = MODEL_CACHE[model_cache_key]
             self.device: t.device = next(model.parameters()).device
             using_cached_model = True
         else:
@@ -95,12 +103,21 @@ class Task:
 
             if self.autoencoder_input is not None:
                 model = autoencoder_model(
-                    model, self.autoencoder_input, new_instance=False
+                    model,
+                    self.autoencoder_input,
+                    self.autoencoder_pythia_size,
+                    new_instance=False,
                 )
-            MODEL_CACHE[cache_key] = model
+            MODEL_CACHE[model_cache_key] = model
 
-        if self._dataset_name in DATASET_CACHE:
-            self._train_loader, self._test_loader = DATASET_CACHE[self._dataset_name]
+        dataset_cache_key = (
+            self._dataset_name,
+            self.batch_size,
+            self.batch_count,
+            self.token_circuit,
+        )
+        if dataset_cache_key in DATASET_CACHE:
+            self._train_loader, self._test_loader = DATASET_CACHE[dataset_cache_key]
         else:
             dataloader_len = self.batch_size * self.batch_count
             tknr = model.tokenizer if hasattr(model, "tokenizer") else None
@@ -115,16 +132,16 @@ class Task:
                 return_seq_length=self.token_circuit,
                 pad=True,
             )
-            DATASET_CACHE[self._dataset_name] = (train_loader, test_loader)
+            DATASET_CACHE[dataset_cache_key] = (train_loader, test_loader)
             self._train_loader, self._test_loader = (train_loader, test_loader)
 
         if isinstance(model, AutoencoderTransformer) and not using_cached_model:
-            assert self.autoencoder_latent_threshold is not None
             assert self.autoencoder_prune_with_corrupt is not None
             model._prune_latents_with_dataset(
-                self._train_loader,
-                self.autoencoder_latent_threshold,
-                self.autoencoder_prune_with_corrupt,
+                dataloader=self._train_loader,
+                max_latents=self.autoencoder_max_latents,
+                include_corrupt=self.autoencoder_prune_with_corrupt,
+                seq_len=self._train_loader.seq_len,
             )  # in place operation
 
         seq_len = self._train_loader.seq_len
@@ -160,8 +177,8 @@ IOI_COMPONENT_CIRCUIT_TASK: Task = Task(
     _true_edge_func=ioi_true_edges,
     token_circuit=False,
 )
-IOI_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
-    key="Indirect Object Identification Autoencoder Component Circuit",
+IOI_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
+    key="Indirect Object Identification GPT2 Autoencoder Component Circuit",
     name="Indirect Object Identification",
     _model_def="gpt2-small",
     _dataset_name="ioi_prompts",
@@ -170,7 +187,6 @@ IOI_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
     _true_edge_func=None,
     token_circuit=False,
     autoencoder_input="resid_delta_mlp",
-    autoencoder_latent_threshold=0.02,
     autoencoder_prune_with_corrupt=False,
 )
 DOCSTRING_TOKEN_CIRCUIT_TASK: Task = Task(
@@ -203,8 +219,8 @@ GREATERTHAN_COMPONENT_CIRCUIT_TASK: Task = Task(
     _true_edge_func=greaterthan_true_edges,
     token_circuit=False,
 )
-GREATERTHAN_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
-    key="Greaterthan Autoencoder Component Circuit",
+GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
+    key="Greaterthan GPT2 Autoencoder Component Circuit",
     name="Greaterthan",
     _model_def="gpt2-small",
     _dataset_name="greaterthan_gpt2-small_prompts",
@@ -213,11 +229,10 @@ GREATERTHAN_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
     _true_edge_func=None,
     token_circuit=False,
     autoencoder_input="resid_delta_mlp",
-    autoencoder_latent_threshold=0.02,
     autoencoder_prune_with_corrupt=False,
 )
-ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
-    key="Animal Diet Autoencoder Component Circuit",
+ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
+    key="Animal Diet GPT2 Autoencoder Component Circuit",
     name="Animal Diet",
     _model_def="gpt2-small",
     _dataset_name="animal_diet_short_prompts",
@@ -226,18 +241,32 @@ ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
     _true_edge_func=None,
     token_circuit=False,
     autoencoder_input="resid_delta_mlp",
-    autoencoder_latent_threshold=0.01,
+    autoencoder_prune_with_corrupt=False,
+)
+CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
+    key="Capital Cities Pythia 70M Deduped Autoencoder Component Circuit",
+    name="Capital Cities",
+    _model_def="pythia-70m-deduped",
+    _dataset_name="capital_cities_pythia-70m-deduped_prompts",
+    batch_size=2,
+    batch_count=4,
+    _true_edge_func=None,
+    token_circuit=True,
+    autoencoder_input="resid_delta_mlp",
+    autoencoder_max_latents=200,
+    autoencoder_pythia_size="2_32768",
     autoencoder_prune_with_corrupt=False,
 )
 
 TASKS: List[Task] = [
     IOI_TOKEN_CIRCUIT_TASK,
     IOI_COMPONENT_CIRCUIT_TASK,
-    IOI_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    IOI_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     DOCSTRING_COMPONENT_CIRCUIT_TASK,
     GREATERTHAN_COMPONENT_CIRCUIT_TASK,
-    GREATERTHAN_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
-    ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
 ]
 TASK_DICT: Dict[TaskKey, Task] = {task.key: task for task in TASKS}

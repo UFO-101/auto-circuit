@@ -1,30 +1,27 @@
 #%%
 import json
 import os
-import random
-from typing import Dict, Optional, Set
+from typing import Dict, Tuple
 
 import blobfile as bf
-import numpy as np
+import plotly.express as px
 import plotly.figure_factory as ff
+import plotly.graph_objects as go
 import torch as t
 import torch.backends.mps
 import transformer_lens as tl
 
-import auto_circuit
-import auto_circuit.data
-import auto_circuit.prune
-import auto_circuit.utils.graph_utils
+from auto_circuit.utils.misc import get_most_similar_embeddings
 
+#%%
 # from auto_circuit.prune_functions.parameter_integrated_gradients import (
 #     BaselineWeights,
 # )
-from auto_circuit.types import Edge, EdgeCounts, PatchType
-from auto_circuit.utils.graph_utils import patchable_model
-from auto_circuit.utils.misc import percent_gpu_mem_used, repo_path_to_abs_path
 
 
-def rotation_matrix(x: t.Tensor, y: t.Tensor) -> t.Tensor:
+def rotation_matrix(
+    x: t.Tensor, y: t.Tensor, lerp: float = 1.0
+) -> Tuple[t.Tensor, t.Tensor]:
     # Based on: https://math.stackexchange.com/questions/598750/finding-the-rotation-matrix-in-n-dimensions
     # Check that neither x or y is a zero vector
     assert t.all(x != 0), "x is a zero vector"
@@ -44,6 +41,12 @@ def rotation_matrix(x: t.Tensor, y: t.Tensor) -> t.Tensor:
     cos_theta = t.dot(x, y) / (t.norm(x) * t.norm(y))
     sin_theta = t.sqrt(1 - cos_theta**2)
 
+    # Interpolate between the identity matrix and the rotation matrix
+    if lerp != 1.0:
+        theta = t.atan2(sin_theta, cos_theta)
+        cos_theta = t.cos(theta * lerp)
+        sin_theta = t.sin(theta * lerp)
+
     # Rotation matrix in the plane spanned by u and v
     R_theta = t.tensor([[cos_theta, -sin_theta], [sin_theta, cos_theta]], device=device)
 
@@ -52,233 +55,357 @@ def rotation_matrix(x: t.Tensor, y: t.Tensor) -> t.Tensor:
     identity = t.eye(len(x), device=device)
     R = identity - t.outer(u, u) - t.outer(v, v) + uv @ R_theta @ uv.T
 
-    return R
+    return R, uv
 
 
-def get_most_similar_embeddings(
-    model: tl.HookedTransformer,
-    resid: t.Tensor,
-    answer: Optional[str] = None,
-    top_k: int = 10,
-):
-    show_answer_rank = answer is not None
-    answer = " cheese" if answer is None else answer
-    unembeded = model.unembed(resid.unsqueeze(0).unsqueeze(0))
-    answer_token = model.to_tokens(answer, prepend_bos=False).squeeze()
-    answer_str_token = model.to_str_tokens(answer, prepend_bos=False)
-    assert len(answer_str_token) == 1
-    logits = unembeded.squeeze()
-    probs = logits.softmax(dim=-1)
-
-    sorted_token_probs, sorted_token_values = probs.sort(descending=True)
-    # Janky way to get the index of the token in the sorted list
-    correct_rank = torch.arange(len(sorted_token_values))[
-        (sorted_token_values == answer_token).cpu()
-    ].item()
-    if show_answer_rank:
-        print(
-            f'\n"{answer_str_token[0]}" token rank:',
-            f"{correct_rank: <8}",
-            f"\nLogit: {logits[answer_token].item():5.2f}",
-            f"Prob: {probs[answer_token].item():6.2%}",
-        )
-    for i in range(top_k):
-        print(
-            f"Top {i}th token. Logit: {logits[sorted_token_values[i]].item():5.2f}",
-            f"Prob: {sorted_token_probs[i].item():6.2%}",
-            f'Token: "{model.to_string(sorted_token_values[i])}"',
-        )
-    print(" ")
-
-
-np.random.seed(0)
-torch.manual_seed(0)
-random.seed(0)
+# np.random.seed(0)
+# torch.manual_seed(0)
+# random.seed(0)
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 print("device", device)
-model = tl.HookedTransformer.from_pretrained("gpt2-small", device=device)
-# model = tl.HookedTransformer.from_pretrained("attn-only-4l", device=device)
-# model = tl.HookedTransformer.from_pretrained("tiny-stories-33M", device=device)
-
-model.cfg.use_attn_result = True
-model.cfg.use_split_qkv_input = True
-model.cfg.use_hook_mlp_in = True
-assert model.tokenizer is not None
-# model = t.compile(model)
+model = tl.HookedTransformer.from_pretrained_no_processing(
+    "tiny-stories-33M", device=device
+)
 model.eval()
-
-# data_file = "datasets/indirect_object_identification.json"
-# data_file = "datasets/greater_than_gpt2-small_prompts.json"
-data_file = "datasets/docstring_prompts.json"
-# data_file = "datasets/animal_diet_short_prompts.json"
-# data_file = "datasets/mini_prompts.json"
-print(percent_gpu_mem_used())
+#%%
+tl.utils.test_prompt("The capital of France is the city of", "stone", model, top_k=5)
 #%%
 
-toks = (
-    model.tokenizer([" zero", " one", " two", " three"], return_tensors="pt")[
-        "input_ids"
-    ]
-    .squeeze()  # type: ignore
-    .to(device)
+
+country_to_captial: Dict[str, str] = {
+    "country": "capital",
+    "France": "Paris",
+    "Hungary": "Budapest",
+    "China": "Beijing",
+    "Germany": "Berlin",
+    "Italy": "Rome",
+    "Japan": "Tokyo",
+    "Russia": "Moscow",
+    # 'Canada': 'Ottawa',
+    # 'Australia': 'Canberra',
+    "Egypt": "Cairo",
+    # 'Turkey': 'Ankara',
+    "Spain": "Madrid",
+    "Sweden": "Stockholm",
+    "Norway": "Oslo",
+    "Denmark": "Copenhagen",
+    "Finland": "Helsinki",
+    "Poland": "Warsaw",
+    "Indonesia": "Jakarta",
+    "Thailand": "Bangkok",
+    "Cuba": "Havana",
+    "Chile": "Santiago",
+    "Greece": "Athens",
+    "Portugal": "Lisbon",
+    "Austria": "Vienna",
+    "Belgium": "Brussels",
+    "Philippines": "Manila",
+    "Peru": "Lima",
+    "Ireland": "Dublin",
+    "Israel": "Jerusalem",
+    # 'Switzerland': 'Bern',
+    # 'Netherlands': 'Amsterdam',
+    # 'Singapore': 'Singapore', # Interesting case
+    "Pakistan": "Islamabad",
+    "Lebanon": "Beirut",
+}
+present_to_past: Dict[str, str] = {
+    "present": "past",
+    "is": "was",
+    "run": "ran",
+    "eat": "ate",
+    "drink": "drank",
+    "go": "went",
+    "see": "saw",
+    "hear": "heard",
+    "speak": "spoke",
+    "write": "wrote",
+    # "read": "read",
+    "do": "did",
+    "have": "had",
+    "give": "gave",
+    "take": "took",
+    "make": "made",
+    "know": "knew",
+    "think": "thought",
+    "find": "found",
+    "tell": "told",
+    "become": "became",
+    "leave": "left",
+    "feel": "felt",
+    # "put": "put",
+    "bring": "brought",
+    "begin": "began",
+    "keep": "kept",
+    "hold": "held",
+    "stand": "stood",
+    "play": "played",
+    "light": "lit",
+}
+male_to_female: Dict[str, str] = {
+    "male": "female",
+    "king": "queen",
+    "actor": "actress",
+    "brother": "sister",
+    "father": "mother",
+    "son": "daughter",
+    "nephew": "niece",
+    "uncle": "aunt",
+    "wizard": "witch",
+    "prince": "princess",
+    "husband": "wife",
+    "boy": "girl",
+    "man": "woman",
+    "hero": "heroine",
+    "lord": "lady",
+    "monk": "nun",
+    "groom": "bride",
+    "bull": "cow",
+    "god": "goddess",
+}
+
+# for k, v in country_to_captial.items():
+#     tl.utils.test_prompt(f"The capital of {k} is", v, model, top_k=5)
+
+word_mapping = present_to_past
+# for i, (k, v) in enumerate(word_mapping.items()):
+#     print("key:", model.to_str_tokens(" " + k, prepend_bos=false))
+#     print("value:", model.to_str_tokens(" " + v, prepend_bos=False))
+key_toks = model.to_tokens(
+    [" " + s for s in word_mapping.keys()], prepend_bos=False
+).squeeze()
+val_toks = model.to_tokens(
+    [" " + s for s in word_mapping.values()], prepend_bos=False
+).squeeze()
+
+# print("EMBEDDINGS")
+# key_embeds = model.embed(key_toks).detach().clone()  # [n_toks, embed_dim]
+# val_embeds = model.embed(val_toks).detach().clone()  # [n_toks, embed_dim]
+# print("average key embedding norm:", key_embeds.norm(dim=-1).mean().item())
+# print("average val embedding norm:", val_embeds.norm(dim=-1).mean().item())
+# key_embeds = model.ln_final(model.embed(key_toks)).detach().clone()
+# val_embeds = model.ln_final(model.embed(val_toks)).detach().clone()
+# key_embeds = model.blocks[3].ln2(model.embed(key_toks)).detach().clone()
+# val_embeds = model.blocks[3].ln2(model.embed(val_toks)).detach().clone()
+# print("LAYERNORM NO BIAS NO SCALE")
+key_embeds = (
+    t.nn.functional.layer_norm(model.embed(key_toks), [model.cfg.d_model])
+    .detach()
+    .clone()
+)  # [n_toks, embed_dim]
+val_embeds = (
+    t.nn.functional.layer_norm(model.embed(val_toks), [model.cfg.d_model])
+    .detach()
+    .clone()
+)  # [n_toks, embed_dim]
+# val_embeds = model.ln_final(model.embed(val_toks)).detach().clone()
+print("average key embedding norm:", key_embeds.norm(dim=-1).mean().item())
+print("average val embedding norm:", val_embeds.norm(dim=-1).mean().item())
+
+idxs = torch.randperm(len(word_mapping))
+train_len = key_embeds.shape[0] - 6
+concept_key_embed, train_key_embeds, test_key_embeds = (
+    key_embeds[0],
+    key_embeds[idxs[1 : 1 + train_len]],
+    key_embeds[idxs[1 + train_len :]],
 )
-print(toks)
-num_embeds = model.embed(toks)
-one_to_two_rotation = rotation_matrix(num_embeds[1], num_embeds[2])
-assert t.allclose(num_embeds[2], one_to_two_rotation @ num_embeds[1], atol=1e-2)
-one_rotated = one_to_two_rotation @ num_embeds[1]
-print("one rotated to two")
-get_most_similar_embeddings(model, one_rotated, top_k=10)
-
-two_rotated = one_to_two_rotation @ num_embeds[2]
-print("two embedded")
-get_most_similar_embeddings(model, num_embeds[2], top_k=10)
-print("two rotated to three")
-get_most_similar_embeddings(model, two_rotated, top_k=10)
-
-
-layernorm_num_embeds = model.blocks[0].ln1(num_embeds)  # type: ignore
-layernorm_one_to_two_rotation = one_to_two_rotation
-
-print("layernorm one")
-get_most_similar_embeddings(model, layernorm_num_embeds[1], top_k=10)
-layernorm_one_rotated = layernorm_one_to_two_rotation @ layernorm_num_embeds[1]
-print("layernorm one rotated to two")
-get_most_similar_embeddings(model, layernorm_one_rotated, top_k=10)
-
-print("layernorm two")
-get_most_similar_embeddings(model, layernorm_num_embeds[2], top_k=10)
-layernorm_two_rotated = layernorm_one_to_two_rotation @ layernorm_num_embeds[2]
-print("layernorm two rotated to three")
-get_most_similar_embeddings(model, layernorm_two_rotated, top_k=10)
-
-#%%
-#%%
-
-monarch_toks = (
-    model.tokenizer([" man", " woman", " king", " queen"], return_tensors="pt")[
-        "input_ids"
-    ]
-    .squeeze()  # type: ignore
-    .to(device)
+concept_val_embed, train_val_embeds, test_val_embeds = (
+    val_embeds[0],
+    val_embeds[idxs[1 : 1 + train_len]],
+    val_embeds[idxs[1 + train_len :]],
 )
-print(monarch_toks)
-man, woman, king, queen = model.embed(monarch_toks)
-man_to_women_rotation = rotation_matrix(man, woman)
-assert t.allclose(woman, man_to_women_rotation @ man, atol=1e-1)
-man_rotated = man_to_women_rotation @ man
-print("man rotated to woman")
-get_most_similar_embeddings(model, man_rotated, top_k=10)
+# ln_final_bias = model.ln_final.b.detach().clone()
 
-print("king embedded")
-get_most_similar_embeddings(model, king, top_k=10)
-print("king rotated to queen")
-king_rotated = man_to_women_rotation @ king
-get_most_similar_embeddings(model, king_rotated, top_k=10)
-
-
-layernorm_man, layernorm_woman, layernorm_king, layernorm_queen = model.blocks[0].ln1(
-    t.stack([man, woman, king, queen])
-)  # type: ignore
-layernorm_man_to_woman_rotation = rotation_matrix(layernorm_man, layernorm_woman)
-# layernorm_man_to_woman_rotation = man_to_women_rotation
-
-print("layernorm man")
-get_most_similar_embeddings(model, layernorm_man, top_k=10)
-print("layernorm man rotated to woman")
-layernorm_man_rotated = layernorm_man_to_woman_rotation @ layernorm_man
-get_most_similar_embeddings(model, layernorm_man_rotated, top_k=10)
-
-print("layernorm king")
-get_most_similar_embeddings(model, layernorm_king, top_k=10)
-layernorm_king_rotated = layernorm_man_to_woman_rotation @ layernorm_king
-print("layernorm king rotated to queen")
-get_most_similar_embeddings(model, layernorm_king_rotated, top_k=10)
-
-
-#%%
-monarch_toks = (
-    model.tokenizer([" man", " woman", " king", " queen"], return_tensors="pt")[
-        "input_ids"
-    ]
-    .squeeze()  # type: ignore
-    .to(device)
+linear_map = t.zeros(
+    [val_embeds.shape[1], key_embeds.shape[1]], device=device, requires_grad=True
 )
-print(monarch_toks)
-man, woman, king, queen = model.embed(monarch_toks)
-man_to_women_translation = woman - man
-assert t.allclose(woman, man_to_women_translation + man, atol=1e-3)
-print("man translated to woman")
-man_translated = man_to_women_translation + man
-get_most_similar_embeddings(model, man_translated, top_k=10)
+translate = t.zeros([key_embeds.shape[1]], device=device, requires_grad=True)
+scale = t.ones([key_embeds.shape[1]], device=device, requires_grad=True)
+translate_2 = t.zeros([key_embeds.shape[1]], device=device, requires_grad=True)
+rotation_vectors = t.rand([2, key_embeds.shape[1]], device=device, requires_grad=True)
 
-print("king embedded")
-get_most_similar_embeddings(model, king, top_k=10)
-print("king translated to queen")
-king_translated = man_to_women_translation + king
-get_most_similar_embeddings(model, king_translated, top_k=10)
+# optim = t.optim.Adam([linear_map], lr=0.01)
+# optim = t.optim.Adam([translate], lr=0.01)
+# optim = t.optim.Adam([linear_map, translate], lr=0.01)
+# optim = t.optim.Adam([rotation_vectors], lr=0.01)
+optim = t.optim.Adam([rotation_vectors, translate], lr=0.01)
+# optim = t.optim.Adam([rotation_vectors, translate, translate_2], lr=0.01)
+# optim = t.optim.Adam([linear_map, translate, translate_2], lr=0.01)
+# optim = t.optim.Adam([rotation_vectors, translate, scale], lr=0.01)
+# optim = t.optim.Adam([translate, scale], lr=0.01)
+# optim = t.optim.Adam([scale], lr=0.01)
 
 
-layernorm_man, layernorm_woman, layernorm_king, layernorm_queen = model.blocks[0].ln1(
-    t.stack([man, woman, king, queen])
-)  # type: ignore
-# layernorm_man_to_woman_translation = layernorm_woman - layernorm_man
-layernorm_man_to_woman_translation = man_to_women_translation
+def pred_from_embeds(embeds: t.Tensor, lerp: float = 1.0) -> t.Tensor:
+    linear_map, proj = rotation_matrix(
+        rotation_vectors[0], rotation_vectors[1], lerp=lerp
+    )
+    # pred = embeds @ linear_map
+    # pred = embeds + (translate * lerp)
+    # pred = embeds * scale
+    # pred = (embeds @ linear_map) + translate
+    # pred = ((embeds + translate_2) @ linear_map) + translate
+    pred = ((embeds + translate) @ linear_map) - translate
+    # pred = ((embeds - ln_final_bias) @ linear_map) + ln_final_bias
+    # pred = ((embeds * scale) + translate) @ linear_map
+    # pred = ((embeds @ linear_map)* scale) + translate
+    # pred = (embeds * scale) + translate
+    return pred
 
-print("layernorm man")
-get_most_similar_embeddings(model, layernorm_man, top_k=10)
-print("layernorm man translated to woman")
-layernorm_man_translated = layernorm_man_to_woman_translation + layernorm_man
-get_most_similar_embeddings(model, layernorm_man_translated, top_k=10)
 
-print("layernorm king")
-get_most_similar_embeddings(model, layernorm_king, top_k=10)
-layernorm_king_translated = layernorm_man_to_woman_translation + layernorm_king
-print("layernorm king translated to queen")
-get_most_similar_embeddings(model, layernorm_king_translated, top_k=10)
-#%%
-out_weight = model.blocks[3].mlp.module.W_out[200]  # type: ignore
-get_most_similar_embeddings(model, out_weight)
-layernorm_out_weight = model.blocks[-1].ln2(out_weight)  # type: ignore
-get_most_similar_embeddings(model, layernorm_out_weight)
+def loss_fn(pred: t.Tensor, target: t.Tensor) -> t.Tensor:
+    # loss = (target - pred).pow(2).mean()
+    # loss = 1 - t.nn.functional.cosine_similarity(pred, target).mean()
+    loss = 1 - t.nn.functional.cosine_similarity(pred, target).mean()
+    return loss
 
-#%%
-# ---------- Config ----------
-experiment_type = PatchType.EDGE_PATCH
-factorized = True
-# pig_baseline, pig_samples = BaselineWeights.ZERO, 50
-default_edge_count_type = EdgeCounts.LOGARITHMIC
-one_tao = 6e-2
-acdc_tao_range, acdc_tao_step = (one_tao, one_tao), one_tao
 
-train_loader, test_loader = auto_circuit.data.load_datasets_from_json(
-    model.tokenizer,
-    repo_path_to_abs_path(data_file),
-    device=device,
-    prepend_bos=True,
-    batch_size=32,
-    train_test_split=[0.5, 0.5],
-    length_limit=64,
-    pad=True,
+losses = []
+for epoch in range(1000):
+    optim.zero_grad()
+    pred = pred_from_embeds(train_key_embeds)
+    loss = loss_fn(pred, train_val_embeds)
+    loss.backward()
+    optim.step()
+    losses.append(loss.item()) if epoch % 10 == 0 else None
+
+px.line(y=losses).show()
+
+linear_map = rotation_matrix(rotation_vectors[0], rotation_vectors[1])  # type: ignore
+test_pred = pred_from_embeds(test_key_embeds)
+print("Test loss:", loss_fn(test_pred, test_val_embeds).item())
+
+print("Train data example")
+get_most_similar_embeddings(
+    model, train_key_embeds[0], top_k=5, apply_ln_final=True, apply_unembed=True
 )
-model = patchable_model(model, factorized, True, None, device)
-edges: Set[Edge] = model.edges
-prune_scores_dict: Dict[str, Dict[Edge, float]] = {}
-# ----------------------------
+train_pred_0 = pred_from_embeds(train_key_embeds[0])
+get_most_similar_embeddings(
+    model, train_pred_0, top_k=5, apply_ln_final=True, apply_unembed=True
+)
+
+for i in range(5):
+    print("Test data example")
+    get_most_similar_embeddings(
+        model, test_key_embeds[i], top_k=5, apply_ln_final=True, apply_unembed=True
+    )
+    test_pred_i = pred_from_embeds(test_key_embeds[i])
+    get_most_similar_embeddings(
+        model, test_pred_i, top_k=5, apply_ln_final=True, apply_unembed=True
+    )
+
+#%%
+linear_map, proj = rotation_matrix(rotation_vectors[0], rotation_vectors[1], lerp=1.0)
+projected_keys = ((key_embeds[1:]) @ proj).detach().clone().cpu()
+projected_vals = ((val_embeds[1:]) @ proj).detach().clone().cpu()
+projected_translate = (translate @ proj).detach().clone().cpu()
+
+projected_rotated_keys = (
+    ((((translate + key_embeds[1:]) @ linear_map) - translate) @ proj)
+    .detach()
+    .clone()
+    .cpu()
+)
+
+keys_x, keys_y = projected_keys[:, 0], projected_keys[:, 1]
+vals_x, vals_y = projected_vals[:, 0], projected_vals[:, 1]
+preds_x, preds_y = projected_rotated_keys[:, 0], projected_rotated_keys[:, 1]
+
+# Create a scatter plot
+fig = go.Figure()
+
+# Adding scatter plot for keys
+fig.add_trace(
+    go.Scatter(
+        x=keys_x,
+        y=keys_y,
+        mode="markers+text",
+        name="Keys",
+        text=list(word_mapping.keys())[1:],
+        marker=dict(size=10, color="blue"),
+    )
+)
+
+# Adding scatter plot for values
+fig.add_trace(
+    go.Scatter(
+        x=vals_x,
+        y=vals_y,
+        mode="markers+text",
+        name="Vals",
+        text=list(word_mapping.values())[1:],
+        marker=dict(size=10, color="red"),
+    )
+)
+
+# Adding scatter plot for predictions
+# fig.add_trace(go.Scatter(x=preds_x, y=preds_y,
+#                             mode='markers+text',
+#                             name='Predictions',
+#                             text=list(word_mapping.values())[1:],
+#                             marker=dict(size=10, color='orange')))
+
+
+# Adding lines connecting keys and values
+for i in range(keys_x.shape[0]):
+    fig.add_trace(
+        go.Scatter(
+            x=[keys_x[i], vals_x[i]],
+            y=[keys_y[i], vals_y[i]],
+            mode="lines",
+            line=dict(color="grey", width=1),
+            showlegend=False,
+        )
+    )
+
+# # Adding lines connecting keys and predictions
+# for i in range(keys_x.shape[0]):
+#     fig.add_trace(go.Scatter(x=[keys_x[i], preds_x[i]],
+#                              y=[keys_y[i], preds_y[i]],
+#                              mode='lines',
+#                              line=dict(color='green', width=1),
+#                              showlegend=False))
+
+# fig.add_trace(go.Scatter(x=[projected_translate[0]],
+#                             y=[projected_translate[1]],
+#                             mode='markers+text',
+#                             name='Translate',
+#                             text=["Translate"],
+#                             marker=dict(size=10, color='green')))
+
+# Update layout for a better look
+fig.update_layout(
+    title="2D Scatter plot of Keys and Vals with Connections",
+    xaxis_title="Dimension 1",
+    yaxis_title="Dimension 2",
+    legend_title="Legend",
+)
+
+# Show plot
+fig.show()
+
+# print("Interpolated test data example")
+# get_most_similar_embeddings(model, test_key_embeds[0], top_k=3)
+# for lerp in t.linspace(0, 1, 10):
+#     print(f"lerp: {lerp.item():.2f}")
+#     test_pred_i = pred_from_embeds(test_key_embeds[0], lerp=lerp.item())
+#     get_most_similar_embeddings(model, test_pred_i, top_k=10)
+
 #%%
 # Resid_delta_mlp, Layer 3 are the most interpretable
-layer_index = 3  # in range(12)
-autoencoder_input = ["mlp_post_act", "resid_delta_mlp"][1]
-feature_idx = 7687
-weight_file = f"az://openaipublic/sparse-autoencoder/gpt2-small/{autoencoder_input}/autoencoders/{layer_index}.pt"
-feature_file = f"az://openaipublic/sparse-autoencoder/gpt2-small/{autoencoder_input}/collated_activations/{layer_index}/{feature_idx}.json"
+layer_index = 6  # in range(12)
+autoencoder_input = ["mlp_post_act", "resid_delta_mlp"][0]
+feature_idx = 25890
+base_url = "az://openaipublic/sparse-autoencoder/gpt2-small/"
+weight_file = f"{autoencoder_input}/autoencoders/{layer_index}.pt"
+feat_file = f"{autoencoder_input}/collated_activations/{layer_index}/{feature_idx}.json"
+url_to_get = base_url + feat_file
 
-bf.stat(weight_file)
-#%%
+bf.stat(url_to_get)
 
-with bf.BlobFile(weight_file, mode="rb") as f:
+with bf.BlobFile(url_to_get, mode="rb") as f:
     data = json.load(f)
 
 examples = data["most_positive_activation_records"]
@@ -287,6 +414,6 @@ cell_vals = [d["activations"] for d in examples]
 text = [d["tokens"] for d in examples]
 fig = ff.create_annotated_heatmap(cell_vals, annotation_text=text, colorscale="Viridis")
 prompt_len = min([len(acts) for acts in cell_vals])
-fig.layout.width = 95 * prompt_len  # type: ignore
+fig.layout.width = 75 * prompt_len  # type: ignore
 fig.layout.height = 32 * len(cell_vals)  # type: ignore
 fig.show()

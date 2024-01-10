@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 import torch as t
 import transformer_lens as tl
@@ -26,6 +28,7 @@ def mini_tl_transformer() -> tl.HookedTransformer:
     mini_tl_model = tl.HookedTransformer(cfg)
     model = mini_tl_model
     model.init_weights()
+    model.tokenizer.padding_side = "left"  # type: ignore
 
     model.cfg.use_attn_result = True
     model.cfg.use_split_qkv_input = True
@@ -34,9 +37,15 @@ def mini_tl_transformer() -> tl.HookedTransformer:
 
 
 @pytest.fixture(scope="session")
-def gpt2() -> tl.HookedTransformer:
-    model = tl.HookedTransformer.from_pretrained(
-        "gpt2", center_writing_weights=False, device=str(DEVICE)
+def hooked_transformer(
+    request: Optional[pytest.FixtureRequest], model_name: Optional[str] = None
+) -> tl.HookedTransformer:
+    name = request.param if request is not None else None
+    if name is None:
+        assert model_name is not None
+        name = model_name
+    model = tl.HookedTransformer.from_pretrained_no_processing(
+        name, center_writing_weights=False, device=str(DEVICE)
     )
     model.cfg.use_attn_result = True
     model.cfg.use_attn_in = True

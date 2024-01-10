@@ -47,7 +47,9 @@ GROUND_TRUTH_PRUNE_ALGO = PruneAlgo(
 ACT_MAG_PRUNE_ALGO = PruneAlgo(
     key="Act Mag", name="Activation Magnitude", func=activation_magnitude_prune_scores
 )
-RANDOM_PRUNE_ALGO = PruneAlgo(key="Random", name="Random", func=random_prune_scores)
+RANDOM_PRUNE_ALGO = PruneAlgo(
+    key="Random", name="Random", short_name="Random", func=random_prune_scores
+)
 EDGE_ATTR_PATCH_PRUNE_ALGO = PruneAlgo(
     key="Edge Attribution Patching",
     name="Edge Attribution Patching",
@@ -74,6 +76,7 @@ INTEGRATED_EDGE_GRADS_PRUNE_ALGO = PruneAlgo(
 INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO = PruneAlgo(
     key="Integrated Edge Gradients (Lop Prob Diff)",
     name="Integrated Edge Gradients",
+    short_name="IEG",
     func=partial(
         integrated_edge_gradients_prune_scores,
         samples=50,
@@ -100,6 +103,7 @@ LOGPROB_GRAD_PRUNE_ALGO = PruneAlgo(
 LOGPROB_DIFF_GRAD_PRUNE_ALGO = PruneAlgo(
     key="Edge Answer Log Prob Diff Gradient At Clean",
     name="Edge Attribution Patching",
+    short_name="EAP",
     func=partial(
         simple_gradient_prune_scores,
         grad_function="logprob",
@@ -110,10 +114,11 @@ LOGPROB_DIFF_GRAD_PRUNE_ALGO = PruneAlgo(
 SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     key="Subnetwork Edge Probing",
     name="Subnetwork Edge Probing",
+    short_name="SEP",
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=100,
+        epochs=500,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         dropout_p=0.0,
@@ -126,7 +131,7 @@ CIRCUIT_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=100,
+        epochs=500,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         dropout_p=0.0,

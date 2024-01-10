@@ -1,6 +1,7 @@
 __pycache__/
 .venv/
 .venv2/
+.autoencoder_cache/
 .measurement_cache/
 .prune_scores_cache/
 .ruff_cache/

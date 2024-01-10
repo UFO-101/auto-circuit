@@ -278,6 +278,7 @@ def src_out_hook(
     src_outs[src] = out if src.head_dim is None else out.squeeze(src.head_dim)
 
 
+# TODO optimize this to use one hook per src module
 def get_sorted_src_outs(
     model: PatchableModel,
     input: t.Tensor,

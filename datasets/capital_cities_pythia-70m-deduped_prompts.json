@@ -1,0 +1,164 @@
+{
+  "prompts": [
+    {
+      "clean": "The capital of Austria is the city of",
+      "corrupt": "The capital of Ireland is the city of",
+      "answers": [
+        " Vienna"
+      ],
+      "wrong_answers": [
+        " Dublin"
+      ]
+    },
+    {
+      "clean": "The capital of Chile is the city of",
+      "corrupt": "The capital of Sweden is the city of",
+      "answers": [
+        " Santiago"
+      ],
+      "wrong_answers": [
+        " Stockholm"
+      ]
+    },
+    {
+      "clean": "The capital of Denmark is the city of",
+      "corrupt": "The capital of Germany is the city of",
+      "answers": [
+        " Copenhagen"
+      ],
+      "wrong_answers": [
+        " Berlin"
+      ]
+    },
+    {
+      "clean": "The capital of Finland is the city of",
+      "corrupt": "The capital of Iraq is the city of",
+      "answers": [
+        " Helsinki"
+      ],
+      "wrong_answers": [
+        " Baghdad"
+      ]
+    },
+    {
+      "clean": "The capital of France is the city of",
+      "corrupt": "The capital of Iraq is the city of",
+      "answers": [
+        " Paris"
+      ],
+      "wrong_answers": [
+        " Baghdad"
+      ]
+    },
+    {
+      "clean": "The capital of Germany is the city of",
+      "corrupt": "The capital of Israel is the city of",
+      "answers": [
+        " Berlin"
+      ],
+      "wrong_answers": [
+        " Jerusalem"
+      ]
+    },
+    {
+      "clean": "The capital of Greece is the city of",
+      "corrupt": "The capital of Iraq is the city of",
+      "answers": [
+        " Athens"
+      ],
+      "wrong_answers": [
+        " Baghdad"
+      ]
+    },
+    {
+      "clean": "The capital of Iraq is the city of",
+      "corrupt": "The capital of Israel is the city of",
+      "answers": [
+        " Baghdad"
+      ],
+      "wrong_answers": [
+        " Jerusalem"
+      ]
+    },
+    {
+      "clean": "The capital of Ireland is the city of",
+      "corrupt": "The capital of Germany is the city of",
+      "answers": [
+        " Dublin"
+      ],
+      "wrong_answers": [
+        " Berlin"
+      ]
+    },
+    {
+      "clean": "The capital of Israel is the city of",
+      "corrupt": "The capital of Sweden is the city of",
+      "answers": [
+        " Jerusalem"
+      ],
+      "wrong_answers": [
+        " Stockholm"
+      ]
+    },
+    {
+      "clean": "The capital of Japan is the city of",
+      "corrupt": "The capital of Denmark is the city of",
+      "answers": [
+        " Tokyo"
+      ],
+      "wrong_answers": [
+        " Copenhagen"
+      ]
+    },
+    {
+      "clean": "The capital of Norway is the city of",
+      "corrupt": "The capital of Singapore is the city of",
+      "answers": [
+        " Oslo"
+      ],
+      "wrong_answers": [
+        " Singapore"
+      ]
+    },
+    {
+      "clean": "The capital of Palestine is the city of",
+      "corrupt": "The capital of Denmark is the city of",
+      "answers": [
+        " Jerusalem"
+      ],
+      "wrong_answers": [
+        " Copenhagen"
+      ]
+    },
+    {
+      "clean": "The capital of Singapore is the city of",
+      "corrupt": "The capital of Germany is the city of",
+      "answers": [
+        " Singapore"
+      ],
+      "wrong_answers": [
+        " Berlin"
+      ]
+    },
+    {
+      "clean": "The capital of Sweden is the city of",
+      "corrupt": "The capital of Denmark is the city of",
+      "answers": [
+        " Stockholm"
+      ],
+      "wrong_answers": [
+        " Copenhagen"
+      ]
+    },
+    {
+      "clean": "The capital of Syria is the city of",
+      "corrupt": "The capital of Israel is the city of",
+      "answers": [
+        " Damascus"
+      ],
+      "wrong_answers": [
+        " Jerusalem"
+      ]
+    }
+  ]
+}

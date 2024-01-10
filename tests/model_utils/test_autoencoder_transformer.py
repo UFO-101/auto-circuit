@@ -1,22 +1,26 @@
 #%%
 from typing import Optional
 
+import pytest
 import torch as t
-import transformer_lens as tl
 from transformer_lens import HookedTransformer
 from transformer_lens.hook_points import HookPoint
 
 from auto_circuit.data import load_datasets_from_json
 from auto_circuit.model_utils.autoencoder_transformer import (
-    AutoencoderHook,
     AutoencoderTransformer,
     autoencoder_model,
+)
+from auto_circuit.model_utils.sparse_autoencoder import (
+    load_autoencoder,
 )
 from auto_circuit.prune import run_pruned
 from auto_circuit.tasks import Task
 from auto_circuit.types import AutoencoderInput, PatchType
-from auto_circuit.utils.misc import repo_path_to_abs_path
+from auto_circuit.utils.misc import repo_path_to_abs_path, run_prompt
 from auto_circuit.utils.patchable_model import PatchableModel
+
+# from tests.conftest import gpt2
 
 
 def normalized_mean_squared_error(
@@ -35,14 +39,22 @@ def normalized_mean_squared_error(
     ).mean()
 
 
+MODEL_NAMES = ["pythia-70m-deduped"]
+# MODEL_NAMES = ["gpt2", "pythia-70m-deduped"]
+
+
+@pytest.mark.parametrize("hooked_transformer", MODEL_NAMES, indirect=True)
 def test_single_autoencoder_output_similarity(
-    gpt2: HookedTransformer,
+    hooked_transformer: HookedTransformer,
+    layer_idx: int = 3,
     autoencoder_input: AutoencoderInput = "resid_delta_mlp",
-    layer_idx: int = 6,
+    pythia_size: Optional[str] = "0_8192",
 ):
     """Check that the output of a single autoencoder is similar to the input."""
-    autoencoder = AutoencoderHook(HookPoint(), layer_idx, autoencoder_input)
-    model = gpt2
+    model = hooked_transformer
+    autoencoder = load_autoencoder(
+        HookPoint(), model, layer_idx, autoencoder_input, pythia_size
+    )
 
     prompt = "This is an example of a prompt that"
     tokens = model.to_tokens(prompt)  # (1, n_tokens)
@@ -50,7 +62,7 @@ def test_single_autoencoder_output_similarity(
         _, activation_cache = model.run_with_cache(tokens, remove_batch_dim=True)
     if autoencoder_input == "mlp_post_act":
         input_tensor = activation_cache[
-            f"blocks.{layer_idx}.mlp.hook_post"
+            "blocks..mlp.hook_post"
         ]  # (n_tokens, n_neurons)
     elif autoencoder_input == "resid_delta_mlp":
         input_tensor = activation_cache[
@@ -64,22 +76,24 @@ def test_single_autoencoder_output_similarity(
     assert error < 0.2
 
 
+@pytest.mark.parametrize("hooked_transformer", MODEL_NAMES, indirect=True)
 def test_autoencoder_transformer_output_similarity(
-    gpt2: HookedTransformer,
+    hooked_transformer: HookedTransformer,
     autoencoder_input: AutoencoderInput = "resid_delta_mlp",
+    pythia_size: Optional[str] = "0_8192",
     print_top_k: Optional[int] = None,
 ):
-    """Check that the output of the AutoencoderTransformer is similar to the input."""
-    default_model = gpt2
+    """Check that the output of the AutoencoderTransformer is similar to the default."""
+    default_model = hooked_transformer
     encoder_model = autoencoder_model(
-        default_model, autoencoder_input, new_instance=True
+        default_model, autoencoder_input, pythia_size, new_instance=True
     )
     prompt = "Michael Jackson was a"
     tokens = default_model.to_tokens(prompt)  # (1, n_tokens)
     with t.inference_mode():
         if print_top_k:
-            tl.utils.test_prompt(prompt, "singer", default_model, top_k=print_top_k)
-            tl.utils.test_prompt(prompt, "singer", encoder_model, top_k=print_top_k)
+            run_prompt(default_model, prompt, top_k=print_top_k)
+            run_prompt(encoder_model, prompt, top_k=print_top_k)
 
         default_logits = default_model(tokens)
         autoencoder_logits = encoder_model(tokens)
@@ -88,12 +102,17 @@ def test_autoencoder_transformer_output_similarity(
     del encoder_model
 
 
+@pytest.mark.parametrize("hooked_transformer", MODEL_NAMES, indirect=True)
 def test_prune_latents_with_dataset(
-    gpt2: HookedTransformer, print_top_k: Optional[int] = None
+    hooked_transformer: HookedTransformer,
+    autoencoder_input: AutoencoderInput = "resid_delta_mlp",
+    pythia_size: Optional[str] = "0_8192",
+    print_top_k: Optional[int] = None,
 ):
-    autoencoder_input: AutoencoderInput = "resid_delta_mlp"
-    default_model = gpt2
-    encoder_model = autoencoder_model(gpt2, autoencoder_input, new_instance=True)
+    default_model = hooked_transformer
+    encoder_model = autoencoder_model(
+        hooked_transformer, autoencoder_input, pythia_size, new_instance=True
+    )
 
     train_loader, test_loader = load_datasets_from_json(
         tokenizer=default_model.tokenizer,
@@ -103,15 +122,18 @@ def test_prune_latents_with_dataset(
         batch_size=1,
         train_test_split=[1, 1],
         length_limit=2,
+        return_seq_length=True,
     )
-    encoder_model._prune_latents_with_dataset(train_loader, latent_threshold=0.01)
+    encoder_model._prune_latents_with_dataset(
+        train_loader, 100, seq_len=train_loader.seq_len
+    )
 
     toks: t.Tensor = test_loader.dataset[0].clean
-    prompts = gpt2.tokenizer.decode(toks, skip_special_tokens=True)  # type: ignore
+    prompts = default_model.tokenizer.decode(toks, True)  # type: ignore
     with t.inference_mode():
         if print_top_k:
-            tl.utils.test_prompt(prompts, "grass", default_model, top_k=print_top_k)
-            tl.utils.test_prompt(prompts, "grass", encoder_model, top_k=print_top_k)
+            run_prompt(default_model, prompts, top_k=print_top_k)
+            run_prompt(encoder_model, prompts, top_k=print_top_k)
 
         default_logits = default_model(toks)
         autoencoder_logits = encoder_model(toks)
@@ -120,22 +142,22 @@ def test_prune_latents_with_dataset(
     del encoder_model
 
 
-def test_task_autoencoder_transformer_edges():
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_task_autoencoder_transformer_edges(model_name: str):
     """Load an autoencoder model, make it a PatchableModel.
     The Edge Patch all the edges going to the output node.
     Check the output is the same as the unpatched model run on the clean input."""
-    autoencoder_input: AutoencoderInput = "resid_delta_mlp"
-
     task = Task(
         key="test_task_autoencoder_transformer_edges",
         name="test_task_autoencoder_transformer_edges",
         batch_size=1,
         batch_count=1,
-        token_circuit=False,
-        _model_def="gpt2",
-        _dataset_name="greaterthan_gpt2-small_prompts",
-        autoencoder_input=autoencoder_input,
-        autoencoder_latent_threshold=0.1,
+        token_circuit=True,
+        _model_def=model_name,
+        _dataset_name="capital_cities_pythia-70m-deduped_prompts",
+        autoencoder_input="resid_delta_mlp",
+        autoencoder_max_latents=100,
+        autoencoder_pythia_size="0_8192",
         autoencoder_prune_with_corrupt=False,
     )
     model = task.model
@@ -155,13 +177,16 @@ def test_task_autoencoder_transformer_edges():
     assert t.allclose(patched_out, clean_logits, atol=1e-5)
 
 
-# gpt2 = gpt2()
+# model_name = "gpt2"
+# model_name = "pythia-70m-deduped"
 # autoencoder_input = "resid_delta_mlp"
+# pythia_size = "2_32768"
+# model = hooked_transformer(None, model_name=model_name)
 
 # for i in range(3):
-#     test_single_autoencoder_output_similarity(gpt2, autoencoder_input, i)
+# test_single_autoencoder_output_similarity(model)
 
-# test_autoencoder_transformer_output_similarity(gpt2, "resid_delta_mlp", 10)
-# test_prune_latents_with_dataset(gpt2, print_top_k=10)
-# test_task_autoencoder_transformer_edges()
+# test_autoencoder_transformer_output_similarity(model)
+# test_prune_latents_with_dataset(model, print_top_k=5)
+# test_task_autoencoder_transformer_edges(model_name)
 # %%

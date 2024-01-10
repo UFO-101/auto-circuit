@@ -1,7 +1,5 @@
 #%%
-import pickle
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
@@ -12,11 +10,12 @@ from auto_circuit.metrics.metrics import (
     ANSWER_LOGIT_METRIC,
     ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
-    LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
     METRIC_DICT,
     ROC_METRIC,
     Metric,
+)
+from auto_circuit.metrics.prune_scores_similarity import (
+    prune_score_similarities_plotly,
 )
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
@@ -29,7 +28,7 @@ from auto_circuit.prune_algos.prune_algos import (
     PruneAlgo,
 )
 from auto_circuit.tasks import (
-    ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
@@ -41,7 +40,7 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
-from auto_circuit.utils.misc import repo_path_to_abs_path
+from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
 from auto_circuit.visualize import average_auc_plot, edge_patching_plot, roc_plot
 
 
@@ -157,9 +156,11 @@ TASKS: List[Task] = [
     # IOI_COMPONENT_CIRCUIT_TASK,
     # DOCSTRING_COMPONENT_CIRCUIT_TASK,
     # GREATERTHAN_COMPONENT_CIRCUIT_TASK,
-    # IOI_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
-    # GREATERTHAN_AUTOENCODER_COMPONENT_CIRCUIT_TASK
-    ANIMAL_DIET_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    # Autoencoder Component Circuits
+    # IOI_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    # GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK
+    # ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
@@ -183,51 +184,47 @@ METRICS: List[Metric] = [
     # CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
     ANSWER_LOGIT_METRIC,
-    LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
+    # LOGIT_DIFF_METRIC,
+    # LOGIT_DIFF_PERCENT_METRIC,
 ]
 
+compute_prune_scores = True
+load_prune_scores = False
+save_prune_scores = False
+
 task_prune_scores: TaskPruneScores = defaultdict(dict)
+if compute_prune_scores:
+    task_prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
+cache_folder_name = ".prune_scores_cache"
+if load_prune_scores:
+    filename = "task-prune-scores-09-01-2024_20-13-48.pkl"
+    loaded_cache = load_cache(cache_folder_name, filename)
+    task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
+if save_prune_scores:
+    base_filename = "task-prune-scores"
+    save_cache(task_prune_scores, cache_folder_name, base_filename)
+
+prune_scores_similartity_fig = prune_score_similarities_plotly(
+    task_prune_scores, [10, 100, 1000], ground_truths=False
+)
+prune_scores_similartity_fig.show()
+#%%
+
 metric_measurements: MetricMeasurements = defaultdict(lambda: defaultdict(dict))
-task_prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
 metric_measurements = measure_circuit_metrics(
     METRICS, task_prune_scores, PatchType.TREE_PATCH, reverse_clean_corrupt=False
 )
 
 # Cache metric_measurements with current date and time
-save = False
-load = False
-if save:
-    now = datetime.now()
-    dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
-    repo_path = f".measurement_cache/autoencoder-circuit-{dt_string}.pkl"
-    # repo_path = ".measurement_cache/token_pos_tree_patch_2.pkl"
-    with open(repo_path_to_abs_path(repo_path), "wb") as f:
-        pickle.dump(dict(metric_measurements), f)
-if load:
-    # cache_path = "experiment_measurements-26-11-2023_16-36-05.pkl"
-    # cache_path = "seq_experiment_measurements-28-11-2023_15-52-47.pkl"
-    # cache_path = "token_pos_exp_1.pkl"
-    # cache_path = "token_pos_tree_patch_2.pkl"
-    # cache_path = "experiment_measurements-10-12-2023_21-50-32.pkl"
-    # cache_path = "experiment_measurements-10-12-2023_23-23-01.pkl"
-    # cache_path = "experiment_measurements-10-12-2023_23-45-00.pkl"
-    # cache_path = "comp-circuit-12-12-2023_00-28-44.pkl"
-    # cache_path = "tok-circuit_measurements-11-12-2023_23-37-24.pkl"
-    # cache_path = "inv-tok-circuit-12-12-2023_01-18-14.pkl"
-    # cache_path = "inv-comp-circuit-12-12-2023_02-07-32.pkl"
-    # cache_path = "seq-circuit-12-12-2023_22-23-54.pkl"
-    # cache_path = "seq-circuit-12-12-2023_23-14-49.pkl"
-    # cache_path = "seq-circuit-12-12-2023_23-37-41.pkl"
-    # cache_path = "ABS-seq-circuit-13-12-2023_01-54-31.pkl"
-    # cache_path = "seq-circuit-13-12-2023_04-10-38.pkl"
-    # cache_path = "seq-circuit-13-12-2023_04-45-15.pkl"
-    cache_path = "seq-circuit-13-12-2023_06-30-20.pkl"
-    with open(repo_path_to_abs_path(".measurement_cache/" + cache_path), "rb") as f:
-        loaded_measurements = pickle.load(f)
-    # merge with existing metric_measurements
-    same_idx = defaultdict(int)
-    metric_measurements = loaded_measurements
+save_metric_measurements = False
+load_metric_measurements = False
+(cache_folder_name,) = (".measurement_cache",)
+if save_metric_measurements:
+    base_filename = "seq-circuit"
+    save_cache(metric_measurements, cache_folder_name, base_filename)
+if load_metric_measurements:
+    filename = "seq-circuit-13-12-2023_06-30-20.pkl"
+    metric_measurements = load_cache(cache_folder_name, filename)
 
 # experiment_steps: Dict[str, Callable] = {
 #     "Calculate prune scores": run_prune_funcs,

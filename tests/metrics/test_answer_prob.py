@@ -103,7 +103,7 @@ def test_greaterthan_answer_prob(
 
 
 # micro_model = micro_model()
-# test_answer_prob(micro_model, dataloader, seq_len=3)
+# test_answer_prob(micro_model, False, 1, 1, 4)
 # test_greater_than_answer_prob(
 #     mini_tl_transformer(), seq_len=None
 # )
@@ -112,4 +112,6 @@ def test_greaterthan_answer_prob(
 #     seq_len=None,
 # )
 # model = mini_tl_transformer()
+# test_greaterthan_answer_prob(model, seq_len=None)
+# test_greaterthan_answer_prob(model, seq_len=3)
 # print(model.tokenizer)

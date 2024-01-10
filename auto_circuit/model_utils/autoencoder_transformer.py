@@ -1,99 +1,27 @@
 from copy import deepcopy
 from itertools import count
-from time import time
-from typing import Any, List, Set
+from typing import Any, List, Optional, Set
 
-import blobfile as bf
 import torch as t
-from sparse_autoencoder import Autoencoder
 from transformer_lens import HookedTransformer
-from transformer_lens.hook_points import HookPoint
 
 from auto_circuit.data import PromptDataLoader
+from auto_circuit.model_utils.sparse_autoencoder import (
+    SparseAutoencoder,
+    load_autoencoder,
+)
 from auto_circuit.types import AutoencoderInput, DestNode, SrcNode
 from auto_circuit.utils.custom_tqdm import tqdm
-from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
-
-CHUNK_SIZE = 1000 * 2**20  # 1000 MB
-
-
-class AutoencoderHook(t.nn.Module):
-    wrapped_hook: HookPoint
-    autoencoder: Autoencoder
-
-    def __init__(
-        self, hook: HookPoint, layer_idx: int, autoencoder_input: AutoencoderInput
-    ):
-        super().__init__()
-        self.wrapped_hook = hook
-        blob_prefix = "az://openaipublic/sparse-autoencoder/gpt2-small"
-        blobfile_path = f"{blob_prefix}/{autoencoder_input}/autoencoders/{layer_idx}.pt"
-        # tempdir = Path(tempfile.gettempdir())
-        cache_dir = repo_path_to_abs_path(".autoencoder_cache")
-        cache_filepath = cache_dir / f"gpt2_{autoencoder_input}_{layer_idx}.pt"
-        if not cache_filepath.exists():
-            with bf.BlobFile(blobfile_path, mode="rb") as blob, open(
-                cache_filepath, "wb"
-            ) as cache_file:
-                print(
-                    "Downloading autoencoder"
-                    + f"{autoencoder_input}, layer {layer_idx} to {cache_filepath}..."
-                )
-                start_time = time()
-                block = blob.read(CHUNK_SIZE)
-                print(f"Done. Took {time() - start_time:.2f} seconds.")
-                cache_file.write(block)
-            # bf.copy(blobfile_path, str(cache_filepath))
-        with open(cache_filepath, "rb") as f:
-            state_dict = t.load(f)
-
-        self.autoencoder = Autoencoder.from_state_dict(state_dict)  # type: ignore
-        self.reset_activated_latents()
-        self.latent_threshold = 0.0
-
-    def reset_activated_latents(self):
-        self.activated_latents = t.zeros_like(
-            self.autoencoder.latent_bias, dtype=t.bool
-        )
-
-    def forward(self, input: t.Tensor) -> t.Tensor:
-        latents_pre_act, latents, recons = self.autoencoder(input)
-        self.activated_latents |= (
-            (latents > self.latent_threshold).flatten(end_dim=-2).any(dim=0)
-        )
-        return self.wrapped_hook(recons)
-
-    def prune_latents(self, idxs: t.Tensor):
-        assert idxs.ndim == 1
-        state_dict = self.autoencoder.state_dict()
-
-        # Check all tensors are on the same device
-        prev_device = state_dict["latent_bias"].device
-        assert all(t.device == prev_device for t in state_dict.values())
-
-        new_state_dict = {
-            "pre_bias": state_dict["pre_bias"].clone(),
-            "latent_bias": state_dict["latent_bias"][idxs].clone(),
-            "stats_last_nonzero": state_dict["stats_last_nonzero"][idxs].clone(),
-            "encoder.weight": state_dict["encoder.weight"][idxs].clone(),
-            "decoder.weight": state_dict["decoder.weight"][:, idxs].clone(),
-        }
-        del self.autoencoder
-        self.autoencoder = Autoencoder.from_state_dict(new_state_dict)
-        self.autoencoder.to(prev_device)
-        self.reset_activated_latents()
 
 
 class AutoencoderTransformer(t.nn.Module):
     wrapped_model: t.nn.Module
-    autoencoder_hooks: List[AutoencoderHook]
+    sparse_autoencoders: List[SparseAutoencoder]
 
-    def __init__(
-        self, wrapped_model: t.nn.Module, autoencoder_hooks: List[AutoencoderHook]
-    ):
+    def __init__(self, wrapped_model: t.nn.Module, saes: List[SparseAutoencoder]):
         super().__init__()
-        self.autoencoder_hooks = autoencoder_hooks
+        self.sparse_autoencoders = saes
 
         if isinstance(wrapped_model, PatchableModel):
             self.wrapped_model = wrapped_model.wrapped_model
@@ -106,8 +34,9 @@ class AutoencoderTransformer(t.nn.Module):
     def _prune_latents_with_dataset(
         self,
         dataloader: PromptDataLoader,
-        latent_threshold: float = 0.0,
+        max_latents: Optional[int],
         include_corrupt: bool = False,
+        seq_len: Optional[int] = None,
     ):
         """
         !In place operation!
@@ -115,38 +44,35 @@ class AutoencoderTransformer(t.nn.Module):
         by the dataset. This can reduce the number of edges in the factorized model by a
         factor of 10 or more.
         """
-        for hook in self.autoencoder_hooks:
-            hook.latent_threshold = latent_threshold
-            hook.reset_activated_latents()
+        for sae in self.sparse_autoencoders:
+            sae.reset_activated_latents(seq_len=seq_len)
 
         print("Running dataset for autoencoder pruning...")
         unpruned_logits = []
-        with t.inference_mode():
-            for batch_idx, batch in (batch_pbar := tqdm(enumerate(dataloader))):
-                batch_pbar.set_description_str(
-                    f"Pruning Autoencoder: Batch {batch_idx}"
-                )
-                for input_idx, single_input in (
-                    input_pbar := tqdm(enumerate(batch.clean))
-                ):
-                    input_pbar.set_description_str(f"Clean Batch Input {input_idx}")
-                    out = self.forward(single_input.unsqueeze(0))  # Run one at a time
+        for batch_idx, batch in (batch_pbar := tqdm(enumerate(dataloader))):
+            batch_pbar.set_description_str(f"Pruning Autoencoder: Batch {batch_idx}")
+            for input_idx, prompt in (input_pbar := tqdm(enumerate(batch.clean))):
+                input_pbar.set_description_str(f"Clean Batch Input {input_idx}")
+                with t.inference_mode():
+                    out = self.forward(prompt.unsqueeze(0))  # Run one at a time
+                unpruned_logits.append(out)
+            if include_corrupt:
+                for input_idx, prompt in (input_pbar := tqdm(enumerate(batch.corrupt))):
+                    input_pbar.set_description_str(f"Corrupt Batch Input {input_idx}")
+                    with t.inference_mode():
+                        out = self.forward(prompt.unsqueeze(0))
                     unpruned_logits.append(out)
-                if include_corrupt:
-                    for input_idx, single_input in (
-                        input_pbar := tqdm(enumerate(batch.corrupt))
-                    ):
-                        input_pbar.set_description_str(
-                            f"Corrupt Batch Input {input_idx}"
-                        )
-                        out = self.forward(single_input.unsqueeze(0))
-                        unpruned_logits.append(out)
 
-        latent_counts = []
-        for hook in self.autoencoder_hooks:
-            latents_to_keep_idxs = t.where(hook.activated_latents)[0]
-            latent_counts.append(len(latents_to_keep_idxs))
-            hook.prune_latents(latents_to_keep_idxs)
+        activated_latent_counts, latent_counts = [], []
+        for sae in self.sparse_autoencoders:
+            activated = (sae.latent_total_act > 0).sum(dim=-1).tolist()
+            activated_latent_counts.append(activated)
+            activated_count = activated if type(activated) == int else max(activated)
+            max_latents = max_latents or activated_count
+            latent_counts.append(max_idx := min(max_latents, activated_count))
+            sorted_latents = t.sort(sae.latent_total_act, dim=-1, descending=True)
+            idxs_to_keep = sorted_latents.indices[..., :max_idx]
+            sae.prune_latents(idxs_to_keep)
 
         pruned_logits = []
         with t.inference_mode():
@@ -168,12 +94,9 @@ class AutoencoderTransformer(t.nn.Module):
             log_target=True,
         )
 
-        print(
-            "Done. Autoencoder latent counts:",
-            latent_counts,
-            ". Pruned vs. Unpruned KL Div:",
-            kl_div.item(),
-        )
+        print("Done. Autoencoder activated latent counts:", activated_latent_counts)
+        print("Autoencoder latent counts:", latent_counts)
+        print("Pruned vs. Unpruned KL Div:", kl_div.item())
 
     def run_with_cache(self, *args: Any, **kwargs: Any) -> Any:
         return self.wrapped_model.run_with_cache(*args, **kwargs)
@@ -215,27 +138,26 @@ class AutoencoderTransformer(t.nn.Module):
 
 def autoencoder_model(
     model: HookedTransformer,
-    autoencoder_input: AutoencoderInput,
+    sae_input: AutoencoderInput = "resid_delta_mlp",
+    pythia_size: Optional[str] = None,
     new_instance: bool = True,
 ) -> AutoencoderTransformer:
     if new_instance:
         model = deepcopy(model)
-    assert model.cfg.model_name == "gpt2"
-    autoencoder_hooks: List[AutoencoderHook] = []
+    sparse_autoencoders: List[SparseAutoencoder] = []
     for layer_idx in range(model.cfg.n_layers):
-        if autoencoder_input == "mlp_post_act":
+        if sae_input == "mlp_post_act":
             hook_point = model.blocks[layer_idx].mlp.hook_post
-            autoencoder_hook = AutoencoderHook(hook_point, layer_idx, autoencoder_input)
-            autoencoder_hook.to(model.cfg.device)
-            setattr(model.blocks[layer_idx].mlp, "hook_post", autoencoder_hook)
+            sae = load_autoencoder(hook_point, model, layer_idx, sae_input, pythia_size)
+            setattr(model.blocks[layer_idx].mlp, "hook_post", sae_input)
         else:
-            assert autoencoder_input == "resid_delta_mlp"
+            assert sae_input == "resid_delta_mlp"
             hook_point = model.blocks[layer_idx].hook_mlp_out
-            autoencoder_hook = AutoencoderHook(hook_point, layer_idx, autoencoder_input)
-            autoencoder_hook.to(model.cfg.device)
-            setattr(model.blocks[layer_idx], "hook_mlp_out", autoencoder_hook)
-        autoencoder_hooks.append(autoencoder_hook)
-    return AutoencoderTransformer(model, autoencoder_hooks)
+            sae = load_autoencoder(hook_point, model, layer_idx, sae_input, pythia_size)
+            setattr(model.blocks[layer_idx], "hook_mlp_out", sae)
+        sae.to(model.cfg.device)
+        sparse_autoencoders.append(sae)
+    return AutoencoderTransformer(model, sparse_autoencoders)
 
 
 def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
@@ -274,19 +196,17 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
                     weight_head_dim=0,
                 )
             )
-        layer = next(layers)
-        for latent_idx in range(
-            model.blocks[block_idx].hook_mlp_out.autoencoder.n_latents
-        ):
+        layer = layer if model.cfg.parallel_attn_mlp else next(layers)
+        for latent_idx in range(model.blocks[block_idx].hook_mlp_out.n_latents):
             nodes.add(
                 SrcNode(
                     name=f"MLP {block_idx} Latent {latent_idx}",
-                    module_name=f"blocks.{block_idx}.hook_mlp_out.autoencoder.latent_outs",
+                    module_name=f"blocks.{block_idx}.hook_mlp_out.latent_outs",
                     layer=layer,
                     idx=next(idxs),
-                    head_dim=-2,
+                    head_dim=2,
                     head_idx=latent_idx,
-                    weight=f"blocks.{block_idx}.hook_mlp_out.autoencoder.decoder.weight",
+                    weight=f"blocks.{block_idx}.hook_mlp_out.decoder.weight",
                     weight_head_dim=0,
                 )
             )
@@ -321,7 +241,7 @@ def factorized_dest_nodes(model: AutoencoderTransformer) -> Set[DestNode]:
             DestNode(
                 name=f"MLP {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_mlp_in",
-                layer=next(layers),
+                layer=layer if model.cfg.parallel_attn_mlp else next(layers),
                 idx=next(idxs),
                 weight=f"blocks.{block_idx}.mlp.W_in",
             )

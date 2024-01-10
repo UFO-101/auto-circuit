@@ -116,8 +116,7 @@ def load_datasets_from_json(
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
         answers = [t.tensor(a).to(device) for a in answer_strs]
         wrong_answers = [t.tensor(a).to(device) for a in wrong_answer_strs]
-        seq_len = None
-        assert return_seq_length is False
+        seq_len = clean_prompts[0].shape[0]
     else:
         if prepend_bos:
             clean_prompts = [tokenizer.bos_token + prompt for prompt in clean_prompts]
