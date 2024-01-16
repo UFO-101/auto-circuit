@@ -12,7 +12,7 @@ from auto_circuit.utils.graph_utils import (
     set_all_masks,
     train_mask_mode,
 )
-from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def integrated_edge_gradients_prune_scores(

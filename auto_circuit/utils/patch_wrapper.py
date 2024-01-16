@@ -1,20 +1,9 @@
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 import torch as t
 from einops import einsum
 
-MaskFn = Optional[Literal["hard_concrete", "sigmoid"]]
-
-# Copied from Subnetwork Probing paper: https://github.com/stevenxcao/subnetwork-probing
-left, right, temp = -0.1, 1.1, 2 / 3
-
-
-def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
-    mask = mask.repeat(batch_size, *([1] * mask.ndim))
-    u = t.zeros_like(mask).uniform_().clamp(0.0001, 0.9999)
-    s = t.sigmoid((u.log() - (1 - u).log() + mask) / temp)
-    s_bar = s * (right - left) + left
-    return s_bar.clamp(min=0.0, max=1.0)
+from auto_circuit.utils.tensor_ops import MaskFn, sample_hard_concrete
 
 
 class PatchWrapper(t.nn.Module):
@@ -55,9 +44,6 @@ class PatchWrapper(t.nn.Module):
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
         self.src_slice = slice(prev_src_count) if prev_src_count else None
 
-    def sigmoid_mask(self, mask: t.Tensor) -> t.Tensor:
-        return t.sigmoid(mask)
-
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         arg_0: t.Tensor = args[0].clone()
 
@@ -71,7 +57,7 @@ class PatchWrapper(t.nn.Module):
                 mask = sample_hard_concrete(self.patch_mask, arg_0.size(0))
                 batch_str = "batch"  # Sample distribution for each batch element
             elif self.mask_fn == "sigmoid":
-                mask = self.sigmoid_mask(self.patch_mask)
+                mask = t.sigmoid(self.patch_mask)
             else:
                 assert self.mask_fn is None
                 mask = self.patch_mask

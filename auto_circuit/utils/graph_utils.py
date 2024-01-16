@@ -9,11 +9,13 @@ from typing import Dict, Iterator, List, Optional, Set, Tuple
 import torch as t
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 
-import auto_circuit.model_utils.autoencoder_transformer as sae_utils
 import auto_circuit.model_utils.micro_model_utils as mm_utils
+import auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer as sae_utils
 import auto_circuit.model_utils.transformer_lens_utils as tl_utils
-from auto_circuit.model_utils.autoencoder_transformer import AutoencoderTransformer
 from auto_circuit.model_utils.micro_model_utils import MicroModel
+from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
+    AutoencoderTransformer,
+)
 from auto_circuit.types import (
     DestNode,
     Edge,
@@ -23,8 +25,9 @@ from auto_circuit.types import (
     TestEdges,
 )
 from auto_circuit.utils.misc import module_by_name, remove_hooks, set_module_by_name
-from auto_circuit.utils.patch_wrapper import MaskFn, PatchWrapper
+from auto_circuit.utils.patch_wrapper import PatchWrapper
 from auto_circuit.utils.patchable_model import PatchableModel
+from auto_circuit.utils.tensor_ops import MaskFn
 
 #%%
 

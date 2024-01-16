@@ -6,7 +6,7 @@ import torch as t
 from transformer_lens import HookedTransformer
 
 from auto_circuit.data import PromptDataLoader
-from auto_circuit.model_utils.sparse_autoencoder import (
+from auto_circuit.model_utils.sparse_autoencoders.sparse_autoencoder import (
     SparseAutoencoder,
     load_autoencoder,
 )
@@ -31,6 +31,12 @@ class AutoencoderTransformer(t.nn.Module):
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         return self.wrapped_model(*args, **kwargs)
 
+    def reset_activated_latents(
+        self, batch_len: Optional[int] = None, seq_len: Optional[int] = None
+    ):
+        for sae in self.sparse_autoencoders:
+            sae.reset_activated_latents(batch_len=batch_len, seq_len=seq_len)
+
     def _prune_latents_with_dataset(
         self,
         dataloader: PromptDataLoader,
@@ -44,8 +50,7 @@ class AutoencoderTransformer(t.nn.Module):
         by the dataset. This can reduce the number of edges in the factorized model by a
         factor of 10 or more.
         """
-        for sae in self.sparse_autoencoders:
-            sae.reset_activated_latents(seq_len=seq_len)
+        self.reset_activated_latents(seq_len=seq_len)
 
         print("Running dataset for autoencoder pruning...")
         unpruned_logits = []
@@ -136,9 +141,11 @@ class AutoencoderTransformer(t.nn.Module):
         return self.wrapped_model.__repr__()
 
 
-def autoencoder_model(
+def sae_model(
     model: HookedTransformer,
-    sae_input: AutoencoderInput = "resid_delta_mlp",
+    sae_input: AutoencoderInput,
+    load_pretrained: bool,
+    n_latents: Optional[int] = None,
     pythia_size: Optional[str] = None,
     new_instance: bool = True,
 ) -> AutoencoderTransformer:
@@ -148,14 +155,21 @@ def autoencoder_model(
     for layer_idx in range(model.cfg.n_layers):
         if sae_input == "mlp_post_act":
             hook_point = model.blocks[layer_idx].mlp.hook_post
-            sae = load_autoencoder(hook_point, model, layer_idx, sae_input, pythia_size)
-            setattr(model.blocks[layer_idx].mlp, "hook_post", sae_input)
+            hook_module = model.blocks[layer_idx].mlp
+            hook_name = "hook_post"
         else:
             assert sae_input == "resid_delta_mlp"
             hook_point = model.blocks[layer_idx].hook_mlp_out
+            hook_module = model.blocks[layer_idx]
+            hook_name = "hook_mlp_out"
+        if load_pretrained:
+            assert pythia_size is not None
             sae = load_autoencoder(hook_point, model, layer_idx, sae_input, pythia_size)
-            setattr(model.blocks[layer_idx], "hook_mlp_out", sae)
+        else:
+            assert n_latents is not None
+            sae = SparseAutoencoder(hook_point, n_latents, model.cfg.d_model)
         sae.to(model.cfg.device)
+        setattr(hook_module, hook_name, sae)
         sparse_autoencoders.append(sae)
     return AutoencoderTransformer(model, sparse_autoencoders)
 

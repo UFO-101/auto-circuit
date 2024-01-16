@@ -5,7 +5,7 @@ import torch as t
 from auto_circuit.tasks import Task
 from auto_circuit.types import Measurements, PrunedOutputs, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
-from auto_circuit.utils.misc import batch_avg_answer_diff
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff
 
 
 def identity(*args: Any, **kwargs: Any) -> Any:

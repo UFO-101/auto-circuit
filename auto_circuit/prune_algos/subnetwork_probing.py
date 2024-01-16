@@ -20,7 +20,8 @@ from auto_circuit.utils.graph_utils import (
     set_all_masks,
     train_mask_mode,
 )
-from auto_circuit.utils.patch_wrapper import MaskFn, sample_hard_concrete
+from auto_circuit.utils.patch_wrapper import sample_hard_concrete
+from auto_circuit.utils.tensor_ops import MaskFn
 
 # Constants are copied from the paper's code
 mask_p, left, right, temp = 0.9, -0.1, 1.1, 2 / 3

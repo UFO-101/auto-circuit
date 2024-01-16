@@ -12,9 +12,9 @@ from auto_circuit.metrics.official_circuits.greaterthan_official import (
     greaterthan_true_edges,
 )
 from auto_circuit.metrics.official_circuits.ioi_official import ioi_true_edges
-from auto_circuit.model_utils.autoencoder_transformer import (
+from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
     AutoencoderTransformer,
-    autoencoder_model,
+    sae_model,
 )
 from auto_circuit.types import AutoencoderInput, Edge, TaskKey
 from auto_circuit.utils.graph_utils import patchable_model
@@ -102,10 +102,11 @@ class Task:
             model.eval()
 
             if self.autoencoder_input is not None:
-                model = autoencoder_model(
-                    model,
-                    self.autoencoder_input,
-                    self.autoencoder_pythia_size,
+                model = sae_model(
+                    model=model,
+                    sae_input=self.autoencoder_input,
+                    load_pretrained=True,
+                    pythia_size=self.autoencoder_pythia_size,
                     new_instance=False,
                 )
             MODEL_CACHE[model_cache_key] = model

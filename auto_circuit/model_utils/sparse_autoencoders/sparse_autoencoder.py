@@ -4,6 +4,7 @@ from typing import Dict, Optional
 import torch as t
 from blobfile import BlobFile
 from einops import einsum
+from torch.nn.init import kaiming_uniform_
 from transformer_lens.hook_points import HookPoint
 from transformer_lens.HookedTransformer import HookedTransformer
 
@@ -45,11 +46,16 @@ class SparseAutoencoder(t.nn.Module):
         self.latent_bias = t.nn.Parameter(t.zeros(seq_shape + [n_latents]))
         self.encode_weight = t.nn.Parameter(t.zeros(seq_shape + [n_latents, n_inputs]))
         self.decode_weight = t.nn.Parameter(t.zeros(seq_shape + [n_inputs, n_latents]))
+        [kaiming_uniform_(w) for w in [self.encode_weight, self.decode_weight]]
 
-    def reset_activated_latents(self, seq_len: Optional[int] = None):
+    def reset_activated_latents(
+        self, batch_len: Optional[int] = None, seq_len: Optional[int] = None
+    ):
         device = self.bias.device
-        latents_shape = ([] if seq_len is None else [seq_len]) + [self.n_latents]
-        self.latent_total_act = t.zeros(latents_shape, device=device)
+        batch_shape = [] if batch_len is None else [batch_len]
+        seq_shape = [] if seq_len is None else [seq_len]
+        shape = batch_shape + seq_shape + [self.n_latents]
+        self.register_buffer("latent_total_act", t.zeros(shape, device=device), False)
 
     @classmethod
     def from_state_dict(
@@ -73,7 +79,7 @@ class SparseAutoencoder(t.nn.Module):
         }
         del state
         self.init_params(*list(reversed(new_state_dict["decode_weight"].shape)))
-        self.load_state_dict(new_state_dict, assign=True)
+        self.load_state_dict(new_state_dict, assign=True, strict=True)
         self.reset_activated_latents()
 
     def encode(self, x: t.Tensor) -> t.Tensor:
@@ -97,8 +103,7 @@ class SparseAutoencoder(t.nn.Module):
     def forward(self, x: t.Tensor) -> t.Tensor:
         """
         :param x: input data (shape: [..., n_inputs])
-        :return:  autoencoder latents (shape: [..., n_latents])
-                  reconstructed data (shape: [..., n_inputs])
+        :return:  reconstructed data (shape: [..., n_inputs])
         """
         x = self.wrapped_hook(x)
         latents = self.encode(x)
@@ -152,13 +157,16 @@ def load_autoencoder(
         file_name = f"pythia-70m-deduped_layer_{layer_idx}_{pythia_size}.pt"
         cache_path = cache_dir / file_name
         t.hub.load_state_dict_from_url(
-            file_url, str(cache_dir.resolve()), file_name=file_name
+            file_url,
+            str(cache_dir.resolve()),
+            file_name=file_name,
+            map_location=model.cfg.device,
         )
     else:
         raise ValueError(f"No autoencoder support for model {model_name}")
 
     with open(cache_path, "rb") as f:
-        state_dict = t.load(f)
+        state_dict = t.load(f, map_location=model.cfg.device)
     map_dict: Dict[str, str] = STATE_DICT_MAPS[model_name]
     state_dict = {map_dict[k]: v for k, v in state_dict.items() if k in map_dict}
     return SparseAutoencoder.from_state_dict(wrapped_hook, state_dict)

@@ -7,11 +7,11 @@ from transformer_lens import HookedTransformer
 from transformer_lens.hook_points import HookPoint
 
 from auto_circuit.data import load_datasets_from_json
-from auto_circuit.model_utils.autoencoder_transformer import (
+from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
     AutoencoderTransformer,
-    autoencoder_model,
+    sae_model,
 )
-from auto_circuit.model_utils.sparse_autoencoder import (
+from auto_circuit.model_utils.sparse_autoencoders.sparse_autoencoder import (
     load_autoencoder,
 )
 from auto_circuit.prune import run_pruned
@@ -85,8 +85,12 @@ def test_autoencoder_transformer_output_similarity(
 ):
     """Check that the output of the AutoencoderTransformer is similar to the default."""
     default_model = hooked_transformer
-    encoder_model = autoencoder_model(
-        default_model, autoencoder_input, pythia_size, new_instance=True
+    encoder_model = sae_model(
+        default_model,
+        autoencoder_input,
+        load_pretrained=True,
+        pythia_size=pythia_size,
+        new_instance=True,
     )
     prompt = "Michael Jackson was a"
     tokens = default_model.to_tokens(prompt)  # (1, n_tokens)
@@ -110,8 +114,12 @@ def test_prune_latents_with_dataset(
     print_top_k: Optional[int] = None,
 ):
     default_model = hooked_transformer
-    encoder_model = autoencoder_model(
-        hooked_transformer, autoencoder_input, pythia_size, new_instance=True
+    encoder_model = sae_model(
+        hooked_transformer,
+        autoencoder_input,
+        load_pretrained=True,
+        pythia_size=pythia_size,
+        new_instance=True,
     )
 
     train_loader, test_loader = load_datasets_from_json(

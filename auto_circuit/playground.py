@@ -66,11 +66,13 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 print("device", device)
 model = tl.HookedTransformer.from_pretrained_no_processing(
-    "tiny-stories-33M", device=device
+    "tiny-stories-2L-33M",
+    device=device
+    # "tiny-stories-33M", device=device
 )
 model.eval()
 #%%
-tl.utils.test_prompt("The capital of France is the city of", "stone", model, top_k=5)
+tl.utils.test_prompt("The sun rises in the", "stone", model, top_k=5)
 #%%
 
 

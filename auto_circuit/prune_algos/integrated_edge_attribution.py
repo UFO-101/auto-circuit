@@ -9,7 +9,7 @@ from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     set_all_masks,
 )
-from auto_circuit.utils.misc import batch_avg_answer_diff
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff
 
 
 def integrated_edge_attribution_prune_scores(

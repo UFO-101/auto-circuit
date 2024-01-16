@@ -188,8 +188,8 @@ METRICS: List[Metric] = [
     # LOGIT_DIFF_PERCENT_METRIC,
 ]
 
-compute_prune_scores = True
-load_prune_scores = False
+compute_prune_scores = False
+load_prune_scores = True
 save_prune_scores = False
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
@@ -208,7 +208,6 @@ prune_scores_similartity_fig = prune_score_similarities_plotly(
     task_prune_scores, [10, 100, 1000], ground_truths=False
 )
 prune_scores_similartity_fig.show()
-#%%
 
 metric_measurements: MetricMeasurements = defaultdict(lambda: defaultdict(dict))
 metric_measurements = measure_circuit_metrics(

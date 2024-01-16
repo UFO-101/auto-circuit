@@ -10,7 +10,7 @@ from auto_circuit.types import PruneScores
 from auto_circuit.utils.graph_utils import (
     set_all_masks,
 )
-from auto_circuit.utils.misc import batch_avg_answer_diff, batch_avg_answer_val
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def edge_attribution_patching_prune_scores(
