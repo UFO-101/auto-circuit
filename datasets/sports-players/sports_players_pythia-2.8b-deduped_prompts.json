@@ -1,0 +1,1423 @@
+{
+  "prompts": [
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Carlos Hyde plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Charlie Manuel plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Victor Cruz plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Garrett Richards plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Justin Tucker plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Magic Johnson plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ryan Leaf plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: George Karl plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Matthew Stafford plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Michael Jordan plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jerry Rice plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Charlie Morton plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Alfred Morris plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Richard Jefferson plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: John Fox plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ricky Rubio plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Sean Taylor plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Willis Reed plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Kurt Warner plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Alex Rodriguez plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Ryan plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Tim Duncan plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Bear Bryant plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Bird plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Al Golden plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ty Cobb plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Fred Taylor plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Blake Griffin plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Malcolm Jenkins plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Rick Barry plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Fitzgerald plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Adams plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jared Allen plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Wil Myers plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Andy Reid plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Perez plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Dion Lewis plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ben Gordon plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Jacobs plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Anthony Davis plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Graham plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Vernon Wells plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Mark Sanchez plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Bill Walton plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Marshall plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Randy Johnson plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Otto Graham plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Jennings plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ed Reed plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Eric Thames plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Chandler Jones plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Sue Bird plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Peters plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Pat Riley plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Andy Dalton plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Oscar Robertson plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Bruce Smith plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Pete Rose plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Mike McCarthy plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brooks Robinson plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Flynn plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Harrison Barnes plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Earl Campbell plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Tyson Chandler plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Fred Jackson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jerry West plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Trent Green plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Vince Carter plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Champ Bailey plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Baron Davis plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Antonio Gates plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Steve Nash plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Alex Smith plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ted Williams plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Garrett plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Evan Turner plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Joey Porter plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Harvey plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: London Fletcher plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ray Allen plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ben Tate plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Neil Walker plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Sam Bradford plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Nolan Ryan plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Willie Parker plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ben Wallace plays the sport of",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Gerald Wallace plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Taylor plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Billy Donovan plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Aaron Hernandez plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Harrison Barnes plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Hank Aaron plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Phil Jackson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: John Fox plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Steve Nash plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Eric Thames plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Taj Gibson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Josh Hamilton plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Anthony Davis plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Crawford plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Bill Walton plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Wil Myers plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Eric Gordon plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Cy Young plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Kevin Love plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Fred Taylor plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: John Wall plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Nolan Ryan plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Doc Rivers plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Perez plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Michael Jordan plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Campbell plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Richard Jefferson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Castro plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Paul Pierce plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Daniel Murphy plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ben Gordon plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Willie Parker plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: George Karl plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Andre Johnson plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Sue Bird plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: London Fletcher plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Maya Moore plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Mel Ott plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Derek Fisher plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Adam Dunn plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Baron Davis plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: David Price plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Bird plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Freddie Freeman plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Jennings plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Trent Edwards plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Bill Russell plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ty Cobb plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Pat Riley plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Otto Graham plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Josh Smith plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Dee Gordon plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Roy plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Andy Dalton plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Vince Carter plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Neil Walker plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Oscar Robertson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Randy Johnson plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Knight plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ted Williams plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Isaiah Thomas plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jim Brown plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Blake Griffin plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Phillips plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ricky Rubio plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Harvey plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jerry West plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Philip Rivers plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Tony Parker plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Archer plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jeremy Lin plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Bernie Williams plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Grant Hill plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Frank Thomas plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Stephen Curry plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jeremy Lane plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Rick Barry plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Doug Martin plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Mike Miller plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Garrett Richards plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Terry plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Marvin Lewis plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Joe Johnson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Trent Green plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Brown plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Flynn plays the sport of",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ryan Howard plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brady Quinn plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Perez plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Anthony Davis plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Belt plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Chad Johnson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ty Cobb plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Bird plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Pete Rose plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Vince Carter plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Bernie Williams plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Phil Jackson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Castro plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Otto Graham plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: David Price plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Alex Smith plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Randy Johnson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: George Karl plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Daniel Murphy plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Blake Griffin plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Hank Aaron plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Mike Miller plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Mel Ott plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jason Garrett plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brooks Robinson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Andrew Luck plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Stephen Drew plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ryan Leaf plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Andre Dawson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Doug Baldwin plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Adams plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Trent Edwards plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Ted Williams plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Kevin Love plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Phillips plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Joe Johnson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Garrett Richards plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Johnson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Alex Rodriguez plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Larry Brown plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Freddie Freeman plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Mike McCarthy plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Jackie Robinson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Knight plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Frank Robinson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Ben Gordon plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Nolan Ryan plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Trent Williams plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Frank Thomas plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Joey Porter plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Charlie Morton plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Eli Manning plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Cy Young plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Evan Turner plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Josh Hamilton plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Jeremy Lane plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Archer plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Mario Williams plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Wil Myers plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Oscar Robertson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Charlie Manuel plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Alex Smith plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Homer Bailey plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Bo Jackson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Dee Gordon plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Jennings plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Vernon Wells plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Josh Freeman plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: David Wright plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Marshall plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Chris Sale plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Carson Palmer plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brandon Crawford plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Isaiah Thomas plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Adam Dunn plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Fred Jackson plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Eric Thames plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Doc Rivers plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Neil Walker plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Bruce Smith plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Brett Myers plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Bill Russell plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Harvey plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Matt Bryant plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": "Fact: Tiger Woods plays the sport of golf\nFact: Walter Johnson plays the sport of",
+      "corrupt": "Fact: Tiger Woods plays the sport of golf\nFact: Steve Nash plays the sport of",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    }
+  ]
+}
