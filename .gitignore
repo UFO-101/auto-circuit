@@ -6,5 +6,6 @@ __pycache__/
 .prune_scores_cache/
 .ruff_cache/
 figure*/
+.DS_Store
 *.interactive
 *.png

@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 import torch as t
 from einops import einsum
-from torch.nn import utils
+from torch.nn.utils.parametrize import register_parametrization
 from transformer_lens.hook_points import HookPoint
 
 from auto_circuit.utils.tensor_ops import MaskFn, sample_hard_concrete
@@ -70,7 +70,7 @@ class TaskProjector(t.nn.Module):
         eye = eye if seq_len is None else eye.unsqueeze(0).repeat(seq_len, 1, 1)
         self.linear = t.nn.Parameter(eye)
         t.nn.init.orthogonal_(self.linear)
-        utils.register_parametrization(self, "linear", Symmetric())  # type: ignore
+        register_parametrization(self, "linear", Symmetric())  # type: ignore
         # self.dim_weights = t.nn.Parameter(t.zeros(seq_shape + [n_inputs]))
         # t.nn.init.constant_(self.dim_weights, 5.0)
         self.bias = t.nn.Parameter(t.zeros(seq_shape + [n_inputs]))

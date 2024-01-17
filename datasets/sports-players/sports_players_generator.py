@@ -1,3 +1,25 @@
+# WikiData SPARQL query:
+"""
+SELECT ?itemLabel WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
+  {
+    FILTER(EXISTS {
+      ?article schema:about ?item;
+        schema:isPartOf <https://en.wikipedia.org/>.
+    })
+    {
+      SELECT ?item (COUNT(DISTINCT ?article) AS ?n_wikipedia_articles) (COUNT(DISTINCT ?occs) AS ?n_occupations) WHERE {
+        ?item wdt:P106 wd:Q10871364.
+        ?article schema:about ?item.
+        ?item wdt:P106 ?occs.
+      }
+      GROUP BY ?item
+      ORDER BY DESC (?count)
+      LIMIT 2194
+    }
+  }
+}
+"""
 #%%
 import json
 import random
@@ -25,10 +47,11 @@ football_prompts = [template.format(player) for player in american_football_play
 basketball_prompts = [template.format(player) for player in basketball_players]
 baseball_prompts = [template.format(player) for player in baseball_players]
 
-MODEL_NAME = "pythia-2.8b-deduped"
+MODEL_NAME = "pythia-410m-deduped"
 
 device = "cuda" if t.cuda.is_available() else "cpu"
 model = tl.HookedTransformer.from_pretrained(MODEL_NAME, device=device)
+#%%
 
 football_valid_idxs, basketball_valid_idxs, baseball_valid_idxs = [], [], []
 

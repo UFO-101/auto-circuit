@@ -17,6 +17,7 @@ from auto_circuit.model_utils.task_projectors.projector_transformer import (
 from auto_circuit.model_utils.task_projectors.task_projector import TaskProjector
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.misc import repo_path_to_abs_path
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff
 
 # Constants are copied from the paper's code
 mask_p, left, right, temp = 0.9, -0.1, 1.1, 2 / 3
@@ -24,14 +25,11 @@ p = (mask_p - left) / (right - left)
 init_mask_val = math.log(p / (1 - p))
 regularize_const = temp * math.log(-left / right)
 
-
 # ISN'T THIS WHOLE THING BASICALLY EQUIVALENT TO SVD ON ACTIVATIONS?
-
 
 def train_model(
     model: tl.HookedTransformer,
     dataloader: PromptDataLoader,
-    n_latents: int,
     regularize_lambda: float,
     learning_rate: float,
     n_epochs: int,
@@ -42,11 +40,12 @@ def train_model(
     # REMEMBER TO TRY POST LAYERNORM
     projector_model: ProjectorTransformer = get_projector_model(
         model,
-        "resid_delta_mlp",
+        "resid",
         "hard_concrete",
         load_pretrained=False,
         seq_len=dataloader.seq_len,
-        new_instance=True,
+        new_instance=False,
+        layers=[0, 2, 5, 6, 15, 31]
     )
 
     train_params = []
@@ -67,16 +66,17 @@ def train_model(
         for batch in (batch_pbar := tqdm(dataloader)):
             toks = batch.clean.to(device)
             optim.zero_grad()
-            with t.no_grad():
-                default_probs = log_softmax(model(toks)[:, -1], dim=-1).clone()
-            proj_lobgprobs = log_softmax(projector_model(toks)[:, -1], dim=-1)
+            # with t.no_grad():
+                # default_probs = log_softmax(model(toks)[:, -1], dim=-1).clone()
+            # proj_lobgprobs = log_softmax(projector_model(toks)[:, -1], dim=-1)
             # nll = (-(default_probs * proj_lobgprobs).sum(dim=-1)).mean()
-            nll = kl_div(
-                proj_lobgprobs.flatten(end_dim=-2),
-                default_probs.flatten(end_dim=-2),
-                reduction="batchmean",
-                log_target=True,
-            )
+            # kl = kl_div(
+                # proj_lobgprobs.flatten(end_dim=-2),
+                # default_probs.flatten(end_dim=-2),
+                # reduction="batchmean",
+                # log_target=True,
+            # )
+            ld = batch_avg_answer_diff(projector_model(toks)[:, -1], batch)
 
             # dim_weights = [p.dim_weights for p in projector_model.projectors]
             # reg = t.sigmoid(t.stack(dim_weights) - regularize_const).mean()
@@ -85,17 +85,15 @@ def train_model(
             eigvals = [t.linalg.eigvalsh(p.linear) for p in projector_model.projectors]
             eigvals = t.stack(eigvals).abs()
             # reg = (eigvals.pow(1/3) + t.nn.functional.relu(eigvals - 1)).mean()
-            reg = ((eigvals.clamp(0, 1) * pi / 2).sin() + relu(eigvals - 1)).mean()
+            reg = ((eigvals.clamp(0, 1) * pi / 2).sin() + relu(eigvals - 1) ** 2).mean()
 
-            loss = nll + reg * regularize_lambda
+            loss = ld + reg * regularize_lambda
             loss.backward()
             optim.step()
             loss_history.append(loss.item())
-            cross_entropy_loss_history.append(nll.item())
+            cross_entropy_loss_history.append(ld.item())
             regularize_loss_history.append(reg.item())
-            desc = (
-                f"Loss: {loss.item():.3f} NLL: {nll.item():.3f} Reg: {reg.item():.3f}"
-            )
+            desc = f"Loss: {loss.item():.3f} LD: {ld.item():.3f} Reg: {reg.item():.3f}"
             batch_pbar.set_description_str(desc)
             epoch_pbar.set_description_str(f"Epoch: {epoch} " + desc)
 
@@ -115,10 +113,11 @@ def train_model(
 # model, dataloader = get_model_and_data(model_name, dataset_name)
 
 
-model_name, dataset_name = (
-    "pythia-70m-deduped",
-    "datasets/capital_cities_pythia-70m-deduped_prompts.json",
-)
+# model_name = "pythia-70m-deduped"
+# dataset_name = "datasets/capital_cities_pythia-70m-deduped_prompts.json"
+model_name = "pythia-2.8b-deduped"
+dataset_name = "datasets/sports-players/sports_players_pythia-2.8b-deduped_prompts.json"
+
 model = tl.HookedTransformer.from_pretrained_no_processing(model_name, device="cpu")
 assert model.cfg.device is not None
 train_dataloader, test_dataloader = load_datasets_from_json(
@@ -126,7 +125,7 @@ train_dataloader, test_dataloader = load_datasets_from_json(
     repo_path_to_abs_path(dataset_name),
     device=t.device(model.cfg.device),
     prepend_bos=True,
-    batch_size=16,
+    batch_size=1,
     train_test_split=[0.8, 0.2],
     length_limit=1000,
     return_seq_length=True,
@@ -136,10 +135,9 @@ train_dataloader, test_dataloader = load_datasets_from_json(
 projector_model = train_model(
     model,
     train_dataloader,
-    n_latents=64,
     regularize_lambda=1,
     learning_rate=1e-2,
-    n_epochs=1500,
+    n_epochs=15,
 )
 
 # %%

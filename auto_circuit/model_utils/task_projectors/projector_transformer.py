@@ -13,10 +13,17 @@ from auto_circuit.utils.tensor_ops import MaskFn
 class ProjectorTransformer(t.nn.Module):
     wrapped_model: t.nn.Module
     projectors: List[TaskProjector]
+    projector_layers: List[int]
 
-    def __init__(self, wrapped_model: t.nn.Module, projectors: List[TaskProjector]):
+    def __init__(
+        self,
+        wrapped_model: t.nn.Module,
+        projectors: List[TaskProjector],
+        layers: List[int]
+    ):
         super().__init__()
         self.projectors = projectors
+        self.projector_layers = layers
 
         if isinstance(wrapped_model, PatchableModel):
             self.wrapped_model = wrapped_model.wrapped_model
@@ -70,30 +77,47 @@ def get_projector_model(
     mask_fn: MaskFn,
     load_pretrained: bool,
     seq_len: Optional[int] = None,
-    pythia_size: Optional[str] = None,
     new_instance: bool = True,
+    layers: Optional[List[int]] = None,
 ) -> ProjectorTransformer:
     if new_instance:
         model = deepcopy(model)
     projectors: List[TaskProjector] = []
+    projector_layers: List[int] = []
     for layer_idx in range(model.cfg.n_layers):
+        if layers is not None and layer_idx not in layers:
+            continue
         if projector_input == "mlp_post_act":
-            hook_point = model.blocks[layer_idx].mlp.hook_post
-            hook_module = model.blocks[layer_idx].mlp
-            hook_name = "hook_post"
+            hook_points = [model.blocks[layer_idx].mlp.hook_post]
+            hook_modules = [model.blocks[layer_idx].mlp]
+            hook_names = ["hook_post"]
+            hook_layers = [layer_idx]
+        elif projector_input == "resid":
+            hook_points = [model.blocks[layer_idx].hook_resid_pre]
+            hook_modules = [model.blocks[layer_idx]]
+            hook_names = ["hook_resid_pre"]
+            hook_layers = [layer_idx]
+            if layer_idx == model.cfg.n_layers - 1:
+                hook_points.append(model.blocks[layer_idx].hook_resid_post)
+                hook_modules.append(model.blocks[layer_idx])
+                hook_names.append("hook_resid_post")
+                hook_layers.append(layer_idx + 1)
         else:
             assert projector_input == "resid_delta_mlp"
-            hook_point = model.blocks[layer_idx].hook_mlp_out
-            hook_module = model.blocks[layer_idx]
-            hook_name = "hook_mlp_out"
+            hook_points = [model.blocks[layer_idx].hook_mlp_out]
+            hook_modules = [model.blocks[layer_idx]]
+            hook_names = ["hook_mlp_out"]
+            hook_layers = [layer_idx]
         if load_pretrained:
             raise NotImplementedError
-        else:
-            projector = TaskProjector(hook_point, model.cfg.d_model, seq_len, mask_fn)
-        projector.to(model.cfg.device)
-        setattr(hook_module, hook_name, projector)
-        projectors.append(projector)
-    return ProjectorTransformer(model, projectors)
+        for hp, mod, name in zip(hook_points, hook_modules, hook_names):
+            projector = TaskProjector(hp, model.cfg.d_model, seq_len, mask_fn)
+            projector.to(model.cfg.device)
+            setattr(mod, name, projector)
+            projectors.append(projector)
+            projector_layers.append(layer_idx)
+
+    return ProjectorTransformer(model, projectors, projector_layers)
 
 
 # def factorized_src_nodes(model: ProjectorTransformer) -> Set[SrcNode]:
