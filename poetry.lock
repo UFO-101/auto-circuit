@@ -4369,6 +4369,16 @@ optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
 
 [[package]]
+name = "wget"
+version = "3.2"
+description = "pure python download utility"
+optional = false
+python-versions = "*"
+files = [
+    {file = "wget-3.2.zip", hash = "sha256:35e630eca2aa50ce998b9b1a127bb26b30dfee573702782aa982f875e3f16061"},
+]
+
+[[package]]
 name = "widgetsnbextension"
 version = "4.0.9"
 description = "Jupyter interactive widgets for Jupyter Notebook"
@@ -4378,6 +4388,23 @@ files = [
     {file = "widgetsnbextension-4.0.9-py3-none-any.whl", hash = "sha256:91452ca8445beb805792f206e560c1769284267a30ceb1cec9f5bcc887d15175"},
     {file = "widgetsnbextension-4.0.9.tar.gz", hash = "sha256:3c1f5e46dc1166dfd40a42d685e6a51396fd34ff878742a3e47c6f0cc4a2a385"},
 ]
+
+[[package]]
+name = "word2word"
+version = "1.0.0"
+description = "Easy-to-use word translations for 3,564 language pairs"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "word2word-1.0.0-py3-none-any.whl", hash = "sha256:da90491ada0250b4350ed78baa37f44ea6d1b063ed559b594aafef8e5ef0862e"},
+    {file = "word2word-1.0.0.tar.gz", hash = "sha256:f29ef3e2ae80432250cdea50105e46ed19b9c307f2ec7c264d72da79e526c05f"},
+]
+
+[package.dependencies]
+numpy = "*"
+requests = "*"
+tqdm = "*"
+wget = "*"
 
 [[package]]
 name = "xxhash"
@@ -4602,4 +4629,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4a2effdeff3f638571af7473d836263da2b84b4f44aec0aa4b9522b18f9c7946"
+content-hash = "7be54876db097af3be8ced23a985747997474e65891f430bfb3eabe2f2405251"

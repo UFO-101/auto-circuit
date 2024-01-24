@@ -16,6 +16,7 @@ tqdm = {git = "https://github.com/UFO-101/tqdm.git"}
 plotly = "^5.18.0"
 kaleido = "0.2.1"  # Improved renderer for plotly
 blobfile = "2.0.2"
+word2word = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.3"
