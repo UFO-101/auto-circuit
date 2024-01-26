@@ -47,9 +47,9 @@ def edge_attribution_patching_prune_scores(
         model.add_hook(edge_acdcpp_back_filter, backward_cache_hook, "bwd")
         logits = model(batch.clean)[out_slice]
         if answer_diff:
-            loss = batch_avg_answer_diff(logits, batch)
+            loss = -batch_avg_answer_diff(logits, batch)
         else:
-            loss = batch_avg_answer_val(logits, batch)
+            loss = -batch_avg_answer_val(logits, batch)
         loss.backward()
         model.reset_hooks()
 

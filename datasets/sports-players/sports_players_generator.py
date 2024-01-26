@@ -8,7 +8,8 @@ SELECT ?itemLabel WHERE {
         schema:isPartOf <https://en.wikipedia.org/>.
     })
     {
-      SELECT ?item (COUNT(DISTINCT ?article) AS ?n_wikipedia_articles) (COUNT(DISTINCT ?occs) AS ?n_occupations) WHERE {
+      SELECT ?item (COUNT(DISTINCT ?article) AS ?n_wikipedia_articles)
+                                    (COUNT(DISTINCT ?occs) AS ?n_occupations) WHERE {
         ?item wdt:P106 wd:Q10871364.
         ?article schema:about ?item.
         ?item wdt:P106 ?occs.
@@ -47,7 +48,7 @@ football_prompts = [template.format(player) for player in american_football_play
 basketball_prompts = [template.format(player) for player in basketball_players]
 baseball_prompts = [template.format(player) for player in baseball_players]
 
-MODEL_NAME = "pythia-410m-deduped"
+MODEL_NAME = "pythia-2.8b-deduped"
 
 device = "cuda" if t.cuda.is_available() else "cpu"
 model = tl.HookedTransformer.from_pretrained(MODEL_NAME, device=device)
@@ -64,7 +65,7 @@ for prompts, answer, valid_idxs in [
     prompt_tokens = model.to_tokens(prompts, prepend_bos=True, padding_side="left")
     print("prompt_tokens.shape", prompt_tokens.shape)
 
-    correct_prompt_len = 19
+    correct_prompt_len = 20
     padding_token = model.tokenizer.pad_token_id  # type: ignore
     correct_prompt_len_idxs = t.where(
         # <pad> == <bos> so we need to subtract 1 from the correct prompt len
@@ -123,6 +124,7 @@ for sport_idx in range(len(sport_objects)):
 
 data_json = {"prompts": prompt_dicts}
 
+#%%
 with open(f"sports_players_{MODEL_NAME}_prompts.json", "w") as f:
     json.dump(data_json, f)
 #%%

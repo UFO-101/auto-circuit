@@ -10,10 +10,10 @@ import plotly.graph_objects as go
 import torch as t
 import torch.backends.mps
 import transformer_lens as tl
+from torch.nn.utils import parametrizations
 
 from auto_circuit.utils.misc import get_most_similar_embeddings
 
-#%%
 # from auto_circuit.prune_functions.parameter_integrated_gradients import (
 #     BaselineWeights,
 # )
@@ -65,8 +65,13 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 print("device", device)
-model = tl.HookedTransformer.from_pretrained_no_processing(
-    "tiny-stories-2L-33M",
+model = tl.HookedTransformer.from_pretrained(
+    # "pythia-410m-deduped",
+    "gpt2",
+    fold_ln=True,
+    center_writing_weights=True,
+    center_unembed=False,
+    # "tiny-stories-2L-33M",
     device=device
     # "tiny-stories-33M", device=device
 )
@@ -82,35 +87,35 @@ country_to_captial: Dict[str, str] = {
     "Hungary": "Budapest",
     "China": "Beijing",
     "Germany": "Berlin",
-    "Italy": "Rome",
+    # "Italy": "Rome",
     "Japan": "Tokyo",
-    "Russia": "Moscow",
+    # "Russia": "Moscow",
     # 'Canada': 'Ottawa',
     # 'Australia': 'Canberra',
-    "Egypt": "Cairo",
+    # "Egypt": "Cairo",
     # 'Turkey': 'Ankara',
-    "Spain": "Madrid",
+    # "Spain": "Madrid",
     "Sweden": "Stockholm",
     "Norway": "Oslo",
     "Denmark": "Copenhagen",
     "Finland": "Helsinki",
     "Poland": "Warsaw",
     "Indonesia": "Jakarta",
-    "Thailand": "Bangkok",
+    # "Thailand": "Bangkok",
     "Cuba": "Havana",
     "Chile": "Santiago",
     "Greece": "Athens",
     "Portugal": "Lisbon",
-    "Austria": "Vienna",
-    "Belgium": "Brussels",
+    # "Austria": "Vienna",
+    # "Belgium": "Brussels",
     "Philippines": "Manila",
     "Peru": "Lima",
     "Ireland": "Dublin",
     "Israel": "Jerusalem",
     # 'Switzerland': 'Bern',
-    # 'Netherlands': 'Amsterdam',
-    # 'Singapore': 'Singapore', # Interesting case
-    "Pakistan": "Islamabad",
+    "Netherlands": "Amsterdam",
+    "Singapore": "Singapore",  # Interesting case
+    # "Pakistan": "Islamabad",
     "Lebanon": "Beirut",
 }
 present_to_past: Dict[str, str] = {
@@ -168,12 +173,13 @@ male_to_female: Dict[str, str] = {
     "god": "goddess",
 }
 
-# for k, v in country_to_captial.items():
-#     tl.utils.test_prompt(f"The capital of {k} is", v, model, top_k=5)
+for k, v in country_to_captial.items():
+    tl.utils.test_prompt(f"The capital of {k} is the city of", v, model, top_k=5)
+#%%
 
 word_mapping = present_to_past
 # for i, (k, v) in enumerate(word_mapping.items()):
-#     print("key:", model.to_str_tokens(" " + k, prepend_bos=false))
+#     print("key:", model.to_str_tokens(" " + k, prepend_bos=False))
 #     print("value:", model.to_str_tokens(" " + v, prepend_bos=False))
 key_toks = model.to_tokens(
     [" " + s for s in word_mapping.keys()], prepend_bos=False
@@ -220,19 +226,26 @@ concept_val_embed, train_val_embeds, test_val_embeds = (
 )
 # ln_final_bias = model.ln_final.b.detach().clone()
 
-linear_map = t.zeros(
-    [val_embeds.shape[1], key_embeds.shape[1]], device=device, requires_grad=True
-)
+# linear_map = t.zeros(
+#     [val_embeds.shape[1], key_embeds.shape[1]], device=device, requires_grad=True
+# )
 translate = t.zeros([key_embeds.shape[1]], device=device, requires_grad=True)
 scale = t.ones([key_embeds.shape[1]], device=device, requires_grad=True)
 translate_2 = t.zeros([key_embeds.shape[1]], device=device, requires_grad=True)
 rotation_vectors = t.rand([2, key_embeds.shape[1]], device=device, requires_grad=True)
 
-# optim = t.optim.Adam([linear_map], lr=0.01)
+learned_rotation = t.nn.Linear(
+    key_embeds.shape[1], key_embeds.shape[1], bias=False, device=device
+)
+
+linear_map = parametrizations.orthogonal(learned_rotation, "weight")
+
+# optim = t.optim.Adam(linear_map.parameters(), lr=0.01)
+optim = t.optim.Adam(list(linear_map.parameters()) + [translate], lr=0.01)
 # optim = t.optim.Adam([translate], lr=0.01)
 # optim = t.optim.Adam([linear_map, translate], lr=0.01)
 # optim = t.optim.Adam([rotation_vectors], lr=0.01)
-optim = t.optim.Adam([rotation_vectors, translate], lr=0.01)
+# optim = t.optim.Adam([rotation_vectors, translate], lr=0.01)
 # optim = t.optim.Adam([rotation_vectors, translate, translate_2], lr=0.01)
 # optim = t.optim.Adam([linear_map, translate, translate_2], lr=0.01)
 # optim = t.optim.Adam([rotation_vectors, translate, scale], lr=0.01)
@@ -241,15 +254,17 @@ optim = t.optim.Adam([rotation_vectors, translate], lr=0.01)
 
 
 def pred_from_embeds(embeds: t.Tensor, lerp: float = 1.0) -> t.Tensor:
-    linear_map, proj = rotation_matrix(
-        rotation_vectors[0], rotation_vectors[1], lerp=lerp
-    )
+    # linear_map, proj = rotation_matrix(
+    #     rotation_vectors[0], rotation_vectors[1], lerp=lerp
+    # )
+    # pred = learned_rotation(embeds)
+    pred = learned_rotation(embeds + translate) - translate
     # pred = embeds @ linear_map
     # pred = embeds + (translate * lerp)
     # pred = embeds * scale
     # pred = (embeds @ linear_map) + translate
     # pred = ((embeds + translate_2) @ linear_map) + translate
-    pred = ((embeds + translate) @ linear_map) - translate
+    # pred = ((embeds + translate) @ linear_map) - translate
     # pred = ((embeds - ln_final_bias) @ linear_map) + ln_final_bias
     # pred = ((embeds * scale) + translate) @ linear_map
     # pred = ((embeds @ linear_map)* scale) + translate
@@ -275,29 +290,33 @@ for epoch in range(1000):
 
 px.line(y=losses).show()
 
-linear_map = rotation_matrix(rotation_vectors[0], rotation_vectors[1])  # type: ignore
+# linear_map = rotation_matrix(rotation_vectors[0], rotation_vectors[1])  # type: ignore
 test_pred = pred_from_embeds(test_key_embeds)
 print("Test loss:", loss_fn(test_pred, test_val_embeds).item())
 
 print("Train data example")
 get_most_similar_embeddings(
-    model, train_key_embeds[0], top_k=5, apply_ln_final=True, apply_unembed=True
+    model, train_key_embeds[0], top_k=5, apply_ln_final=False, apply_unembed=True
 )
+print()
 train_pred_0 = pred_from_embeds(train_key_embeds[0])
 get_most_similar_embeddings(
-    model, train_pred_0, top_k=5, apply_ln_final=True, apply_unembed=True
+    model, train_pred_0, top_k=5, apply_ln_final=False, apply_unembed=True
 )
 
 for i in range(5):
     print("Test data example")
     get_most_similar_embeddings(
-        model, test_key_embeds[i], top_k=5, apply_ln_final=True, apply_unembed=True
+        model, test_key_embeds[i], top_k=5, apply_ln_final=False, apply_unembed=True
     )
+    print()
     test_pred_i = pred_from_embeds(test_key_embeds[i])
     get_most_similar_embeddings(
-        model, test_pred_i, top_k=5, apply_ln_final=True, apply_unembed=True
+        model, test_pred_i, top_k=5, apply_ln_final=False, apply_unembed=True
     )
 
+#%%
+get_most_similar_embeddings(model, train_key_embeds[0], apply_embed=True)
 #%%
 linear_map, proj = rotation_matrix(rotation_vectors[0], rotation_vectors[1], lerp=1.0)
 projected_keys = ((key_embeds[1:]) @ proj).detach().clone().cpu()

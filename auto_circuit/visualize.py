@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import torch as t
 from ordered_set import OrderedSet
-from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.metrics.area_under_curve import task_measurements_auc
 from auto_circuit.prune_algos.prune_algos import (
@@ -267,15 +266,14 @@ def net_viz(
     seq_idx: Optional[int] = None,
     show_prune_scores: bool = False,
     show_all_edges: bool = False,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> go.Sankey:
     nodes: OrderedSet[Node] = OrderedSet(model.nodes)
     seq_dim: int = model.seq_dim
     seq_sl = (-1 if input.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
     label_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
 
-    src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input, kv_cache)
-    dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input, kv_cache)
+    src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input)
+    dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input)
     node_ins = dict([(head(k.name), v) for k, v in dest_ins.items()])
     defaultdict(str, node_ins)
 
@@ -343,7 +341,6 @@ def draw_seq_graph(
     show_prune_scores: bool = False,  # Show edges batched on mask or prune scores
     show_all_edges: bool = False,
     show_all_seq_pos: bool = False,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
     seq_labels: Optional[List[str]] = None,
     display_ipython: bool = True,
     file_path: Optional[str] = None,
@@ -381,7 +378,6 @@ def draw_seq_graph(
             seq_idx,
             show_prune_scores,
             show_all_edges,
-            kv_cache,
         )
         sankeys.append(viz)
 

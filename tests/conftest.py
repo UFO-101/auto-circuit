@@ -23,7 +23,8 @@ def mini_tl_transformer() -> tl.HookedTransformer:
         d_head=2,
         act_fn="gelu",
         tokenizer_name="gpt2",
-        device=str(DEVICE),
+        # device=str(DEVICE),
+        device="cpu",
     )
     mini_tl_model = tl.HookedTransformer(cfg)
     model = mini_tl_model
@@ -31,6 +32,7 @@ def mini_tl_transformer() -> tl.HookedTransformer:
     model.tokenizer.padding_side = "left"  # type: ignore
 
     model.cfg.use_attn_result = True
+    model.cfg.use_attn_in = True
     model.cfg.use_split_qkv_input = True
     model.cfg.use_hook_mlp_in = True
     return model

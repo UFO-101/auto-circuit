@@ -49,7 +49,9 @@ class PatchWrapper(t.nn.Module):
 
         if self.patch_mode and self.is_dest:
             assert self.patch_src_outs is not None and self.curr_src_outs is not None
-            diff = (self.patch_src_outs - self.curr_src_outs)[self.src_slice]
+            diff = (
+                self.patch_src_outs[self.src_slice] - self.curr_src_outs[self.src_slice]
+            )
             batch_str = ""
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately

@@ -118,10 +118,9 @@ SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=2000,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
-        dropout_p=0.0,
         show_train_graph=True,
     ),
 )
@@ -131,14 +130,42 @@ CIRCUIT_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=2000,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
-        dropout_p=0.0,
         show_train_graph=True,
-        regularize_to_true_circuit_size=True,
+        true_circuit_size=True,
     ),
     short_name="CP",
+)
+SUBNETWORK_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
+    key="Subnetwork Tree Probing",
+    name="Subnetwork Tree Probing",
+    short_name="STP",
+    func=partial(
+        subnetwork_probing_prune_scores,
+        learning_rate=0.1,
+        epochs=2000,
+        regularize_lambda=0.5,
+        mask_fn="hard_concrete",
+        show_train_graph=True,
+        tree_optimisation=True,
+    ),
+)
+CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
+    key="Tree Probing",
+    name="Tree Probing",
+    func=partial(
+        subnetwork_probing_prune_scores,
+        learning_rate=0.1,
+        epochs=2000,
+        regularize_lambda=0.1,
+        mask_fn="hard_concrete",
+        show_train_graph=True,
+        true_circuit_size=True,
+        tree_optimisation=True,
+    ),
+    short_name="TP",
 )
 
 PRUNE_ALGOS: List[PruneAlgo] = [
@@ -152,5 +179,7 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
     SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     CIRCUIT_PROBING_PRUNE_ALGO,
+    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
+    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
 ]
 PRUNE_ALGO_DICT: Dict[AlgoKey, PruneAlgo] = {algo.key: algo for algo in PRUNE_ALGOS}

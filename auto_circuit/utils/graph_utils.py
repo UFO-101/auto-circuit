@@ -35,12 +35,14 @@ from auto_circuit.utils.tensor_ops import MaskFn
 def patchable_model(
     model: t.nn.Module,
     factorized: bool,
+    separate_qkv: bool,
     slice_output: bool = False,
     seq_len: Optional[int] = None,
+    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
     device: t.device = t.device("cpu"),
 ) -> PatchableModel:
     nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
-        model, factorized, seq_len
+        model, factorized, separate_qkv, seq_len
     )
     wrappers, src_wrappers, dest_wrappers = make_model_patchable(
         model, srcs, nodes, device, seq_len, seq_dim
@@ -64,12 +66,16 @@ def patchable_model(
         dest_wrappers=dest_wrappers,
         out_slice=out_slice,
         is_transformer=is_transformer,
+        kv_cache=kv_cache,
         wrapped_model=model,
     )
 
 
 def graph_edges(
-    model: t.nn.Module, factorized: bool, seq_len: Optional[int] = None
+    model: t.nn.Module,
+    factorized: bool,
+    separate_qkv: bool,
+    seq_len: Optional[int] = None,
 ) -> Tuple[
     Set[Node],
     Set[SrcNode],
@@ -98,10 +104,10 @@ def graph_edges(
             dests: Set[DestNode] = mm_utils.factorized_dest_nodes(model)
         elif isinstance(model, HookedTransformer):
             srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
-            dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model)
+            dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model, separate_qkv)
         elif isinstance(model, AutoencoderTransformer):
             srcs: Set[SrcNode] = sae_utils.factorized_src_nodes(model)
-            dests: Set[DestNode] = sae_utils.factorized_dest_nodes(model)
+            dests: Set[DestNode] = sae_utils.factorized_dest_nodes(model, separate_qkv)
         else:
             raise NotImplementedError(model)
         for i in [None] if seq_len is None else range(seq_len):
@@ -285,7 +291,6 @@ def src_out_hook(
 def get_sorted_src_outs(
     model: PatchableModel,
     input: t.Tensor,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[SrcNode, t.Tensor]:
     src_outs: Dict[SrcNode, t.Tensor] = {}
     with remove_hooks() as handles:
@@ -293,10 +298,7 @@ def get_sorted_src_outs(
             hook_fn = partial(src_out_hook, src=node, src_outs=src_outs)
             handles.add(node.module(model).register_forward_hook(hook_fn))
         with t.inference_mode():
-            if model.is_transformer and kv_cache is not None:
-                model(input, past_kv_cache=kv_cache)
-            else:
-                model(input)
+            model(input)
     src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
     assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
     return src_outs
@@ -322,7 +324,6 @@ def dest_in_hook(
 def get_sorted_dest_ins(
     model: PatchableModel,
     input: t.Tensor,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
 ) -> Dict[DestNode, t.Tensor]:
     dest_ins: Dict[DestNode, t.Tensor] = {}
     with remove_hooks() as handles:
@@ -330,10 +331,7 @@ def get_sorted_dest_ins(
             hook_fn = partial(dest_in_hook, dest=node, dest_ins=dest_ins)
             handles.add(node.module(model).module.register_forward_hook(hook_fn))
         with t.inference_mode():
-            if model.is_transformer and kv_cache is not None:
-                model(input, past_kv_cache=kv_cache)
-            else:
-                model(input)
+            model(input)
     dest_ins = dict(sorted(dest_ins.items(), key=lambda x: x[0].idx))
     assert [dest.idx for dest in dest_ins.keys()] == list(range(len(dest_ins)))
     return dest_ins

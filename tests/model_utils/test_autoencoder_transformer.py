@@ -64,7 +64,8 @@ def test_single_autoencoder_output_similarity(
         input_tensor = activation_cache[
             "blocks..mlp.hook_post"
         ]  # (n_tokens, n_neurons)
-    elif autoencoder_input == "resid_delta_mlp":
+    else:
+        assert autoencoder_input == "resid_delta_mlp"
         input_tensor = activation_cache[
             f"blocks.{layer_idx}.hook_mlp_out"
         ]  # (n_tokens, n_residual_channels)
@@ -123,7 +124,7 @@ def test_prune_latents_with_dataset(
     )
 
     train_loader, test_loader = load_datasets_from_json(
-        tokenizer=default_model.tokenizer,
+        model=default_model,
         path=repo_path_to_abs_path("datasets/mini_prompts.json"),
         device=t.device("cpu"),
         prepend_bos=True,

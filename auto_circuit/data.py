@@ -10,6 +10,7 @@ from torch.utils.data import (
     DataLoader,
     Dataset,
 )
+from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
 
 @dataclass(frozen=True)
@@ -55,13 +56,11 @@ class PromptDataset(Dataset):
         corrupt_prompts: List[t.Tensor] | t.Tensor,
         answers: List[t.Tensor],
         wrong_answers: List[t.Tensor],
-        seq_labels: Optional[List[str]] = None,
     ):
         self.clean_prompts = clean_prompts
         self.corrupt_prompts = corrupt_prompts
         self.answers = answers
         self.wrong_answers = wrong_answers
-        self.seq_labels = seq_labels
 
     def __len__(self) -> int:
         assert len(self.clean_prompts) == len(self.corrupt_prompts)
@@ -81,16 +80,21 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         self,
         *args: Any,
         seq_len: Optional[int],
+        diverge_idx: int,
         seq_labels: Optional[List[str]] = None,
+        kv_cache: Optional[HookedTransformerKeyValueCache] = None,
         **kwargs: Any
     ):
         super().__init__(*args, **kwargs)
         self.seq_len = seq_len
+        self.diverge_idx = diverge_idx
         self.seq_labels = seq_labels
+        assert kv_cache is None or diverge_idx > 0
+        self.kv_cache = kv_cache
 
 
 def load_datasets_from_json(
-    tokenizer: Any,
+    model: Optional[t.nn.Module],
     path: Path,
     device: t.device,
     prepend_bos: bool = True,
@@ -98,6 +102,7 @@ def load_datasets_from_json(
     train_test_split: Sequence[int | float] = [0.9, 0.1],
     length_limit: int = 100,
     return_seq_length: bool = False,
+    tail_divergence: bool = False,  # Remove all tokens before divergence
     random_subet: bool = True,
     pad: bool = True,
 ) -> Tuple[PromptDataLoader, PromptDataLoader]:
@@ -111,13 +116,17 @@ def load_datasets_from_json(
     answer_strs = [d["answers"] for d in data["prompts"]][:length_limit]
     wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:length_limit]
     seq_labels = data.get("seq_labels", None)
-    if tokenizer is None:
+    kv_cache = None
+    if model is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
         answers = [t.tensor(a).to(device) for a in answer_strs]
         wrong_answers = [t.tensor(a).to(device) for a in wrong_answer_strs]
         seq_len = clean_prompts[0].shape[0]
+        assert not tail_divergence
+        diverge_idx = 0
     else:
+        tokenizer: Any = model.tokenizer
         if prepend_bos:
             clean_prompts = [tokenizer.bos_token + prompt for prompt in clean_prompts]
             corrupt_prompts = [
@@ -139,23 +148,52 @@ def load_datasets_from_json(
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
         answers = [a["input_ids"].squeeze(-1).to(device) for a in ans_dict]
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dict]
+        diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
+        diverge_idx: int = int(diverge_idxs.min().item())
+        print("Dataloader diverge_idx", diverge_idx)
+        if tail_divergence:
+            assert diverge_idx > 0
+            common_prefix_batch = clean_prompts[:batch_size, :diverge_idx]
+            print("kv_cache for common_prefix_batch", common_prefix_batch.shape)
+            kv_cache = HookedTransformerKeyValueCache.init_cache(
+                model.cfg, model.cfg.device, common_prefix_batch.shape[0]
+            )
+            with t.inference_mode():
+                model(common_prefix_batch, past_kv_cache=kv_cache)
+            kv_cache.freeze()
+
+            clean_prompts = clean_prompts[:, diverge_idx:]
+            corrupt_prompts = corrupt_prompts[:, diverge_idx:]
+            assert clean_prompts.shape[0] % batch_size == 0
+            assert corrupt_prompts.shape[0] % batch_size == 0
+            print("seq_len before divergence", seq_len)
+            if return_seq_length:
+                assert seq_len is not None
+                seq_len -= diverge_idx
+            print("seq_len after divergence", seq_len)
 
     dataset = PromptDataset(clean_prompts, corrupt_prompts, answers, wrong_answers)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
     train_loader = PromptDataLoader(
         train_set,
         seq_len=seq_len,
+        diverge_idx=diverge_idx,
         seq_labels=seq_labels,
+        kv_cache=kv_cache,
         batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_fn,
+        drop_last=tail_divergence,
     )
     test_loader = PromptDataLoader(
         test_set,
         seq_len=seq_len,
+        diverge_idx=diverge_idx,
         seq_labels=seq_labels,
+        kv_cache=kv_cache,
         batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_fn,
+        drop_last=tail_divergence,
     )
     return train_loader, test_loader

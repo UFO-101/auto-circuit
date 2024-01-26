@@ -227,30 +227,48 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
     return nodes
 
 
-def factorized_dest_nodes(model: AutoencoderTransformer) -> Set[DestNode]:
+def factorized_dest_nodes(
+    model: AutoencoderTransformer, separate_qkv: bool
+) -> Set[DestNode]:
     """Get the destination part of each edge in the factorized graph, grouped by layer.
     Graph is factorized following the Mathematical Framework paper."""
-    assert model.cfg.use_attn_result  # Get attention head outputs separately
-    assert (
-        model.cfg.use_attn_in
-    )  # Get attention head inputs separately (but Q, K, V are still combined)
-    # assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
+    if separate_qkv:
+        assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
+    else:
+        assert model.cfg.use_attn_in
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers, idxs = count(1), count()
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
         for head_idx in range(model.cfg.n_heads):
-            nodes.add(
-                DestNode(
-                    name=f"A{block_idx}.{head_idx}",
-                    module_name=f"blocks.{block_idx}.hook_attn_in",
-                    layer=layer,
-                    idx=next(idxs),
-                    head_dim=2,
-                    head_idx=head_idx,
+            if separate_qkv:
+                for letter in ["Q", "K", "V"]:
+                    nodes.add(
+                        DestNode(
+                            name=f"A{block_idx}.{head_idx}.{letter}",
+                            module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                            layer=layer,
+                            idx=next(idxs),
+                            head_dim=2,
+                            head_idx=head_idx,
+                            weight=f"blocks.{block_idx}.attn.W_{letter}",
+                            weight_head_dim=0,
+                        )
+                    )
+            else:
+                nodes.add(
+                    DestNode(
+                        name=f"A{block_idx}.{head_idx}",
+                        module_name=f"blocks.{block_idx}.hook_attn_in",
+                        layer=layer,
+                        idx=next(idxs),
+                        head_dim=2,
+                        head_idx=head_idx,
+                        weight=f"blocks.{block_idx}.attn.W_QKV",
+                        weight_head_dim=0,
+                    )
                 )
-            )
         nodes.add(
             DestNode(
                 name=f"MLP {block_idx}",

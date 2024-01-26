@@ -48,7 +48,7 @@ def integrated_edge_attribution_prune_scores(
         model.add_hook(edge_acdcpp_back_filter, backward_cache_hook, "bwd")
         for _ in (ig_pbar := tqdm(range(samples))):
             logits = model(batch.clean)[out_slice]
-            loss = batch_avg_answer_diff(logits, batch)
+            loss = -batch_avg_answer_diff(logits, batch)
             loss.backward()
         model.reset_hooks()
 

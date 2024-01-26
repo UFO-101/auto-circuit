@@ -12,6 +12,9 @@ from auto_circuit.metrics.official_circuits.greaterthan_official import (
     greaterthan_true_edges,
 )
 from auto_circuit.metrics.official_circuits.ioi_official import ioi_true_edges
+from auto_circuit.metrics.official_circuits.sports_players_official import (
+    sports_players_true_edges,
+)
 from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
     AutoencoderTransformer,
     sae_model,
@@ -34,6 +37,7 @@ class Task:
     token_circuit: bool
     _model_def: str | t.nn.Module
     _dataset_name: str
+    separate_qkv: bool = True
     _true_edge_func: Optional[Callable[..., Set[Edge]]] = None
     autoencoder_input: Optional[AutoencoderInput] = None
     autoencoder_max_latents: Optional[int] = None
@@ -45,6 +49,10 @@ class Task:
     def true_edges(self) -> Optional[Set[Edge]]:
         self.init_task() if not self.__init_complete__ else None
         return self._true_edges
+
+    @property
+    def true_edge_count(self) -> Optional[int]:
+        return len(self.true_edges) if self.true_edges is not None else None
 
     @property
     def model(self) -> PatchableModel:
@@ -116,14 +124,14 @@ class Task:
             self.batch_size,
             self.batch_count,
             self.token_circuit,
+            self.device,
         )
         if dataset_cache_key in DATASET_CACHE:
             self._train_loader, self._test_loader = DATASET_CACHE[dataset_cache_key]
         else:
             dataloader_len = self.batch_size * self.batch_count
-            tknr = model.tokenizer if hasattr(model, "tokenizer") else None
             train_loader, test_loader = load_datasets_from_json(
-                tokenizer=tknr,
+                model=model if hasattr(model, "tokenizer") else None,
                 path=repo_path_to_abs_path(f"datasets/{self._dataset_name}.json"),
                 device=self.device,
                 prepend_bos=True,
@@ -131,6 +139,7 @@ class Task:
                 train_test_split=[dataloader_len, dataloader_len],
                 length_limit=dataloader_len * 2,
                 return_seq_length=self.token_circuit,
+                tail_divergence=True if hasattr(model, "tokenizer") else False,
                 pad=True,
             )
             DATASET_CACHE[dataset_cache_key] = (train_loader, test_loader)
@@ -146,7 +155,10 @@ class Task:
             )  # in place operation
 
         seq_len = self._train_loader.seq_len
-        self._model = patchable_model(model, True, True, seq_len, self.device)
+        kv_cache = self._train_loader.kv_cache
+        self._model = patchable_model(
+            model, True, self.separate_qkv, True, seq_len, kv_cache, self.device
+        )
 
         if self._true_edge_func is not None:
             if self.token_circuit:
@@ -158,6 +170,28 @@ class Task:
         self.__init_complete__ = True
 
 
+SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK: Task = Task(
+    key="Sports Players Token Circuit",
+    name="Sports Players",
+    _model_def="pythia-2.8b-deduped",
+    _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
+    batch_size=1,  # There are 3 sports (football, basketball, baseball),
+    batch_count=105,  # 70 prompts for each sport (210 total), 105 test and 105 train
+    _true_edge_func=sports_players_true_edges,
+    token_circuit=True,
+    separate_qkv=False,
+)
+SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK: Task = Task(
+    key="Sports Players Component Circuit",
+    name="Sports Players",
+    _model_def="pythia-2.8b-deduped",
+    _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
+    batch_size=1,
+    batch_count=105,
+    _true_edge_func=sports_players_true_edges,
+    token_circuit=False,
+    separate_qkv=False,
+)
 IOI_TOKEN_CIRCUIT_TASK: Task = Task(
     key="Indirect Object Identification Token Circuit",
     name="Indirect Object Identification",
@@ -260,6 +294,8 @@ CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
 )
 
 TASKS: List[Task] = [
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     IOI_TOKEN_CIRCUIT_TASK,
     IOI_COMPONENT_CIRCUIT_TASK,
     IOI_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,

@@ -110,5 +110,5 @@ def prune_score_similarities_plotly(
             )
     # fig.update_layout(yaxis_scaleanchor="x")
     fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
-    fig.update_layout(width=col_count * 440, height=row_count * 300)
+    fig.update_layout(width=col_count * 750, height=row_count * 550)
     return fig

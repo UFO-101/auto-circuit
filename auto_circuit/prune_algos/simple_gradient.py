@@ -48,9 +48,9 @@ def simple_gradient_prune_scores(
                 else:
                     raise ValueError(f"Unknown grad_function: {grad_function}")
                 if answer_diff:
-                    loss = batch_avg_answer_diff(token_vals, batch)
+                    loss = -batch_avg_answer_diff(token_vals, batch)
                 else:
-                    loss = batch_avg_answer_val(token_vals, batch)
+                    loss = -batch_avg_answer_val(token_vals, batch)
                 loss.backward()
 
     prune_scores = {}

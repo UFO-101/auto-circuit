@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import torch as t
+from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
 from auto_circuit.types import DestNode, Edge, Node, SrcNode
 from auto_circuit.utils.patch_wrapper import PatchWrapper
@@ -19,6 +20,7 @@ class PatchableModel(t.nn.Module):
     dest_wrappers: Set[PatchWrapper]
     out_slice: Tuple[slice | int, ...]
     is_transformer: bool
+    kv_cache: Optional[HookedTransformerKeyValueCache]
     wrapped_model: t.nn.Module
 
     def __init__(
@@ -35,6 +37,7 @@ class PatchableModel(t.nn.Module):
         dest_wrappers: Set[PatchWrapper],
         out_slice: Tuple[slice | int, ...],
         is_transformer: bool,
+        kv_cache: Optional[HookedTransformerKeyValueCache],
         wrapped_model: t.nn.Module,
     ) -> None:
         super().__init__()
@@ -50,13 +53,22 @@ class PatchableModel(t.nn.Module):
         self.dest_wrappers = dest_wrappers
         self.out_slice = out_slice
         self.is_transformer = is_transformer
+        self.kv_cache = kv_cache
         self.wrapped_model = wrapped_model
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        return self.wrapped_model(*args, **kwargs)
+        if self.kv_cache is None:
+            return self.wrapped_model(*args, **kwargs)
+        else:
+            return self.wrapped_model(*args, past_kv_cache=self.kv_cache, **kwargs)
 
     def run_with_cache(self, *args: Any, **kwargs: Any) -> Any:
-        return self.wrapped_model.run_with_cache(*args, **kwargs)
+        if self.kv_cache is None:
+            return self.wrapped_model.run_with_cache(*args, **kwargs)
+        else:
+            return self.wrapped_model.run_with_cache(
+                *args, past_kv_cache=self.kv_cache, **kwargs
+            )
 
     def add_hook(self, *args: Any, **kwargs: Any) -> Any:
         return self.wrapped_model.add_hook(*args, **kwargs)

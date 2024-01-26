@@ -4,14 +4,14 @@
 # https://arxiv.org/abs/2104.03514
 
 import math
-from typing import Dict
+from typing import Dict, Optional, Set
 
 import plotly.graph_objects as go
 import torch as t
 from torch.nn.functional import kl_div, log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import PruneScores
+from auto_circuit.types import Edge, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
@@ -41,17 +41,19 @@ def subnetwork_probing_prune_scores(
     dropout_p: float = 0.0,
     init_val: float = -init_mask_val,
     show_train_graph: bool = False,
-    regularize_to_true_circuit_size: bool = False,
+    true_circuit_size: bool = False,
     tree_optimisation: bool = False,
+    avoid_edges: Optional[Set[Edge]] = None,
+    avoid_lambda: float = 1.0,
 ) -> PruneScores:
     """Prune scores are the mean activation magnitude of each edge."""
     model = task.model
     out_slice = model.out_slice
     true_size = 100 if task.true_edges is None else len(task.true_edges)
-    total_edges = len(model.edges)
-    inv_size = total_edges - true_size if tree_optimisation else true_size
+    n_edges = len(model.edges)
+    n_avoid = len(avoid_edges or [])
 
-    clean_logprobs: Dict[str, t.Tensor] = {}
+    clean_logprobs: Dict[int, t.Tensor] = {}
     with t.inference_mode():
         for batch in task.train_loader:
             clean_out = model(batch.clean)[out_slice]
@@ -64,7 +66,7 @@ def subnetwork_probing_prune_scores(
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     losses, kl_divs, regularizes = [], [], []
-    set_all_masks(model, val=init_val)
+    set_all_masks(model, val=-init_val if tree_optimisation else init_val)
     with train_mask_mode(model) as patch_masks, mask_fn_mode(model, mask_fn, dropout_p):
         optim = t.optim.Adam(patch_masks, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
@@ -82,35 +84,31 @@ def subnetwork_probing_prune_scores(
                         log_target=True,
                     )
                     masks = t.cat([patch_mask.flatten() for patch_mask in patch_masks])
-                    if regularize_to_true_circuit_size:
-                        mask_sample = sample_hard_concrete(masks, batch_size=1).sum()
-                        if tree_optimisation:
-                            regularize_term = t.relu(inv_size - mask_sample) / inv_size
-                            regularize_direction = 1
-                        else:
-                            regularize_term = (
-                                t.relu(mask_sample - true_size) / true_size
-                            )
-                            regularize_direction = 1
-                    else:
-                        regularize_term = t.sigmoid(masks - regularize_const).mean()
-                        regularize_direction = -1 if tree_optimisation else 1
-                    loss = (
-                        kl_div_term
-                        + regularize_direction * regularize_term * regularize_lambda
-                    )
+                    if mask_fn == "hard_concrete":
+                        masks = sample_hard_concrete(masks, batch_size=1)
+                    elif mask_fn == "sigmoid":
+                        masks = t.sigmoid(masks)
+                    n_mask = n_edges - masks.sum() if tree_optimisation else masks.sum()
+                    if true_circuit_size:
+                        n_mask = t.relu(n_mask - true_size)
+                    regularize = n_mask / (true_size if true_circuit_size else n_edges)
+                    for edge in avoid_edges or []:  # Penalize banned edges
+                        wgt = (-1 if tree_optimisation else 1) * avoid_lambda / n_avoid
+                        penalty = edge.patch_mask(model)[edge.patch_idx]
+                        const = regularize_const if mask_fn == "hard_concrete" else 0.0
+                        if mask_fn is not None:
+                            penalty = t.sigmoid(penalty - const)
+                        regularize += wgt * penalty
+                    loss = kl_div_term + regularize * regularize_lambda
                     losses.append(loss.item())
                     kl_divs.append(kl_div_term.item())
-                    regularizes.append(
-                        regularize_direction
-                        * regularize_term.item()
-                        * regularize_lambda
-                    )
+                    regularizes.append(regularize.item() * regularize_lambda)
                     model.zero_grad()
                     loss.backward()
                     optim.step()
-        min_val = abs(min([t.min(mask).item() for mask in patch_masks]))
-        max_val = abs(max([t.min(mask).item() for mask in patch_masks]))
+        xtreme_val = max if tree_optimisation else min
+        xtreme_torch_val = t.max if tree_optimisation else t.min
+        m = abs(xtreme_val([xtreme_torch_val(mask).item() for mask in patch_masks]))
 
     if show_train_graph:
         title = "Subnetwork Probing Loss History"
@@ -121,22 +119,10 @@ def subnetwork_probing_prune_scores(
         fig.update_layout(title=title, xaxis_title="Iteration", yaxis_title="Loss")
         fig.show()
 
-    if tree_optimisation:
-        ps = dict(
-            [
-                (e, max_val - e.patch_mask(model)[e.patch_idx].item())
-                for e in model.edges
-            ]
-        )
-    else:
-        ps = dict(
-            [
-                (e, min_val + e.patch_mask(model)[e.patch_idx].item())
-                for e in model.edges
-            ]
-        )
-    if regularize_to_true_circuit_size:
-        sorted_ps = sorted(ps.items(), key=lambda x: x[1], reverse=True)
+    sign = -1 if tree_optimisation else 1
+    ps = [(e, m + sign * e.patch_mask(model)[e.patch_idx].item()) for e in model.edges]
+    if true_circuit_size:
+        sorted_ps = sorted(ps, key=lambda x: x[1], reverse=True)
         return dict([(e, 1.0) for e, _ in sorted_ps[:true_size]])
     else:
-        return ps
+        return dict(ps)

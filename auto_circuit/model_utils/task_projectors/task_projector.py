@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import torch as t
 from einops import einsum
@@ -46,8 +46,9 @@ class TaskProjector(t.nn.Module):
         self,
         wrapped_hook: HookPoint,
         n_inputs: int,
-        seq_len: Optional[int] = None,
+        seq_idxs: Optional[List[int]] = None,
         mask_fn: MaskFn = None,
+        layernorm: bool = False,
     ) -> None:
         """
         :param wrapped_hook: the wrapped transformer_lens hook that caches the SAE input
@@ -55,24 +56,25 @@ class TaskProjector(t.nn.Module):
         """
         super().__init__()
         self.wrapped_hook: HookPoint = wrapped_hook
-        self.init_params(n_inputs, seq_len)
+        self.init_params(n_inputs, seq_idxs)
         self.mask_fn: MaskFn = mask_fn
+        self.layernorm: bool = layernorm
 
-    def init_params(self, n_inputs: int, seq_len: Optional[int] = None) -> None:
+    def init_params(self, n_inputs: int, seq_idxs: Optional[List[int]]) -> None:
         self.n_inputs: int = n_inputs
-        self.seq_len: Optional[int] = seq_len
-        seq_shape = [] if seq_len is None else [seq_len]
+        self.seq_len: Optional[int] = None if seq_idxs is None else len(seq_idxs)
+        self.seq_idxs: Optional[List[int]] = seq_idxs
+
+        seq_shape = [] if self.seq_len is None else [self.seq_len]
         # rotation_matrix = RotationMatrix(n_inputs, seq_len)
-        # self.rotation = orthogonal(rotation_matrix, "weight")
+        # self.rotation = parametrizations.orthogonal(rotation_matrix, "weight")
         # t.nn.init.orthogonal_(self.rotation.weight)
-        # linear = rearrange(t.eye(n_inputs)
-        eye = t.eye(n_inputs)
-        eye = eye if seq_len is None else eye.unsqueeze(0).repeat(seq_len, 1, 1)
-        self.linear = t.nn.Parameter(eye)
-        t.nn.init.orthogonal_(self.linear)
+        linear = t.eye(n_inputs).unsqueeze(0).repeat(seq_shape + [1, 1])
+        self.linear = t.nn.Parameter(linear)
+        # t.nn.init.orthogonal_(self.linear)
         register_parametrization(self, "linear", Symmetric())  # type: ignore
         # self.dim_weights = t.nn.Parameter(t.zeros(seq_shape + [n_inputs]))
-        # t.nn.init.constant_(self.dim_weights, 5.0)
+        # t.nn.init.constant_(self.dim_weights, 1.0)
         self.bias = t.nn.Parameter(t.zeros(seq_shape + [n_inputs]))
 
     def discretize_dim_weights(self, threshold: float = 0.0) -> int:
@@ -82,11 +84,15 @@ class TaskProjector(t.nn.Module):
 
     @classmethod
     def from_state_dict(
-        cls, wrapped_hook: HookPoint, state_dict: Dict[str, t.Tensor], mask_fn: MaskFn
+        cls,
+        wrapped_hook: HookPoint,
+        state_dict: Dict[str, t.Tensor],
+        seq_idxs: Optional[List[int]],
+        mask_fn: MaskFn,
     ) -> "TaskProjector":
         shape = state_dict["bias"].shape
-        seq_len, n_inputs = (shape[0], shape[1]) if len(shape) > 1 else (None, shape[0])
-        projector = cls(wrapped_hook, n_inputs, seq_len, mask_fn)
+        _, n_inputs = (shape[0], shape[1]) if len(shape) > 1 else (None, shape[0])
+        projector = cls(wrapped_hook, n_inputs, seq_idxs, mask_fn)
         projector.load_state_dict(state_dict, strict=True)
         return projector
 
@@ -129,5 +135,19 @@ class TaskProjector(t.nn.Module):
         # projected_rotated = self.encode(x)
         # projected_unrotated = self.decode(projected_rotated)
         # return projected_unrotated
-        transformed = (self.linear @ x.unsqueeze(-1)).squeeze(-1)
-        return transformed + self.bias
+        head_size = None
+        if head_dim := (x.ndim == 4):
+            head_size = x.shape[2]
+            x = x[:, :, 0]
+        if self.layernorm:
+            x = t.nn.functional.layer_norm(x, x.shape[-1:])
+        if self.seq_idxs is not None:
+            projected = (self.linear @ x[:, self.seq_idxs].unsqueeze(-1)).squeeze(-1)
+            out = x.clone()
+            out[:, self.seq_idxs] = projected + self.bias
+        else:
+            out = (self.linear @ x.unsqueeze(-1)).squeeze(-1) + self.bias
+        if head_dim:
+            assert head_size is not None
+            out = out.unsqueeze(2).repeat(1, 1, head_size, 1)
+        return out

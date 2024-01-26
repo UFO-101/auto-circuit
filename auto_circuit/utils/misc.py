@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Set
 
 import torch as t
+from einops import einsum
 from torch.utils.hooks import RemovableHandle
 
 
@@ -62,11 +63,15 @@ def percent_gpu_mem_used(total_gpu_mib: int = 49000) -> str:
 
 
 def run_prompt(
-    model: t.nn.Module, prompt: str, answer: Optional[str] = None, top_k: int = 10
+    model: t.nn.Module,
+    prompt: str,
+    answer: Optional[str] = None,
+    top_k: int = 10,
+    prepend_bos: bool = False,
 ):
     print(" ")
     print("Testing prompt", model.to_str_tokens(prompt))
-    toks = model.to_tokens(prompt)
+    toks = model.to_tokens(prompt, prepend_bos=prepend_bos)
     logits = model(toks)
     get_most_similar_embeddings(model, logits[0, -1], answer, top_k=top_k)
 
@@ -78,23 +83,35 @@ def get_most_similar_embeddings(
     top_k: int = 10,
     apply_ln_final: bool = False,
     apply_unembed: bool = False,
+    apply_embed: bool = False,
 ):
+    assert not (apply_embed and apply_unembed), "Can't apply both embed and unembed"
     show_answer_rank = answer is not None
     answer = " cheese" if answer is None else answer
     out = out.unsqueeze(0).unsqueeze(0) if out.ndim == 1 else out
-    out = model.ln_final() if apply_ln_final else out
-    unembeded = model.unembed(out) if apply_unembed else out
+    out = model.ln_final(out) if apply_ln_final else out
+    if apply_embed:
+        unembeded = einsum(
+            out, model.embed.W_E, "batch pos d_model, vocab d_model -> batch pos vocab"
+        )
+    elif apply_unembed:
+        unembeded = model.unembed(out)
+    else:
+        unembeded = out
     answer_token = model.to_tokens(answer, prepend_bos=False).squeeze()
     answer_str_token = model.to_str_tokens(answer, prepend_bos=False)
     assert len(answer_str_token) == 1
-    logits = unembeded.squeeze()
+    logits = unembeded.squeeze()  # type: ignore
     probs = logits.softmax(dim=-1)
 
     sorted_token_probs, sorted_token_values = probs.sort(descending=True)
     # Janky way to get the index of the token in the sorted list
-    correct_rank = t.arange(len(sorted_token_values))[
-        (sorted_token_values == answer_token).cpu()
-    ].item()
+    if answer is not None:
+        correct_rank = t.arange(len(sorted_token_values))[
+            (sorted_token_values == answer_token).cpu()
+        ].item()
+    else:
+        correct_rank = -1
     if show_answer_rank:
         print(
             f'\n"{answer_str_token[0]}" token rank:',

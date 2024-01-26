@@ -11,7 +11,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 
 def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
-    model = patchable_model(mini_tl_transformer, factorized=True)
+    model = patchable_model(mini_tl_transformer, factorized=True, separate_qkv=False)
     edges: Set[Edge] = model.edges
     n_model_edges = len(model.edges)
 
@@ -24,7 +24,7 @@ def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
 
 
 def test_groups_edge_counts(micro_model: MicroModel):
-    model = patchable_model(micro_model, factorized=True)
+    model = patchable_model(micro_model, factorized=True, separate_qkv=True)
     edges: Set[Edge] = model.edges
     edge_list = list(edges)
 

@@ -6,6 +6,7 @@ from transformer_lens import HookedTransformer
 
 from auto_circuit.model_utils.task_projectors.task_projector import TaskProjector
 from auto_circuit.types import AutoencoderInput
+from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import MaskFn
 
@@ -13,17 +14,23 @@ from auto_circuit.utils.tensor_ops import MaskFn
 class ProjectorTransformer(t.nn.Module):
     wrapped_model: t.nn.Module
     projectors: List[TaskProjector]
-    projector_layers: List[int]
+    layer_idxs: List[int]
+    seq_idxs: Optional[List[int]]
+    layernorm: bool
 
     def __init__(
         self,
         wrapped_model: t.nn.Module,
         projectors: List[TaskProjector],
-        layers: List[int]
+        layer_idxs: List[int],
+        seq_idxs: Optional[List[int]],
+        layernorm: bool = False,
     ):
         super().__init__()
         self.projectors = projectors
-        self.projector_layers = layers
+        self.layer_idxs = layer_idxs
+        self.seq_idxs = seq_idxs
+        self.layernorm = layernorm
 
         if isinstance(wrapped_model, PatchableModel):
             self.wrapped_model = wrapped_model.wrapped_model
@@ -76,48 +83,61 @@ def get_projector_model(
     projector_input: AutoencoderInput,
     mask_fn: MaskFn,
     load_pretrained: bool,
-    seq_len: Optional[int] = None,
     new_instance: bool = True,
-    layers: Optional[List[int]] = None,
+    layer_idxs: Optional[List[int]] = None,
+    seq_idxs: Optional[List[int]] = None,
+    layernorm: bool = False,
+    load_file_task_name: Optional[str] = None,
+    load_file_date: Optional[str] = None,
 ) -> ProjectorTransformer:
     if new_instance:
         model = deepcopy(model)
+    if layer_idxs is None:
+        layer_idxs = list(range(model.cfg.n_layers + 1))
     projectors: List[TaskProjector] = []
-    projector_layers: List[int] = []
-    for layer_idx in range(model.cfg.n_layers):
-        if layers is not None and layer_idx not in layers:
-            continue
+    n_inputs = model.cfg.d_model
+    for layer_idx in layer_idxs:
         if projector_input == "mlp_post_act":
-            hook_points = [model.blocks[layer_idx].mlp.hook_post]
-            hook_modules = [model.blocks[layer_idx].mlp]
-            hook_names = ["hook_post"]
-            hook_layers = [layer_idx]
+            hook_point = model.blocks[layer_idx].mlp.hook_post
+            hook_module = model.blocks[layer_idx].mlp
+            hook_name = "hook_post"
         elif projector_input == "resid":
-            hook_points = [model.blocks[layer_idx].hook_resid_pre]
-            hook_modules = [model.blocks[layer_idx]]
-            hook_names = ["hook_resid_pre"]
-            hook_layers = [layer_idx]
+            assert model.cfg.use_attn_in
             if layer_idx == model.cfg.n_layers - 1:
-                hook_points.append(model.blocks[layer_idx].hook_resid_post)
-                hook_modules.append(model.blocks[layer_idx])
-                hook_names.append("hook_resid_post")
-                hook_layers.append(layer_idx + 1)
+                hook_point = model.blocks[layer_idx].hook_resid_post
+                hook_module = model.blocks[layer_idx]
+                hook_name = "hook_resid_post"
+            else:
+                hook_point = model.blocks[layer_idx].hook_resid_pre
+                hook_module = model.blocks[layer_idx]
+                hook_name = "hook_resid_pre"
         else:
             assert projector_input == "resid_delta_mlp"
-            hook_points = [model.blocks[layer_idx].hook_mlp_out]
-            hook_modules = [model.blocks[layer_idx]]
-            hook_names = ["hook_mlp_out"]
-            hook_layers = [layer_idx]
+            hook_point = model.blocks[layer_idx].hook_mlp_out
+            hook_module = model.blocks[layer_idx]
+            hook_name = "hook_mlp_out"
         if load_pretrained:
             raise NotImplementedError
-        for hp, mod, name in zip(hook_points, hook_modules, hook_names):
-            projector = TaskProjector(hp, model.cfg.d_model, seq_len, mask_fn)
-            projector.to(model.cfg.device)
-            setattr(mod, name, projector)
-            projectors.append(projector)
-            projector_layers.append(layer_idx)
+        if load_file_task_name is not None or load_file_date is not None:
+            assert load_file_task_name is not None and load_file_date is not None
+            folder = repo_path_to_abs_path(".projector_cache")
+            filename_pt_1 = f"projector_{model.cfg.model_name}_layer_{layer_idx}"
+            filename_pt_2 = f"_seq_{seq_idxs}_task_{load_file_task_name}"
+            filename_pt_3 = f"_layernorm_{layernorm}-{load_file_date}.pt"
+            filename = filename_pt_1 + filename_pt_2 + filename_pt_3
+            state_dict = t.load(folder / filename, map_location=model.cfg.device)
+            projector = TaskProjector.from_state_dict(
+                hook_point, state_dict, seq_idxs, mask_fn
+            )
+        else:
+            projector = TaskProjector(
+                hook_point, n_inputs, seq_idxs, mask_fn, layernorm
+            )
+        projector.to(model.cfg.device)
+        setattr(hook_module, hook_name, projector)
+        projectors.append(projector)
 
-    return ProjectorTransformer(model, projectors, projector_layers)
+    return ProjectorTransformer(model, projectors, layer_idxs, seq_idxs)
 
 
 # def factorized_src_nodes(model: ProjectorTransformer) -> Set[SrcNode]:

@@ -5,7 +5,6 @@ from typing import Callable, Dict, List, Optional
 
 import torch as t
 from ordered_set import OrderedSet
-from transformer_lens import HookedTransformerKeyValueCache
 
 from auto_circuit.tasks import Task
 from auto_circuit.types import (
@@ -63,29 +62,15 @@ def acdc_prune_scores(
 
         with t.inference_mode():
             clean_out = model(clean_batch)[out_slice]
-            kv_cache, toks, short_embd, attn_mask, resids = None, None, None, None, []
+            toks, short_embd, attn_mask, resids = None, None, None, []
             if model.is_transformer:
-                print("train_batch.diverge_idx:", train_batch.diverge_idx)
-                common_prefix_batch = clean_batch[:, : train_batch.diverge_idx]
-                kv_cache = HookedTransformerKeyValueCache.init_cache(
-                    model.cfg, model.cfg.device, common_prefix_batch.shape[0]
-                )
-                model(common_prefix_batch, past_kv_cache=kv_cache)
-                kv_cache.freeze()
-                clean_batch = clean_batch[:, train_batch.diverge_idx :]
-                corrupt_batch = corrupt_batch[:, train_batch.diverge_idx :]
-
                 assert model.tokenizer is not None
                 assert model.tokenizer.padding_side == "left"
-                _, toks, short_embd, attn_mask = model.input_to_embed(
-                    clean_batch, past_kv_cache=kv_cache  # We patch edges not in graph
-                )
-                _, cache = model.run_with_cache(clean_batch, past_kv_cache=kv_cache)
+                _, toks, short_embd, attn_mask = model.input_to_embed(clean_batch)
+                _, cache = model.run_with_cache(clean_batch)
                 n_layers = range(model.cfg.n_layers)
                 resids = [cache[f"blocks.{i}.hook_resid_pre"].clone() for i in n_layers]
                 del cache
-                patch_outs = get_sorted_src_outs(model, corrupt_batch, kv_cache)
-                src_outs = get_sorted_src_outs(model, clean_batch, kv_cache=kv_cache)
 
         clean_logprobs = t.nn.functional.log_softmax(clean_out, dim=-1)
 
@@ -108,7 +93,6 @@ def acdc_prune_scores(
                         start_layer = int(edge.dest.module_name.split(".")[1])
                         out = model(
                             resids[start_layer],
-                            past_kv_cache=kv_cache,
                             start_at_layer=start_layer,
                             tokens=toks,
                             shortformer_pos_embed=short_embd,
@@ -128,7 +112,7 @@ def acdc_prune_scores(
                     tree = dict([(e, 1.0) for e in edges - (removed_edges | {edge})])
                     if render:
                         assert draw_seq_graph_ref is not None
-                        draw_seq_graph_ref(model, clean_batch, tree, kv_cache=kv_cache)
+                        draw_seq_graph_ref(model, clean_batch, tree)
 
                     print("Test mode: running pruned model") if render else None
                     test_out = run_pruned_ref(

@@ -40,9 +40,9 @@ def integrated_edge_gradients_prune_scores(
                     model_out = model(batch.corrupt)[out_slice]
                     masked_logprobs = log_softmax(model_out, dim=-1)
                     if answer_diff:
-                        loss = batch_avg_answer_diff(masked_logprobs, batch)
+                        loss = -batch_avg_answer_diff(masked_logprobs, batch)
                     else:
-                        loss = batch_avg_answer_val(masked_logprobs, batch)
+                        loss = -batch_avg_answer_val(masked_logprobs, batch)
                     loss.backward()
 
     prune_scores = {}

@@ -129,7 +129,7 @@ model_name, dataset_name = (
 model = tl.HookedTransformer.from_pretrained_no_processing(model_name)
 assert model.cfg.device is not None
 train_dataloader, test_dataloader = load_datasets_from_json(
-    model.tokenizer,
+    model,
     repo_path_to_abs_path(dataset_name),
     device=t.device(model.cfg.device),
     prepend_bos=True,

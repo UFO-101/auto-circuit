@@ -10,7 +10,6 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
     """Get the source part of each edge in the factorized graph, grouped by layer.
     Graph is factorized following the Mathematical Framework paper."""
     assert model.cfg.use_attn_result  # Get attention head outputs separately
-    assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers, idxs = count(), count()
     nodes = set()
@@ -39,12 +38,13 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                     weight_head_dim=0,
                 )
             )
+        layer = layer if model.cfg.parallel_attn_mlp else next(layers)
         if not model.cfg.attn_only:
             nodes.add(
                 SrcNode(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_out",
-                    layer=next(layers),
+                    layer=layer,
                     idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_out",
                 )
@@ -52,27 +52,45 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
     return nodes
 
 
-def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
+def factorized_dest_nodes(
+    model: tl.HookedTransformer, separate_qkv: bool
+) -> Set[DestNode]:
     """Get the destination part of each edge in the factorized graph, grouped by layer.
     Graph is factorized following the Mathematical Framework paper."""
-    assert model.cfg.use_attn_result  # Get attention head outputs separately
-    assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
+    if separate_qkv:
+        assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
+    else:
+        assert model.cfg.use_attn_in
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers, idxs = count(1), count()
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
         for head_idx in range(model.cfg.n_heads):
-            for letter in ["Q", "K", "V"]:
+            if separate_qkv:
+                for letter in ["Q", "K", "V"]:
+                    nodes.add(
+                        DestNode(
+                            name=f"A{block_idx}.{head_idx}.{letter}",
+                            module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                            layer=layer,
+                            idx=next(idxs),
+                            head_dim=2,
+                            head_idx=head_idx,
+                            weight=f"blocks.{block_idx}.attn.W_{letter}",
+                            weight_head_dim=0,
+                        )
+                    )
+            else:
                 nodes.add(
                     DestNode(
-                        name=f"A{block_idx}.{head_idx}.{letter}",
-                        module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                        name=f"A{block_idx}.{head_idx}",
+                        module_name=f"blocks.{block_idx}.hook_attn_in",
                         layer=layer,
                         idx=next(idxs),
                         head_dim=2,
                         head_idx=head_idx,
-                        weight=f"blocks.{block_idx}.attn.W_{letter}",
+                        weight=f"blocks.{block_idx}.attn.W_QKV",
                         weight_head_dim=0,
                     )
                 )
@@ -81,7 +99,7 @@ def factorized_dest_nodes(model: tl.HookedTransformer) -> Set[DestNode]:
                 DestNode(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_in",
-                    layer=next(layers),
+                    layer=layer if model.cfg.parallel_attn_mlp else next(layers),
                     idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_in",
                 )
@@ -102,6 +120,7 @@ def simple_graph_nodes(
     model: tl.HookedTransformer,
 ) -> Tuple[Set[SrcNode], Set[DestNode]]:
     """Get the nodes in the unfactorized graph."""
+    assert not model.cfg.parallel_attn_mlp
     layers, src_idxs, dest_idxs = count(), count(), count()
     src_nodes, dest_nodes = set(), set()
     for block_idx in range(model.cfg.n_layers):
