@@ -1,19 +1,19 @@
 #%%
 from collections import defaultdict
-import json
-import os
-from typing import Dict, Tuple
-from auto_circuit.utils.custom_tqdm import tqdm
-import plotly.express as px
-from torch.nn.functional import layer_norm
+from typing import Tuple
 
+import plotly.express as px
 import torch as t
 import transformer_lens as tl
-from torch.nn.utils import parametrizations
-
+from torch.nn.functional import layer_norm
 from word2word import Word2word
 
-from auto_circuit.utils.misc import get_most_similar_embeddings, remove_hooks, run_prompt, get_most_similar_embeddings
+from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.misc import (
+    get_most_similar_embeddings,
+    remove_hooks,
+)
+
 #%%
 
 model = tl.HookedTransformer.from_pretrained_no_processing("bloom-3b")
@@ -40,7 +40,7 @@ for tok in range(n_toks):
         continue
     # if en_tok_str.lower() == fr_tok_str.lower() or en_tok_str.lower() == es_tok_str.lower():
     if en_tok_str.lower() == fr_tok_str.lower():
-    # if en_tok_str.lower() == es_tok_str.lower():
+        # if en_tok_str.lower() == es_tok_str.lower():
         continue
     try:
         fr_tok = model.to_single_token(fr_tok_str)
@@ -60,8 +60,12 @@ fr_toks = t.tensor(fr_toks, device=device)
 es_toks = t.tensor(es_toks, device=device)
 #%%
 d_model = model.cfg.d_model
-en_embeds = t.nn.functional.layer_norm(model.embed.W_E[en_toks].detach().clone(), [d_model])
-fr_embeds = t.nn.functional.layer_norm(model.embed.W_E[fr_toks].detach().clone(), [d_model])
+en_embeds = t.nn.functional.layer_norm(
+    model.embed.W_E[en_toks].detach().clone(), [d_model]
+)
+fr_embeds = t.nn.functional.layer_norm(
+    model.embed.W_E[fr_toks].detach().clone(), [d_model]
+)
 # es_embeds = t.nn.functional.layer_norm(model.embed.W_E[es_toks].detach().clone(), [d_model])
 # en_embeds = model.embed.W_E[en_toks].detach().clone()
 # fr_embeds = model.embed.W_E[fr_toks].detach().clone()
@@ -85,18 +89,21 @@ optim = t.optim.Adam(list(linear_map.parameters()), lr=0.0002)
 # optim = t.optim.Adam(list(learned_rotation.parameters()), lr=0.01)
 # optim = t.optim.Adam([translate], lr=0.01)
 
+
 def word_pred_from_embeds(embeds: t.Tensor, lerp: float = 1.0) -> t.Tensor:
     # return learned_rotation(embeds + translate) - translate
     return learned_rotation(embeds)
     # return embeds + translate
 
+
 def word_distance_metric(a: t.Tensor, b: t.Tensor) -> t.Tensor:
     return -t.nn.functional.cosine_similarity(a, b)
     # return (a - b) ** 2
 
+
 n_epochs = 200
 loss_history = []
-for epoch in (epoch_pbar:=tqdm(range(n_epochs))):
+for epoch in (epoch_pbar := tqdm(range(n_epochs))):
     for batch_idx, (en_embed, fr_embed) in enumerate(train_loader):
         en_embed.to(device)
         fr_embed.to(device)
@@ -128,11 +135,32 @@ for batch_idx, (en_embed, fr_embed) in enumerate(test_loader):
     for i in range(30):
         print()
         print()
-        get_most_similar_embeddings(model, en_embed[i], top_k=4, apply_ln_final=False, apply_unembed=False, apply_embed=True)
+        get_most_similar_embeddings(
+            model,
+            en_embed[i],
+            top_k=4,
+            apply_ln_final=False,
+            apply_unembed=False,
+            apply_embed=True,
+        )
         print()
-        get_most_similar_embeddings(model, fr_embed[i], top_k=4, apply_ln_final=False, apply_unembed=False, apply_embed=True)
+        get_most_similar_embeddings(
+            model,
+            fr_embed[i],
+            top_k=4,
+            apply_ln_final=False,
+            apply_unembed=False,
+            apply_embed=True,
+        )
         print()
-        get_most_similar_embeddings(model, pred[i], top_k=4, apply_ln_final=False, apply_unembed=False, apply_embed=True)
+        get_most_similar_embeddings(
+            model,
+            pred[i],
+            top_k=4,
+            apply_ln_final=False,
+            apply_unembed=False,
+            apply_embed=True,
+        )
     break
 # %%
 #  -------------- GATHER FR EN EMBED DATA ----------------
@@ -142,90 +170,105 @@ batch_size = 2
 
 en_strs = []
 fr_strs = []
-# Read the first 10000 lines of the files
+# Read the first 1000 lines of the files (excluding the first line)
 with open(en_file, "r") as f:
-    en_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(10001)][1:]
+    en_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(1001)][1:]
 with open(fr_file, "r") as f:
-    fr_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(10001)][1:]
+    fr_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(1001)][1:]
 
-en_toks = model.to_tokens(en_strs, prepend_bos=True, padding_side="left")
-fr_toks = model.to_tokens(fr_strs, prepend_bos=True, padding_side="left")
+model.tokenizer.padding_side = "right"
+en_tokenized = model.tokenizer(en_strs, padding=True, return_tensors="pt")
+fr_tokenized = model.tokenizer(fr_strs, padding=True, return_tensors="pt")
+en_toks, en_attn_mask = en_tokenized["input_ids"], en_tokenized["attention_mask"]
+fr_toks, fr_attn_mask = fr_tokenized["input_ids"], fr_tokenized["attention_mask"]
 
-dataset = t.utils.data.TensorDataset(en_toks, fr_toks)
-train_set, test_set = t.utils.data.random_split(dataset, [0.9, 0.1])
-train_loader = t.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
-test_loader = t.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=True)
+dataset = t.utils.data.TensorDataset(en_toks, en_attn_mask, fr_toks, fr_attn_mask)
+loader = t.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 #%%
 en_embeds, fr_embeds = defaultdict(list), defaultdict(list)
-lyrs = range(0, model.cfg.n_layers, 5)
-for en_batch, fr_batch in tqdm(test_loader):
+lyrs = [20, 25, 27, 29]
+for en_batch, en_attn_mask, fr_batch, fr_attn_mask in tqdm(loader):
     with t.inference_mode():
         _, en_cache = model.run_with_cache(en_batch, prepend_bos=True)
-        [en_embeds[lyr].append(en_cache[f"blocks.{lyr}.hook_resid_pre"][:, -1].detach().clone().cpu()) for lyr in lyrs]
+        for lyr in lyrs:
+            resids = en_cache[f"blocks.{lyr}.hook_resid_pre"]
+            resids_flat = resids.flatten(start_dim=0, end_dim=1)
+            mask_flat = en_attn_mask.flatten(start_dim=0, end_dim=1)
+            en_embeds[lyr].append(resids_flat[mask_flat == 1].detach().clone().cpu())
         del en_cache
         _, fr_cache = model.run_with_cache(fr_batch, prepend_bos=True)
-        [fr_embeds[lyr].append(fr_cache[f"blocks.{lyr}.hook_resid_pre"][:, -1].detach().clone().cpu()) for lyr in lyrs]
+        for lyr in lyrs:
+            resids = fr_cache[f"blocks.{lyr}.hook_resid_pre"]
+            resids_flat = resids.flatten(start_dim=0, end_dim=1)
+            mask_flat = fr_attn_mask.flatten(start_dim=0, end_dim=1)
+            fr_embeds[lyr].append(resids_flat[mask_flat == 1].detach().clone().cpu())
         del fr_cache
 # %%
-test_en_embeds = {lyr: t.cat(en_embeds[lyr]) for lyr in lyrs}
-test_fr_embeds = {lyr: t.cat(fr_embeds[lyr]) for lyr in lyrs}
+en_resids = {lyr: t.cat(en_embeds[lyr]) for lyr in lyrs}
+fr_resids = {lyr: t.cat(fr_embeds[lyr]) for lyr in lyrs}
 # %%
 from auto_circuit.utils.misc import repo_path_to_abs_path
+
 cache_folder = repo_path_to_abs_path(".activation_cache")
-filename_root = f"europarl_v7_fr_en_double_prompt_final_tok-{model.cfg.model_name}-lyrs_{lyrs}"
-# Save test_en_embeds and test_fr_embeds to cache with torch.save
-t.save(test_en_embeds, cache_folder / f"{filename_root}-test-en.pt")
-t.save(test_fr_embeds, cache_folder / f"{filename_root}-test-fr.pt")
+filename_root = (
+    f"europarl_v7_fr_en_double_prompt_all_toks-{model.cfg.model_name}-lyrs_{lyrs}"
+)
+# Save en_resids and fr_resids to cache with torch.save
+t.save(en_resids, cache_folder / f"{filename_root}-en.pt")
+t.save(fr_resids, cache_folder / f"{filename_root}-fr.pt")
 # %%
 # -------------- TRAIN FR EN EMBED ROTATION ----------------
-train_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-en.pt")
-train_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-fr.pt")
-test_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-en.pt")
-test_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-fr.pt")
+# train_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-en.pt")
+# train_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-fr.pt")
+# test_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-en.pt")
+# test_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-fr.pt")
+train_en_resids = t.load(
+    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks-bloom-3b-lyrs_[20, 25, 27, 29]-en.pt"
+)
+train_fr_resids = t.load(
+    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks-bloom-3b-lyrs_[20, 25, 27, 29]-fr.pt"
+)
 layer_idx = 25
 d_model = model.cfg.d_model
 device = model.cfg.device
+min_len = min(train_en_resids[layer_idx].shape[0], train_fr_resids[layer_idx].shape[0])
 
 train_dataset = t.utils.data.TensorDataset(
-    # layer_norm(train_en_resids[25], [d_model]),
-    # layer_norm(train_fr_resids[25], [d_model]),
-    train_en_resids[25],
-    train_fr_resids[25],
-)
-test_dataset = t.utils.data.TensorDataset(
-    # layer_norm(test_en_resids[25], [d_model]),
-    # layer_norm(test_fr_resids[25], [d_model]),
-    test_en_resids[25],
-    test_fr_resids[25],
+    layer_norm(train_en_resids[25][:min_len], [d_model]),
+    layer_norm(train_fr_resids[25][:min_len], [d_model]),
+    # train_en_resids[25][:min_len],
+    # train_fr_resids[25][:min_len],
 )
 train_loader = t.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True)
-test_loader = t.utils.data.DataLoader(test_dataset, batch_size=512, shuffle=True)
 
 #%%
 
-translate = t.zeros([d_model], device=device, requires_grad=True)
+# translate = t.zeros([d_model], device=device, requires_grad=True)
 learned_rotation = t.nn.Linear(d_model, d_model, bias=False, device=device)
 linear_map = t.nn.utils.parametrizations.orthogonal(learned_rotation, "weight")
-optim = t.optim.Adam(list(linear_map.parameters()) + [translate], lr=0.0002)
-# optim = t.optim.Adam(list(linear_map.parameters()), lr=0.0002)
+# optim = t.optim.Adam(list(linear_map.parameters()) + [translate], lr=0.0002)
+optim = t.optim.Adam(list(linear_map.parameters()), lr=0.0002)
 # optim = t.optim.Adam(list(learned_rotation.parameters()) + [translate], lr=0.0002)
 # optim = t.optim.Adam(list(learned_rotation.parameters()), lr=0.01)
 # optim = t.optim.Adam([translate], lr=0.0002)
 
+
 def pred_from_embeds(embeds: t.Tensor, lerp: float = 1.0) -> t.Tensor:
-    return learned_rotation(embeds + translate) - translate
-    # return learned_rotation(embeds)
+    # return learned_rotation(embeds + translate) - translate
+    return learned_rotation(embeds)
     # return embeds + translate
 
-def distance_metric(a: t.Tensor, b: t.Tensor) -> t.Tensor:
-    # return -t.nn.functional.cosine_similarity(a, b)
-    return (a - b) ** 2
 
-n_epochs = 500
+def distance_metric(a: t.Tensor, b: t.Tensor) -> t.Tensor:
+    return -t.nn.functional.cosine_similarity(a, b)
+    # return (a - b) ** 2
+
+
+n_epochs = 1000
 loss_history = []
-for epoch in (epoch_pbar:=tqdm(range(n_epochs))):
-    for batch_idx, (en_embed, fr_embed) in enumerate(train_loader):
+for epoch in (epoch_pbar := tqdm(range(n_epochs))):
+    for batch_idx, (en_embed, fr_embed) in tqdm(enumerate(train_loader)):
         en_embed = en_embed.to(device)
         fr_embed = fr_embed.to(device)
 
@@ -241,18 +284,21 @@ px.line(y=loss_history, title="Loss History").show()
 en_file = "/home/dev/europarl/europarl-v7.fr-en.en"
 fr_file = "/home/dev/europarl/europarl-v7.fr-en.fr"
 
+fr_to_en_mean_vec = (
+    train_en_resids[20].mean(dim=0) - train_fr_resids[20].mean(dim=0)
+).to(device)
+
 # define a pytorch forward hook function
-def steering_hook(module: t.nn.Module, input: Tuple[t.Tensor], output: t.Tensor) -> t.Tensor:
-    print("Inside " + module.__class__.__name__ + " forward")
-    print("input[0].shape:", input[0].shape)
-    print("output.shape:", output.shape)
+def steering_hook(
+    module: t.nn.Module, input: Tuple[t.Tensor], output: t.Tensor
+) -> t.Tensor:
     prefix_toks, final_tok = input[0][:, :-1], input[0][:, -1]
-    print("prefix_toks.shape:", prefix_toks.shape, "final_tok.shape:", final_tok.shape)
     layernormed_final_tok = layer_norm(final_tok, [d_model])
-    rotated_final_tok = pred_from_embeds(final_tok)
+    rotated_final_tok = pred_from_embeds(layernormed_final_tok)
+    # rotated_final_tok = pred_from_embeds(final_tok)
+    # rotated_final_tok = fr_to_en_mean_vec + final_tok
     # rotated_final_tok = t.zeros_like(rotated_final_tok)
-    out =  t.cat([prefix_toks, rotated_final_tok.unsqueeze(1)], dim=1)
-    print("out.shape:", out.shape)
+    out = t.cat([prefix_toks, rotated_final_tok.unsqueeze(1)], dim=1)
     return out
 
 
@@ -269,14 +315,16 @@ with open(fr_file, "r") as f:
         test_str = f.readline()[:-1] + " " + f.readline()[:-1]
         if i > 10000:
             test_fr_strs.append(test_str)
-    
+
 
 for idx, (test_en_str, test_fr_str) in enumerate(zip(test_en_strs, test_fr_strs)):
     print("test_en_str:", test_en_str)
     tl.utils.test_prompt(test_en_str, answer="hi", model=model)
     print("test_fr_str:", test_fr_str)
     with remove_hooks() as handles, t.inference_mode():
-        handle = model.blocks[layer_idx].hook_resid_pre.register_forward_hook(steering_hook)
+        handle = model.blocks[layer_idx].hook_resid_pre.register_forward_hook(
+            steering_hook
+        )
         handles.add(handle)
         logits = model(test_fr_str, prepend_bos=True)
         print("logits.shape:", logits.shape)
