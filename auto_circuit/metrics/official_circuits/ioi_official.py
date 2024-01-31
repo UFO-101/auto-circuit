@@ -53,7 +53,9 @@ class Conn:
     qkv: List[Tuple[Optional[str], int]]
 
 
-def ioi_true_edges(model: PatchableModel, token_positions: bool = False) -> Set[Edge]:
+def ioi_true_edges(
+    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+) -> Set[Edge]:
     assert model.cfg.model_name == "gpt2"
 
     special_connections: List[Conn] = [
@@ -119,7 +121,8 @@ def ioi_true_edges(model: PatchableModel, token_positions: bool = False) -> Set[
     for edge in model.edges:
         if edge.name in edges_present.keys():
             if token_positions:
-                true_edges.add(Edge(edge.src, edge.dest, edges_present[edge.name]))
+                seq_idx = edges_present[edge.name] - seq_start_idx
+                true_edges.add(Edge(edge.src, edge.dest, seq_idx))
             else:
                 true_edges.add(edge)
     return true_edges

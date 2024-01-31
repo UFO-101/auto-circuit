@@ -13,7 +13,11 @@ from auto_circuit.types import (
 
 
 def measurements_auc(
-    points: Measurements, log_x: bool, log_y: bool, y_min: Optional[float]
+    points: Measurements,
+    log_x: bool,
+    log_y: bool,
+    y_min: Optional[float],
+    eps: float = 1e-3,
 ) -> float:
     points = sorted(points, key=lambda x: x[0])
     assert points[0][0] == 0
@@ -39,7 +43,7 @@ def measurements_auc(
             y2 = math.log(y2, 10) - math.log(y_min, 10)
         height_1, height_2 = y1 - y_baseline, y2 - y_baseline
         area += (x2 - x1) * (height_1 + height_2) / 2.0
-    return area
+    return max(area, eps)
 
 
 def algo_measurements_auc(

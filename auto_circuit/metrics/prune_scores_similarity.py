@@ -77,6 +77,7 @@ def prune_score_similarities_plotly(
 
     row_count = len(sims)
     col_count = len(edge_counts) + (1 if ground_truths else 0)
+    algo_count = 0
     fig = subplots.make_subplots(
         rows=row_count,
         cols=col_count,
@@ -88,6 +89,7 @@ def prune_score_similarities_plotly(
     )
     for task_idx, edge_count_sims in enumerate(sims.values()):
         for count_idx, algo_sims in enumerate(edge_count_sims.values()):
+            algo_count = len(algo_sims)
             x_strs = [PRUNE_ALGO_DICT[a].short_name for a in reversed(algo_sims.keys())]
             y_strs = [PRUNE_ALGO_DICT[algo].short_name for algo in algo_sims.keys()]
             heatmap = []
@@ -110,5 +112,8 @@ def prune_score_similarities_plotly(
             )
     # fig.update_layout(yaxis_scaleanchor="x")
     fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
-    fig.update_layout(width=col_count * 750, height=row_count * 550)
+    fig.update_layout(
+        width=col_count * 50 * algo_count + 100,
+        height=row_count * 50 * algo_count + 100,
+    )
     return fig

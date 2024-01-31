@@ -57,5 +57,5 @@ def simple_gradient_prune_scores(
     for edge in task.model.edges:
         grad = edge.patch_mask(model).grad
         assert grad is not None
-        prune_scores[edge] = grad[edge.patch_idx]
+        prune_scores[edge] = grad[edge.patch_idx].item()
     return prune_scores

@@ -29,7 +29,7 @@ def test_pruning(
 
     To visualize, set render_graph=True in run_pruned."""
     model: PatchableModel = patchable_model(
-        micro_model, True, True, True, seq_len=seq_len
+        micro_model, True, True, "last_seq", seq_len=seq_len
     )
     test_loader = micro_dataloader
 
@@ -76,7 +76,7 @@ def test_prune_sequence(
     show_graphs: bool = False,
 ):
     """Test pruning different positions in the sequence."""
-    model: PatchableModel = patchable_model(micro_model, True, False, False, seq_len=3)
+    model: PatchableModel = patchable_model(micro_model, True, False, None, seq_len=3)
     test_loader = micro_dataloader
 
     test_input = next(iter(test_loader))

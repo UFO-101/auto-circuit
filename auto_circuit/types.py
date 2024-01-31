@@ -16,6 +16,7 @@ class EdgeCounts(Enum):
 
 TestEdges = EdgeCounts | List[int | float]
 AutoencoderInput = Literal["mlp_post_act", "resid_delta_mlp", "resid"]
+OutputSlice = Optional[Literal["last_seq", "not_first_seq"]]
 
 
 class PatchType(Enum):

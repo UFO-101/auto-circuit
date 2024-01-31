@@ -19,7 +19,7 @@ from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import
     AutoencoderTransformer,
     sae_model,
 )
-from auto_circuit.types import AutoencoderInput, Edge, TaskKey
+from auto_circuit.types import AutoencoderInput, Edge, OutputSlice, TaskKey
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
@@ -32,17 +32,19 @@ DATASET_CACHE: Dict[Any, Tuple[PromptDataLoader, PromptDataLoader]] = {}
 class Task:
     key: TaskKey
     name: str
-    batch_size: int
-    batch_count: int
+    batch_size: int | Tuple[int, int]  # (train, test) if tuple
+    batch_count: int | Tuple[int, int]  # (train, test) if tuple
     token_circuit: bool
     _model_def: str | t.nn.Module
     _dataset_name: str
     separate_qkv: bool = True
     _true_edge_func: Optional[Callable[..., Set[Edge]]] = None
+    slice_output: OutputSlice = "last_seq"
     autoencoder_input: Optional[AutoencoderInput] = None
     autoencoder_max_latents: Optional[int] = None
     autoencoder_pythia_size: Optional[str] = None
     autoencoder_prune_with_corrupt: Optional[bool] = None
+    dtype: t.dtype = t.float32
     __init_complete__: bool = False
 
     @property
@@ -80,9 +82,13 @@ class Task:
                 self.autoencoder_pythia_size,
                 self.autoencoder_prune_with_corrupt,
                 self._dataset_name,
+                self.dtype,
             )
         else:
-            model_cache_key = self._model_def
+            model_cache_key = (
+                self._model_def,
+                self.dtype,
+            )
 
         using_cached_model = False
         if isinstance(self._model_def, t.nn.Module):
@@ -95,13 +101,18 @@ class Task:
         else:
             device_str = "cuda" if t.cuda.is_available() else "cpu"
             self.device: t.device = t.device(device_str)
-            model = tl.HookedTransformer.from_pretrained(
-                self._model_def,
-                device=self.device,
-                fold_ln=True,
-                center_writing_weights=False,
-                center_unembed=True,
-            )
+            if self.dtype != t.float32:
+                model = tl.HookedTransformer.from_pretrained_no_processing(
+                    self._model_def, device=self.device, dtype=self.dtype
+                )
+            else:
+                model = tl.HookedTransformer.from_pretrained(
+                    self._model_def,
+                    device=self.device,
+                    fold_ln=True,
+                    center_writing_weights=True,
+                    center_unembed=True,
+                )
             model.cfg.use_attn_result = True
             model.cfg.use_attn_in = True
             model.cfg.use_split_qkv_input = True
@@ -129,17 +140,22 @@ class Task:
         if dataset_cache_key in DATASET_CACHE:
             self._train_loader, self._test_loader = DATASET_CACHE[dataset_cache_key]
         else:
-            dataloader_len = self.batch_size * self.batch_count
+            bs, b_count = self.batch_size, self.batch_count
+            bs_1 = bs[0] if isinstance(bs, tuple) else bs
+            count_1 = b_count[0] if isinstance(b_count, tuple) else b_count
+            bs_2 = bs[1] if isinstance(bs, tuple) else bs
+            count_2 = b_count[1] if isinstance(b_count, tuple) else b_count
+            has_tokenizer = hasattr(model, "tokenizer") and model.tokenizer is not None
             train_loader, test_loader = load_datasets_from_json(
-                model=model if hasattr(model, "tokenizer") else None,
+                model=model if has_tokenizer else None,
                 path=repo_path_to_abs_path(f"datasets/{self._dataset_name}.json"),
                 device=self.device,
-                prepend_bos=True,
+                prepend_bos=has_tokenizer,
                 batch_size=self.batch_size,
-                train_test_split=[dataloader_len, dataloader_len],
-                length_limit=dataloader_len * 2,
+                train_test_split=[bs_1 * count_1, bs_2 * count_2],
+                length_limit=bs_1 * count_1 + bs_2 * count_2,
                 return_seq_length=self.token_circuit,
-                tail_divergence=True if hasattr(model, "tokenizer") else False,
+                tail_divergence=True if has_tokenizer else False,
                 pad=True,
             )
             DATASET_CACHE[dataset_cache_key] = (train_loader, test_loader)
@@ -155,14 +171,21 @@ class Task:
             )  # in place operation
 
         seq_len = self._train_loader.seq_len
-        kv_cache = self._train_loader.kv_cache
+        diverge_idx = self._train_loader.diverge_idx
+        kv_caches = self._train_loader.kv_cache, self._test_loader.kv_cache
         self._model = patchable_model(
-            model, True, self.separate_qkv, True, seq_len, kv_cache, self.device
+            model,
+            True,
+            self.separate_qkv,
+            self.slice_output,
+            seq_len,
+            kv_caches,
+            self.device,
         )
 
         if self._true_edge_func is not None:
             if self.token_circuit:
-                self._true_edges = self._true_edge_func(self._model, True)
+                self._true_edges = self._true_edge_func(self._model, True, diverge_idx)
             else:
                 self._true_edges = self._true_edge_func(self._model)
         else:
@@ -175,22 +198,27 @@ SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Sports Players",
     _model_def="pythia-2.8b-deduped",
     _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
-    batch_size=1,  # There are 3 sports (football, basketball, baseball),
-    batch_count=105,  # 70 prompts for each sport (210 total), 105 test and 105 train
+    batch_size=(10, 10),  # There are 3 sports (football, basketball, baseball),
+    batch_count=(
+        10,
+        10,
+    ),  # 70 prompts for each sport (210 total), 105 test and 105 train
     _true_edge_func=sports_players_true_edges,
     token_circuit=True,
     separate_qkv=False,
+    dtype=t.bfloat16,
 )
 SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK: Task = Task(
     key="Sports Players Component Circuit",
     name="Sports Players",
     _model_def="pythia-2.8b-deduped",
     _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
-    batch_size=1,
-    batch_count=105,
+    batch_size=15,
+    batch_count=7,
     _true_edge_func=sports_players_true_edges,
     token_circuit=False,
     separate_qkv=False,
+    dtype=t.bfloat16,
 )
 IOI_TOKEN_CIRCUIT_TASK: Task = Task(
     key="Indirect Object Identification Token Circuit",

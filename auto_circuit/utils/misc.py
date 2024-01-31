@@ -20,6 +20,7 @@ def save_cache(data_dict: Dict[Any, Any], folder_name: str, base_filename: str):
     folder.mkdir(parents=True, exist_ok=True)
     dt_string = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     file_path = folder / f"{base_filename}-{dt_string}.pkl"
+    print(f"Saving cache to {file_path}")
     with open(file_path, "wb") as f:
         pickle.dump(data_dict, f)
 

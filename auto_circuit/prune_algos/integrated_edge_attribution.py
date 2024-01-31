@@ -74,6 +74,6 @@ def integrated_edge_attribution_prune_scores(
                     :, :, edge.src.head_idx
                 ]
             assert grad is not None
-            prune_scores[edge] = (grad * (src_clean_act - src_corrupt_act)).sum()
+            prune_scores[edge] = (grad * (src_clean_act - src_corrupt_act)).sum().item()
     model.eval()
     return prune_scores  # type: ignore

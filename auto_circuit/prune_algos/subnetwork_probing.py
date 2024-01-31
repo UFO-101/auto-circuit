@@ -41,15 +41,14 @@ def subnetwork_probing_prune_scores(
     dropout_p: float = 0.0,
     init_val: float = -init_mask_val,
     show_train_graph: bool = False,
-    true_circuit_size: bool = False,
+    circuit_size: Optional[int] = None,
     tree_optimisation: bool = False,
     avoid_edges: Optional[Set[Edge]] = None,
     avoid_lambda: float = 1.0,
 ) -> PruneScores:
-    """Prune scores are the mean activation magnitude of each edge."""
+    """Optimize the patch masks using gradient descent."""
     model = task.model
     out_slice = model.out_slice
-    true_size = 100 if task.true_edges is None else len(task.true_edges)
     n_edges = len(model.edges)
     n_avoid = len(avoid_edges or [])
 
@@ -89,9 +88,9 @@ def subnetwork_probing_prune_scores(
                     elif mask_fn == "sigmoid":
                         masks = t.sigmoid(masks)
                     n_mask = n_edges - masks.sum() if tree_optimisation else masks.sum()
-                    if true_circuit_size:
-                        n_mask = t.relu(n_mask - true_size)
-                    regularize = n_mask / (true_size if true_circuit_size else n_edges)
+                    if circuit_size:
+                        n_mask = t.relu(n_mask - circuit_size)
+                    regularize = n_mask / (circuit_size if circuit_size else n_edges)
                     for edge in avoid_edges or []:  # Penalize banned edges
                         wgt = (-1 if tree_optimisation else 1) * avoid_lambda / n_avoid
                         penalty = edge.patch_mask(model)[edge.patch_idx]
@@ -121,8 +120,8 @@ def subnetwork_probing_prune_scores(
 
     sign = -1 if tree_optimisation else 1
     ps = [(e, m + sign * e.patch_mask(model)[e.patch_idx].item()) for e in model.edges]
-    if true_circuit_size:
+    if circuit_size:
         sorted_ps = sorted(ps, key=lambda x: x[1], reverse=True)
-        return dict([(e, 1.0) for e, _ in sorted_ps[:true_size]])
+        return dict([(e, 1.0) for e, _ in sorted_ps[:circuit_size]])
     else:
         return dict(ps)

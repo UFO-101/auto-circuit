@@ -5,13 +5,13 @@ from typing import Tuple
 import plotly.express as px
 import torch as t
 import transformer_lens as tl
-from torch.nn.functional import layer_norm
 from word2word import Word2word
 
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.misc import (
     get_most_similar_embeddings,
     remove_hooks,
+    repo_path_to_abs_path,
 )
 
 #%%
@@ -36,16 +36,17 @@ for tok in range(n_toks):
     try:
         fr_tok_str = " " + en2fr(en_tok_str[1:], n_best=1)[0]
         # es_tok_str = " " + en2es(en_tok_str[1:], n_best=1)[0]
-    except:
+    except Exception:
         continue
-    # if en_tok_str.lower() == fr_tok_str.lower() or en_tok_str.lower() == es_tok_str.lower():
+    # if en_tok_str.lower() == fr_tok_str.lower()
+    # or en_tok_str.lower() == es_tok_str.lower():
     if en_tok_str.lower() == fr_tok_str.lower():
         # if en_tok_str.lower() == es_tok_str.lower():
         continue
     try:
         fr_tok = model.to_single_token(fr_tok_str)
         # es_tok = model.to_single_token(es_tok_str)
-    except:
+    except Exception:
         continue
     en_toks.append(tok)
     fr_toks.append(fr_tok)
@@ -66,7 +67,8 @@ en_embeds = t.nn.functional.layer_norm(
 fr_embeds = t.nn.functional.layer_norm(
     model.embed.W_E[fr_toks].detach().clone(), [d_model]
 )
-# es_embeds = t.nn.functional.layer_norm(model.embed.W_E[es_toks].detach().clone(), [d_model])
+# es_embeds = t.nn.functional.layer_norm(
+# model.embed.W_E[es_toks].detach().clone(), [d_model])
 # en_embeds = model.embed.W_E[en_toks].detach().clone()
 # fr_embeds = model.embed.W_E[fr_toks].detach().clone()
 # es_embeds = model.embed.W_E[es_toks].detach().clone()
@@ -170,17 +172,17 @@ batch_size = 2
 
 en_strs = []
 fr_strs = []
-# Read the first 1000 lines of the files (excluding the first line)
+# Read the first 5000 lines of the files (excluding the first line)
 with open(en_file, "r") as f:
-    en_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(1001)][1:]
+    en_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(5001)][1:]
 with open(fr_file, "r") as f:
-    fr_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(1001)][1:]
+    fr_strs = [f.readline()[:-1] + " " + f.readline()[:-1] for _ in range(5001)][1:]
 
-model.tokenizer.padding_side = "right"
-en_tokenized = model.tokenizer(en_strs, padding=True, return_tensors="pt")
-fr_tokenized = model.tokenizer(fr_strs, padding=True, return_tensors="pt")
-en_toks, en_attn_mask = en_tokenized["input_ids"], en_tokenized["attention_mask"]
-fr_toks, fr_attn_mask = fr_tokenized["input_ids"], fr_tokenized["attention_mask"]
+model.tokenizer.padding_side = "right"  # type: ignore
+en_tknzd = model.tokenizer(en_strs, padding=True, return_tensors="pt")  # type: ignore
+fr_tknzd = model.tokenizer(fr_strs, padding=True, return_tensors="pt")  # type: ignore
+en_toks, en_attn_mask = en_tknzd["input_ids"], en_tknzd["attention_mask"]
+fr_toks, fr_attn_mask = fr_tknzd["input_ids"], fr_tknzd["attention_mask"]
 
 dataset = t.utils.data.TensorDataset(en_toks, en_attn_mask, fr_toks, fr_attn_mask)
 loader = t.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -208,8 +210,6 @@ for en_batch, en_attn_mask, fr_batch, fr_attn_mask in tqdm(loader):
 en_resids = {lyr: t.cat(en_embeds[lyr]) for lyr in lyrs}
 fr_resids = {lyr: t.cat(fr_embeds[lyr]) for lyr in lyrs}
 # %%
-from auto_circuit.utils.misc import repo_path_to_abs_path
-
 cache_folder = repo_path_to_abs_path(".activation_cache")
 filename_root = (
     f"europarl_v7_fr_en_double_prompt_all_toks-{model.cfg.model_name}-lyrs_{lyrs}"
@@ -219,29 +219,39 @@ t.save(en_resids, cache_folder / f"{filename_root}-en.pt")
 t.save(fr_resids, cache_folder / f"{filename_root}-fr.pt")
 # %%
 # -------------- TRAIN FR EN EMBED ROTATION ----------------
-# train_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-en.pt")
-# train_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-fr.pt")
-# test_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-en.pt")
-# test_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-fr.pt")
+# train_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/
+# europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-en.pt")
+# train_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/
+# europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-train-fr.pt")
+# test_en_resids = t.load("/home/dev/auto-circuit/.activation_cache/
+# europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-en.pt")
+# test_fr_resids = t.load("/home/dev/auto-circuit/.activation_cache/
+# europarl_v7_fr_en_double_prompt_final_tok-bloom-3b-lyrs_range(0, 30, 5)-test-fr.pt")
 train_en_resids = t.load(
-    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks-bloom-3b-lyrs_[20, 25, 27, 29]-en.pt"
+    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks"
+    + "-bloom-3b-lyrs_[20, 25, 27, 29]-en.pt"
 )
 train_fr_resids = t.load(
-    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks-bloom-3b-lyrs_[20, 25, 27, 29]-fr.pt"
+    "/home/dev/auto-circuit/.activation_cache/europarl_v7_fr_en_double_prompt_all_toks"
+    + "-bloom-3b-lyrs_[20, 25, 27, 29]-fr.pt"
 )
-layer_idx = 25
+layer_idx = 29
 d_model = model.cfg.d_model
 device = model.cfg.device
 min_len = min(train_en_resids[layer_idx].shape[0], train_fr_resids[layer_idx].shape[0])
 
 train_dataset = t.utils.data.TensorDataset(
-    layer_norm(train_en_resids[25][:min_len], [d_model]),
-    layer_norm(train_fr_resids[25][:min_len], [d_model]),
-    # train_en_resids[25][:min_len],
-    # train_fr_resids[25][:min_len],
+    # layer_norm(train_en_resids[layer_idx][:min_len], [d_model]),
+    # layer_norm(train_fr_resids[layer_idx][:min_len], [d_model]),
+    train_en_resids[layer_idx][:min_len],
+    train_fr_resids[layer_idx][:min_len],
 )
 train_loader = t.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True)
-
+fr_to_en_mean_vec = (
+    train_en_resids[layer_idx].mean(dim=0) - train_fr_resids[layer_idx].mean(dim=0)
+).to(device)
+del train_en_resids
+del train_fr_resids
 #%%
 
 # translate = t.zeros([d_model], device=device, requires_grad=True)
@@ -265,7 +275,7 @@ def distance_metric(a: t.Tensor, b: t.Tensor) -> t.Tensor:
     # return (a - b) ** 2
 
 
-n_epochs = 1000
+n_epochs = 1
 loss_history = []
 for epoch in (epoch_pbar := tqdm(range(n_epochs))):
     for batch_idx, (en_embed, fr_embed) in tqdm(enumerate(train_loader)):
@@ -284,18 +294,16 @@ px.line(y=loss_history, title="Loss History").show()
 en_file = "/home/dev/europarl/europarl-v7.fr-en.en"
 fr_file = "/home/dev/europarl/europarl-v7.fr-en.fr"
 
-fr_to_en_mean_vec = (
-    train_en_resids[20].mean(dim=0) - train_fr_resids[20].mean(dim=0)
-).to(device)
 
 # define a pytorch forward hook function
 def steering_hook(
     module: t.nn.Module, input: Tuple[t.Tensor], output: t.Tensor
 ) -> t.Tensor:
     prefix_toks, final_tok = input[0][:, :-1], input[0][:, -1]
-    layernormed_final_tok = layer_norm(final_tok, [d_model])
-    rotated_final_tok = pred_from_embeds(layernormed_final_tok)
-    # rotated_final_tok = pred_from_embeds(final_tok)
+    # layernormed_final_tok = layer_norm(final_tok, [d_model])
+    # rotated_final_tok = pred_from_embeds(layernormed_final_tok)
+    rotated_final_tok = pred_from_embeds(final_tok)
+    # rotated_final_tok = fr_to_en_mean_vec + layernormed_final_tok
     # rotated_final_tok = fr_to_en_mean_vec + final_tok
     # rotated_final_tok = t.zeros_like(rotated_final_tok)
     out = t.cat([prefix_toks, rotated_final_tok.unsqueeze(1)], dim=1)
@@ -316,20 +324,45 @@ with open(fr_file, "r") as f:
         if i > 10000:
             test_fr_strs.append(test_str)
 
-
+gen_length = 20
 for idx, (test_en_str, test_fr_str) in enumerate(zip(test_en_strs, test_fr_strs)):
+    print()
+    print("----------------------------------------------")
     print("test_en_str:", test_en_str)
-    tl.utils.test_prompt(test_en_str, answer="hi", model=model)
+    en_str_init_len = len(test_en_str)
+    logits = model(test_en_str, prepend_bos=True)
+    get_most_similar_embeddings(model, logits[0, -1], top_k=5)
+    for i in range(gen_length):
+        top_tok = model(test_en_str, prepend_bos=True)[:, -1].argmax(dim=-1)
+        top_tok_str = model.to_string(top_tok)
+        test_en_str += top_tok_str
+    print("result en str:", test_en_str[en_str_init_len:])
+    print()
     print("test_fr_str:", test_fr_str)
+    fr_str_init_len = len(test_fr_str)
     with remove_hooks() as handles, t.inference_mode():
         handle = model.blocks[layer_idx].hook_resid_pre.register_forward_hook(
             steering_hook
         )
         handles.add(handle)
         logits = model(test_fr_str, prepend_bos=True)
-        print("logits.shape:", logits.shape)
-        get_most_similar_embeddings(model, logits[0, -1])
-    break
+        get_most_similar_embeddings(model, logits[0, -1], top_k=5)
+        for i in range(gen_length):
+            top_tok = model(test_fr_str, prepend_bos=True)[:, -1].argmax(dim=-1)
+            top_tok_str = model.to_string(top_tok)
+            test_fr_str += top_tok_str
+        print("result fr str:", test_fr_str[fr_str_init_len:])
+    if idx > 5:
+        break
 
 
 # %%
+# FINDINGS
+# The learned translation is almost exactly equal to the mean difference between the en
+# and fr embeddings
+# Even though we learn / take the mean on the unnormalized resids, it works much better
+# if we apply layernorm to the resids before adding the vector
+
+
+# Language rotations of the embeddings seem to work reasonably well, better than a
+# translation or a linear map

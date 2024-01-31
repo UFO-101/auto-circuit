@@ -21,6 +21,7 @@ from auto_circuit.types import (
     Edge,
     EdgeCounts,
     Node,
+    OutputSlice,
     SrcNode,
     TestEdges,
 )
@@ -36,9 +37,9 @@ def patchable_model(
     model: t.nn.Module,
     factorized: bool,
     separate_qkv: bool,
-    slice_output: bool = False,
+    slice_output: OutputSlice = None,
     seq_len: Optional[int] = None,
-    kv_cache: Optional[HookedTransformerKeyValueCache] = None,
+    kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...] = (None,),
     device: t.device = t.device("cpu"),
 ) -> PatchableModel:
     nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
@@ -47,9 +48,11 @@ def patchable_model(
     wrappers, src_wrappers, dest_wrappers = make_model_patchable(
         model, srcs, nodes, device, seq_len, seq_dim
     )
-    out_slice: Tuple[slice | int, ...] = (
-        tuple([slice(None)] * seq_dim + [-1]) if slice_output else (slice(None),)
-    )
+    if slice_output is None:
+        out_slice: Tuple[slice | int, ...] = (slice(None),)
+    else:
+        last_slice = [-1] if slice_output == "last_seq" else [slice(1, None)]
+        out_slice: Tuple[slice | int, ...] = tuple([slice(None)] * seq_dim + last_slice)
     is_tl_transformer = isinstance(model, HookedTransformer)
     is_autoencoder_transformer = isinstance(model, AutoencoderTransformer)
     is_transformer = is_tl_transformer or is_autoencoder_transformer
@@ -66,7 +69,7 @@ def patchable_model(
         dest_wrappers=dest_wrappers,
         out_slice=out_slice,
         is_transformer=is_transformer,
-        kv_cache=kv_cache,
+        kv_caches=kv_caches,
         wrapped_model=model,
     )
 
@@ -130,6 +133,7 @@ def make_model_patchable(
     node_dict: Dict[str, Set[Node]] = defaultdict(set)
     [node_dict[node.module_name].add(node) for node in nodes]
     wrappers, src_wrappers, dest_wrappers = set(), set(), set()
+    dtype = next(model.parameters()).dtype
 
     for module_name, module_nodes in node_dict.items():
         module = module_by_name(model, module_name)
@@ -151,9 +155,9 @@ def make_model_patchable(
             module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
             prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
             seq_shape = [seq_len] if seq_len is not None else []
-            head_shape = [module_dest_count] if module_dest_count > 1 else []
+            head_shape = [module_dest_count] if head_dim is not None else []
             mask_shape = seq_shape + head_shape + [prev_src_count]
-            patch_mask = t.zeros(mask_shape, device=device)
+            patch_mask = t.zeros(mask_shape, device=device, dtype=dtype)
         wrapper = PatchWrapper(
             module=module,
             head_dim=head_dim,
@@ -251,7 +255,8 @@ def edge_counts_util(
         counts_list = [
             n
             for n in range(1, n_edges)
-            if n % (10 ** max(math.floor(math.log10(n)) - 1, 0)) == 0
+            # if n % (10 ** max(math.floor(math.log10(n)) - 1, 0)) == 0
+            if n % (10 ** max(math.floor(math.log10(n)), 0)) == 0
         ]
     elif test_counts == EdgeCounts.GROUPS:
         assert prune_scores is not None
@@ -280,23 +285,26 @@ def src_out_hook(
     module: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     out: t.Tensor,
-    src: SrcNode,
+    src_nodes: List[SrcNode],
     src_outs: Dict[SrcNode, t.Tensor],
 ):
-    out = out if src.head_dim is None else out.split(1, dim=src.head_dim)[src.head_idx]
-    src_outs[src] = out if src.head_dim is None else out.squeeze(src.head_dim)
+    head_dim: Optional[int] = src_nodes[0].head_dim
+    out = out if head_dim is None else out.split(1, dim=head_dim)
+    for s in src_nodes:
+        src_outs[s] = out if head_dim is None else out[s.head_idx].squeeze(s.head_dim)
 
 
-# TODO optimize this to use one hook per src module
 def get_sorted_src_outs(
     model: PatchableModel,
     input: t.Tensor,
 ) -> Dict[SrcNode, t.Tensor]:
     src_outs: Dict[SrcNode, t.Tensor] = {}
+    src_modules: Dict[t.nn.Module, List[SrcNode]] = defaultdict(list)
+    [src_modules[src.module(model)].append(src) for src in model.srcs]
     with remove_hooks() as handles:
-        for node in model.srcs:
-            hook_fn = partial(src_out_hook, src=node, src_outs=src_outs)
-            handles.add(node.module(model).register_forward_hook(hook_fn))
+        for mod, src_nodes in src_modules.items():
+            hook_fn = partial(src_out_hook, src_nodes=src_nodes, src_outs=src_outs)
+            handles.add(mod.register_forward_hook(hook_fn))
         with t.inference_mode():
             model(input)
     src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
@@ -308,17 +316,15 @@ def dest_in_hook(
     module: t.nn.Module,
     input: Tuple[t.Tensor, ...],
     output: t.Tensor,
-    dest: DestNode,
+    dest_nodes: List[DestNode],
     dest_ins: Dict[DestNode, t.Tensor],
 ):
     in_0 = input[0] if type(input) == tuple else input
     assert type(in_0) == t.Tensor
-    in_0 = (
-        in_0
-        if dest.head_dim is None
-        else in_0.split(1, dim=dest.head_dim)[dest.head_idx]
-    )
-    dest_ins[dest] = in_0 if dest.head_dim is None else in_0.squeeze(dest.head_dim)
+    head_dim: Optional[int] = dest_nodes[0].head_dim
+    in_0 = in_0 if head_dim is None else in_0.split(1, dim=head_dim)
+    for d in dest_nodes:
+        dest_ins[d] = in_0 if head_dim is None else in_0[d.head_idx].squeeze(d.head_dim)
 
 
 def get_sorted_dest_ins(
@@ -326,10 +332,12 @@ def get_sorted_dest_ins(
     input: t.Tensor,
 ) -> Dict[DestNode, t.Tensor]:
     dest_ins: Dict[DestNode, t.Tensor] = {}
+    dest_modules: Dict[t.nn.Module, List[DestNode]] = defaultdict(list)
+    [dest_modules[dest.module(model)].append(dest) for dest in model.dests]
     with remove_hooks() as handles:
-        for node in model.dests:
-            hook_fn = partial(dest_in_hook, dest=node, dest_ins=dest_ins)
-            handles.add(node.module(model).module.register_forward_hook(hook_fn))
+        for mod, dest_nodes in dest_modules.items():
+            hook_fn = partial(dest_in_hook, dest_nodes=dest_nodes, dest_ins=dest_ins)
+            handles.add(mod.register_forward_hook(hook_fn))
         with t.inference_mode():
             model(input)
     dest_ins = dict(sorted(dest_ins.items(), key=lambda x: x[0].idx))

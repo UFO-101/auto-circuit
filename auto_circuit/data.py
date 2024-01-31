@@ -83,7 +83,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         diverge_idx: int,
         seq_labels: Optional[List[str]] = None,
         kv_cache: Optional[HookedTransformerKeyValueCache] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.seq_len = seq_len
@@ -98,7 +98,7 @@ def load_datasets_from_json(
     path: Path,
     device: t.device,
     prepend_bos: bool = True,
-    batch_size: int = 32,
+    batch_size: int | Tuple[int, int] = 32,  # (train, test) if tuple
     train_test_split: Sequence[int | float] = [0.9, 0.1],
     length_limit: int = 100,
     return_seq_length: bool = False,
@@ -116,7 +116,7 @@ def load_datasets_from_json(
     answer_strs = [d["answers"] for d in data["prompts"]][:length_limit]
     wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:length_limit]
     seq_labels = data.get("seq_labels", None)
-    kv_cache = None
+    kvs = []
     if model is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
@@ -150,22 +150,31 @@ def load_datasets_from_json(
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dict]
         diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
         diverge_idx: int = int(diverge_idxs.min().item())
-        print("Dataloader diverge_idx", diverge_idx)
         if tail_divergence:
             assert diverge_idx > 0
-            common_prefix_batch = clean_prompts[:batch_size, :diverge_idx]
-            print("kv_cache for common_prefix_batch", common_prefix_batch.shape)
-            kv_cache = HookedTransformerKeyValueCache.init_cache(
-                model.cfg, model.cfg.device, common_prefix_batch.shape[0]
-            )
-            with t.inference_mode():
-                model(common_prefix_batch, past_kv_cache=kv_cache)
-            kv_cache.freeze()
-
             clean_prompts = clean_prompts[:, diverge_idx:]
             corrupt_prompts = corrupt_prompts[:, diverge_idx:]
-            assert clean_prompts.shape[0] % batch_size == 0
-            assert corrupt_prompts.shape[0] % batch_size == 0
+            clean_len, corrupt_len = clean_prompts.shape[0], corrupt_prompts.shape[0]
+            prefixs, cfg, device = [], model.cfg, model.cfg.device
+            if isinstance(batch_size, tuple):
+                prefixs.append(clean_prompts[: (bs0 := batch_size[0]), :diverge_idx])
+                prefixs.append(clean_prompts[: (bs1 := batch_size[1]), :diverge_idx])
+                assert clean_len % bs0 == 0 and clean_len % bs1 == 0
+                assert corrupt_len % bs0 == 0 and corrupt_len % bs1 == 0
+                kvs.append(HookedTransformerKeyValueCache.init_cache(cfg, device, bs0))
+                kvs.append(HookedTransformerKeyValueCache.init_cache(cfg, device, bs1))
+            else:
+                assert clean_len % batch_size == 0 and corrupt_len % batch_size == 0
+                prefixs.append(clean_prompts[:batch_size, :diverge_idx])
+                kvs.append(
+                    HookedTransformerKeyValueCache.init_cache(cfg, device, batch_size)
+                )
+
+            for prefix, kv_cache in zip(prefixs, kvs):
+                with t.inference_mode():
+                    model(prefix, past_kv_cache=kv_cache)
+                kv_cache.freeze()
+
             print("seq_len before divergence", seq_len)
             if return_seq_length:
                 assert seq_len is not None
@@ -179,8 +188,8 @@ def load_datasets_from_json(
         seq_len=seq_len,
         diverge_idx=diverge_idx,
         seq_labels=seq_labels,
-        kv_cache=kv_cache,
-        batch_size=batch_size,
+        kv_cache=kvs[0] if len(kvs) > 0 else None,
+        batch_size=batch_size[0] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
         collate_fn=collate_fn,
         drop_last=tail_divergence,
@@ -190,8 +199,8 @@ def load_datasets_from_json(
         seq_len=seq_len,
         diverge_idx=diverge_idx,
         seq_labels=seq_labels,
-        kv_cache=kv_cache,
-        batch_size=batch_size,
+        kv_cache=kvs[-1] if len(kvs) > 0 else None,
+        batch_size=batch_size[1] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
         collate_fn=collate_fn,
         drop_last=tail_divergence,

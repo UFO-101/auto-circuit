@@ -20,7 +20,7 @@ class PatchableModel(t.nn.Module):
     dest_wrappers: Set[PatchWrapper]
     out_slice: Tuple[slice | int, ...]
     is_transformer: bool
-    kv_cache: Optional[HookedTransformerKeyValueCache]
+    kv_caches: Optional[Dict[int, HookedTransformerKeyValueCache]]
     wrapped_model: t.nn.Module
 
     def __init__(
@@ -37,7 +37,7 @@ class PatchableModel(t.nn.Module):
         dest_wrappers: Set[PatchWrapper],
         out_slice: Tuple[slice | int, ...],
         is_transformer: bool,
-        kv_cache: Optional[HookedTransformerKeyValueCache],
+        kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...],
         wrapped_model: t.nn.Module,
     ) -> None:
         super().__init__()
@@ -53,22 +53,31 @@ class PatchableModel(t.nn.Module):
         self.dest_wrappers = dest_wrappers
         self.out_slice = out_slice
         self.is_transformer = is_transformer
-        self.kv_cache = kv_cache
+        if all([kv_cache is None for kv_cache in kv_caches]) or len(kv_caches) == 0:
+            self.kv_caches = None
+        else:
+            self.kv_caches = {}
+            for kv_cache in kv_caches:
+                if kv_cache is not None:
+                    batch_size = kv_cache.previous_attention_mask.shape[0]
+                    self.kv_caches[batch_size] = kv_cache
         self.wrapped_model = wrapped_model
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        if self.kv_cache is None:
+        if self.kv_caches is None:
             return self.wrapped_model(*args, **kwargs)
         else:
-            return self.wrapped_model(*args, past_kv_cache=self.kv_cache, **kwargs)
+            batch_size = args[0].shape[0]
+            kv = self.kv_caches[batch_size]
+            return self.wrapped_model(*args, past_kv_cache=kv, **kwargs)
 
     def run_with_cache(self, *args: Any, **kwargs: Any) -> Any:
-        if self.kv_cache is None:
+        if self.kv_caches is None:
             return self.wrapped_model.run_with_cache(*args, **kwargs)
         else:
-            return self.wrapped_model.run_with_cache(
-                *args, past_kv_cache=self.kv_cache, **kwargs
-            )
+            batch_size = args[0].shape[0]
+            kv = self.kv_caches[batch_size]
+            return self.wrapped_model.run_with_cache(*args, past_kv_cache=kv, **kwargs)
 
     def add_hook(self, *args: Any, **kwargs: Any) -> Any:
         return self.wrapped_model.add_hook(*args, **kwargs)

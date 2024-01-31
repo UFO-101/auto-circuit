@@ -8,16 +8,14 @@ import plotly.graph_objects as go
 import torch as t
 
 from auto_circuit.metrics.metrics import (
+    ANSWER_LOGIT_METRIC,
     ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
+    CORRUPT_KL_DIV_METRIC,
     LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
     METRIC_DICT,
     ROC_METRIC,
     Metric,
-)
-from auto_circuit.metrics.prune_scores_similarity import (
-    prune_score_similarities_plotly,
 )
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
@@ -34,8 +32,7 @@ from auto_circuit.prune_algos.prune_algos import (
 )
 from auto_circuit.prune_algos.subnetwork_probing import subnetwork_probing_prune_scores
 from auto_circuit.tasks import (
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
@@ -72,7 +69,11 @@ def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPrune
         constrained_ps: AlgoPruneScores = {}
         algo_prune_scores = task_prune_scores[task_key]
         for algo_key, algo_ps in (prune_score_pbar := tqdm(algo_prune_scores.items())):
-            if algo_key.startswith("Constrained"):
+            if (
+                algo_key.startswith("Constrained")
+                or algo_key not in ["Official Circuit", "Tree Probing"]
+                or True
+            ):
                 continue
             sorted_edges: List[Edge] = list(
                 sorted(algo_ps.keys(), key=lambda x: abs(algo_ps[x]), reverse=True)
@@ -80,9 +81,9 @@ def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPrune
             algo_circuit = set([e for e in sorted_edges[: task.true_edge_count]])
             prune_score_pbar.set_description_str(f"Constrained Pruning: {algo_key}")
             constrained_algo = PruneAlgo(
-                key="Constrained Circuit Probing" + algo_key,
+                key="Constrained Circuit Probing " + algo_key,
                 name=f"Not {PRUNE_ALGO_DICT[algo_key].name} Circuit Probing",
-                short_name=f"¬{PRUNE_ALGO_DICT[algo_key].short_name} CP",
+                short_name=f"¬{PRUNE_ALGO_DICT[algo_key].short_name} TP",
                 func=partial(
                     subnetwork_probing_prune_scores,
                     learning_rate=0.1,
@@ -90,7 +91,7 @@ def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPrune
                     regularize_lambda=0.1,
                     mask_fn="hard_concrete",
                     show_train_graph=True,
-                    true_circuit_size=True,
+                    circuit_size="true_size",
                     tree_optimisation=True,
                     avoid_edges=algo_circuit,
                     avoid_lambda=0.3,
@@ -170,6 +171,8 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
                                 else max(y, metric.y_min),
                             }
                         )
+                        # !!!! Make multiple different ones if not sharing y-axis
+                        # Also, why are the x-values not quite right?
                         y_max = max(y_max, y)
 
         if metric == ROC_METRIC:
@@ -204,9 +207,9 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
 
 TASKS: List[Task] = [
     # Token Circuits
-    # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+    # IOI_TOKEN_CIRCUIT_TASK,
+    # DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -237,28 +240,39 @@ PRUNE_ALGOS: List[PruneAlgo] = [
 METRICS: List[Metric] = [
     ROC_METRIC,
     CLEAN_KL_DIV_METRIC,
-    # CORRUPT_KL_DIV_METRIC,
+    CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
-    # ANSWER_LOGIT_METRIC,
+    ANSWER_LOGIT_METRIC,
     LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
+    # LOGIT_DIFF_PERCENT_METRIC,
 ]
 
-compute_prune_scores = True
-save_prune_scores = True
-load_prune_scores = False
+compute_prune_scores = False
+save_prune_scores = False
+load_prune_scores = True
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
 if compute_prune_scores:
     prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
+    print("prune_scores.keys():", prune_scores.keys())
     constrained_ps = run_constrained_prune_funcs(prune_scores)
+    print("constrained_ps.keys():", constrained_ps.keys())
     task_prune_scores = {k: v | constrained_ps[k] for k, v in prune_scores.items()}
+    print("task_prune_scores.keys():", task_prune_scores.keys())
 if load_prune_scores:
     # filename = "task-prune-scores-09-01-2024_20-13-48.pkl"
     # filename = "task-prune-scores-19-01-2024_20-19-04.pkl"
     # filename = "task-prune-scores-21-01-2024_01-19-29.pkl"
-    filename = "task-prune-scores-24-01-2024_20-12-00.pkl"
+    # filename = "task-prune-scores-24-01-2024_20-12-00.pkl"
+    # filename = "task-prune-scores-30-01-2024_17-56-05.pkl"
+
+    # Sports Players 100 epochs
+    filename = "task-prune-scores-30-01-2024_19-41-40.pkl"
+
+    # IOI and Docstring [100, 1000, ...] circuits
+    # filename = "task-prune-scores-31-01-2024_01-51-25.pkl"
+
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
     run_constrained_prune_funcs(task_prune_scores)
@@ -266,10 +280,10 @@ if save_prune_scores:
     base_filename = "task-prune-scores"
     save_cache(task_prune_scores, cache_folder_name, base_filename)
 
-prune_scores_similartity_fig = prune_score_similarities_plotly(
-    task_prune_scores, [10, 100, 1000], ground_truths=True
-)
-prune_scores_similartity_fig.show()
+# prune_scores_similartity_fig = prune_score_similarities_plotly(
+#     task_prune_scores, [10, 100, 1000], ground_truths=True
+# )
+# prune_scores_similartity_fig.show()
 
 compute_metric_measurements = True
 save_metric_measurements = True
@@ -286,7 +300,11 @@ if compute_metric_measurements:
 else:
     assert load_metric_measurements
     # filename = "seq-circuit-13-12-2023_06-30-20.pkl"
-    filename = "seq-circuit-24-01-2024_20-17-35.pkl"
+    # filename = "seq-circuit-24-01-2024_20-17-35.pkl"
+
+    # IOI and Docstring [100, 1000, ...] circuits
+    filename = "seq-circuit-31-01-2024_02-20-11.pkl"
+
     metric_measurements = load_cache(cache_folder_name, filename)
 
 # experiment_steps: Dict[str, Callable] = {

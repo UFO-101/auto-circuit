@@ -6,6 +6,7 @@ from auto_circuit.prune_algos.ACDC import acdc_prune_scores
 from auto_circuit.prune_algos.activation_magnitude import (
     activation_magnitude_prune_scores,
 )
+from auto_circuit.prune_algos.circuit_probing import circuit_probing_prune_scores
 from auto_circuit.prune_algos.edge_attribution_patching import (
     edge_attribution_patching_prune_scores,
 )
@@ -118,7 +119,7 @@ SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=500,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -128,13 +129,13 @@ CIRCUIT_PROBING_PRUNE_ALGO = PruneAlgo(
     key="Circuit Probing",
     name="Circuit Probing",
     func=partial(
-        subnetwork_probing_prune_scores,
+        circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=500,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
-        true_circuit_size=True,
+        circuit_sizes=["true_size", 1000],
     ),
     short_name="CP",
 )
@@ -145,7 +146,7 @@ SUBNETWORK_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=500,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -156,13 +157,13 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     key="Tree Probing",
     name="Tree Probing",
     func=partial(
-        subnetwork_probing_prune_scores,
+        circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=500,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
-        true_circuit_size=True,
+        circuit_sizes=[100, "true_size", 1000, 10000, 100000],
         tree_optimisation=True,
     ),
     short_name="TP",

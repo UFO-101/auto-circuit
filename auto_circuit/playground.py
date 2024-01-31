@@ -77,7 +77,35 @@ model = tl.HookedTransformer.from_pretrained(
 )
 model.eval()
 #%%
-tl.utils.test_prompt("The sun rises in the", "stone", model, top_k=5)
+modelb16 = tl.HookedTransformer.from_pretrained(
+    # "pythia-410m-deduped",
+    "gpt2",
+    fold_ln=True,
+    center_writing_weights=True,
+    center_unembed=False,
+    # "tiny-stories-2L-33M",
+    device=device,
+    dtype="bfloat16"
+    # "tiny-stories-33M", device=device
+)
+model16 = tl.HookedTransformer.from_pretrained(
+    # "pythia-410m-deduped",
+    "gpt2",
+    fold_ln=True,
+    center_writing_weights=True,
+    center_unembed=False,
+    # "tiny-stories-2L-33M",
+    device=device,
+    dtype="float16"
+    # "tiny-stories-33M", device=device
+)
+model16.eval()
+modelb16.eval()
+#%%
+test_prompt = "The sun rises in the"
+tl.utils.test_prompt(test_prompt, "stone", model, top_k=5)
+tl.utils.test_prompt(test_prompt, "stone", model16, top_k=5)
+tl.utils.test_prompt(test_prompt, "stone", modelb16, top_k=5)
 #%%
 
 

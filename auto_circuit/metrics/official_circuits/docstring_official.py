@@ -8,7 +8,7 @@ from auto_circuit.utils.patchable_model import PatchableModel
 
 
 def docstring_true_edges(
-    model: PatchableModel, token_positions: bool = False
+    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
 ) -> Set[Edge]:
     """
     the manual graph, from Stefan
@@ -47,7 +47,7 @@ def docstring_true_edges(
         if edge.name in edges_present.keys():
             if token_positions:
                 for tok_pos in edges_present[edge.name]:
-                    true_edges.add(Edge(edge.src, edge.dest, tok_pos))
+                    true_edges.add(Edge(edge.src, edge.dest, tok_pos - seq_start_idx))
             else:
                 true_edges.add(edge)
     return true_edges
