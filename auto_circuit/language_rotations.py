@@ -5,6 +5,7 @@ from typing import Tuple
 import plotly.express as px
 import torch as t
 import transformer_lens as tl
+from einops import einsum
 from word2word import Word2word
 
 from auto_circuit.utils.custom_tqdm import tqdm
@@ -61,22 +62,22 @@ fr_toks = t.tensor(fr_toks, device=device)
 es_toks = t.tensor(es_toks, device=device)
 #%%
 d_model = model.cfg.d_model
-en_embeds = t.nn.functional.layer_norm(
-    model.embed.W_E[en_toks].detach().clone(), [d_model]
-)
-fr_embeds = t.nn.functional.layer_norm(
-    model.embed.W_E[fr_toks].detach().clone(), [d_model]
-)
+# en_embeds = t.nn.functional.layer_norm(
+#     model.embed.W_E[en_toks].detach().clone(), [d_model]
+# )
+# fr_embeds = t.nn.functional.layer_norm(
+#     model.embed.W_E[fr_toks].detach().clone(), [d_model]
+# )
 # es_embeds = t.nn.functional.layer_norm(
 # model.embed.W_E[es_toks].detach().clone(), [d_model])
-# en_embeds = model.embed.W_E[en_toks].detach().clone()
-# fr_embeds = model.embed.W_E[fr_toks].detach().clone()
+en_embeds = model.embed.W_E[en_toks].detach().clone()
+fr_embeds = model.embed.W_E[fr_toks].detach().clone()
 # es_embeds = model.embed.W_E[es_toks].detach().clone()
 
 # dataset = t.utils.data.TensorDataset(en_embeds, fr_embeds, es_embeds)
 dataset = t.utils.data.TensorDataset(en_embeds, fr_embeds)
 # dataset = t.utils.data.TensorDataset(en_embeds, es_embeds)
-train_set, test_set = t.utils.data.random_split(dataset, [0.9, 0.1])
+train_set, test_set = t.utils.data.random_split(dataset, [0.99, 0.01])
 train_loader = t.utils.data.DataLoader(train_set, batch_size=512, shuffle=True)
 test_loader = t.utils.data.DataLoader(test_set, batch_size=512, shuffle=True)
 
@@ -86,10 +87,10 @@ test_loader = t.utils.data.DataLoader(test_set, batch_size=512, shuffle=True)
 # translate_2 = t.zeros([d_model], device=device, requires_grad=True)
 learned_rotation = t.nn.Linear(d_model, d_model, bias=False, device=device)
 linear_map = t.nn.utils.parametrizations.orthogonal(learned_rotation, "weight")
+# optim = t.optim.Adam(list(learned_rotation.parameters()) + [translate], lr=0.0002)
 # optim = t.optim.Adam(list(linear_map.parameters()) + [translate], lr=0.01)
-optim = t.optim.Adam(list(linear_map.parameters()), lr=0.0002)
-# optim = t.optim.Adam(list(learned_rotation.parameters()), lr=0.01)
-# optim = t.optim.Adam([translate], lr=0.01)
+optim = t.optim.Adam(list(learned_rotation.parameters()), lr=0.0002)
+# optim = t.optim.Adam([translate], lr=0.0002)
 
 
 def word_pred_from_embeds(embeds: t.Tensor, lerp: float = 1.0) -> t.Tensor:
@@ -103,7 +104,7 @@ def word_distance_metric(a: t.Tensor, b: t.Tensor) -> t.Tensor:
     # return (a - b) ** 2
 
 
-n_epochs = 200
+n_epochs = 50
 loss_history = []
 for epoch in (epoch_pbar := tqdm(range(n_epochs))):
     for batch_idx, (en_embed, fr_embed) in enumerate(train_loader):
@@ -130,6 +131,7 @@ for batch_idx, (en_embed, fr_embed) in enumerate(test_loader):
 
 print("Test Accuracy:", t.cat(cosine_sims).mean().item())
 
+correct_count = 0
 for batch_idx, (en_embed, fr_embed) in enumerate(test_loader):
     en_embed.to(device)
     fr_embed.to(device)
@@ -137,33 +139,24 @@ for batch_idx, (en_embed, fr_embed) in enumerate(test_loader):
     for i in range(30):
         print()
         print()
-        get_most_similar_embeddings(
-            model,
-            en_embed[i],
-            top_k=4,
-            apply_ln_final=False,
-            apply_unembed=False,
-            apply_embed=True,
-        )
-        print()
-        get_most_similar_embeddings(
-            model,
-            fr_embed[i],
-            top_k=4,
-            apply_ln_final=False,
-            apply_unembed=False,
-            apply_embed=True,
-        )
-        print()
+        logits = einsum(en_embed[i], model.embed.W_E, "d_model, vocab d_model -> vocab")
+        en_str = model.to_single_str_token(logits.argmax().item())  # type: ignore
+        logits = einsum(fr_embed[i], model.embed.W_E, "d_model, vocab d_model -> vocab")
+        fr_str = model.to_single_str_token(logits.argmax().item())  # type: ignore
+        logits = einsum(pred[i], model.embed.W_E, "d_model, vocab d_model -> vocab")
+        pred_str = model.to_single_str_token(logits.argmax().item())  # type: ignore
+        if correct := (fr_str == pred_str):
+            correct_count += 1
+        print("English:", en_str, "French:", fr_str)
+        print("English to French rotation", "✅" if correct else "❌")
         get_most_similar_embeddings(
             model,
             pred[i],
             top_k=4,
-            apply_ln_final=False,
-            apply_unembed=False,
             apply_embed=True,
         )
-    break
+print()
+print("Correct percentage:", correct_count / len(test_loader.dataset) * 100)
 # %%
 #  -------------- GATHER FR EN EMBED DATA ----------------
 en_file = "/home/dev/europarl/europarl-v7.fr-en.en"
@@ -366,3 +359,5 @@ for idx, (test_en_str, test_fr_str) in enumerate(zip(test_en_strs, test_fr_strs)
 
 # Language rotations of the embeddings seem to work reasonably well, better than a
 # translation or a linear map
+
+# See https://docs.google.com/document/d/1P_GDQb8L2rJBMtPJrm3gCmaOOvO2EtHtaIvP-HXMvWA

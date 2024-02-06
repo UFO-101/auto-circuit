@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Tuple
 import plotly.graph_objects as go
 import torch as t
 
+from auto_circuit.completeness_algos.same_under_knockouts import (
+    TaskCompletenessScores,
+    run_same_under_knockouts,
+    same_under_knockouts_fig,
+)
 from auto_circuit.metrics.metrics import (
     ANSWER_LOGIT_METRIC,
     ANSWER_PROB_METRIC,
@@ -17,6 +22,7 @@ from auto_circuit.metrics.metrics import (
     ROC_METRIC,
     Metric,
 )
+from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
     CIRCUIT_PROBING_PRUNE_ALGO,
@@ -32,6 +38,8 @@ from auto_circuit.prune_algos.prune_algos import (
 )
 from auto_circuit.prune_algos.subnetwork_probing import subnetwork_probing_prune_scores
 from auto_circuit.tasks import (
+    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    IOI_TOKEN_CIRCUIT_TASK,
     SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
@@ -46,7 +54,12 @@ from auto_circuit.types import (
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
 from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
-from auto_circuit.visualize import average_auc_plot, edge_patching_plot, roc_plot
+from auto_circuit.visualize import (
+    average_auc_plot,
+    draw_seq_graph,
+    edge_patching_plot,
+    roc_plot,
+)
 
 
 def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPruneScores:
@@ -56,7 +69,8 @@ def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
         prune_scores_dict: AlgoPruneScores = {}
         for prune_algo in (prune_score_pbar := tqdm(prune_algos)):
             prune_score_pbar.set_description_str(f"Prune scores: {prune_algo.name}")
-            prune_scores_dict[prune_algo.key] = prune_algo.func(task)
+            ps = dict(list(prune_algo.func(task).items())[: task.true_edge_count])
+            prune_scores_dict[prune_algo.key] = ps
         task_prune_scores[task.key] = prune_scores_dict
     return task_prune_scores
 
@@ -178,7 +192,7 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
         if metric == ROC_METRIC:
             figs.append(roc_plot(data, task_measurements))
         else:
-            y_max = None if metric.y_min is None else y_max
+            y_max = None if metric.y_min is None or not metric.y_axes_match else y_max
             figs.append(
                 edge_patching_plot(
                     data,
@@ -208,8 +222,8 @@ def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
 TASKS: List[Task] = [
     # Token Circuits
     SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-    # IOI_TOKEN_CIRCUIT_TASK,
-    # DOCSTRING_TOKEN_CIRCUIT_TASK,
+    IOI_TOKEN_CIRCUIT_TASK,
+    DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -246,10 +260,11 @@ METRICS: List[Metric] = [
     LOGIT_DIFF_METRIC,
     # LOGIT_DIFF_PERCENT_METRIC,
 ]
+figs = []
 
 compute_prune_scores = False
 save_prune_scores = False
-load_prune_scores = True
+load_prune_scores = False
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
@@ -268,10 +283,15 @@ if load_prune_scores:
     # filename = "task-prune-scores-30-01-2024_17-56-05.pkl"
 
     # Sports Players 100 epochs
-    filename = "task-prune-scores-30-01-2024_19-41-40.pkl"
+    # filename = "task-prune-scores-30-01-2024_19-41-40.pkl" !!!! Don't use this one
 
-    # IOI and Docstring [100, 1000, ...] circuits
+    # IOI and Docstring [100, 1000, ...] circuits 2000 epochs
     # filename = "task-prune-scores-31-01-2024_01-51-25.pkl"
+    # Sports Players 500 epochs
+    # filename = "task-prune-scores-31-01-2024_22-36-47.pkl"
+    filename = (
+        "icml-2024-sports-ioi-docstring-02-02-2024_04-09-35.pkl"  # 2 above combined
+    )
 
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
@@ -280,16 +300,63 @@ if save_prune_scores:
     base_filename = "task-prune-scores"
     save_cache(task_prune_scores, cache_folder_name, base_filename)
 
-# prune_scores_similartity_fig = prune_score_similarities_plotly(
-#     task_prune_scores, [10, 100, 1000], ground_truths=True
-# )
-# prune_scores_similartity_fig.show()
+if False:
+    for task_key, algo_prune_scores in task_prune_scores.items():
+        task = TASK_DICT[task_key]
+        for algo_key, prune_scores in algo_prune_scores.items():
+            algo = PRUNE_ALGO_DICT[algo_key]
+            print("task:", task.name, "algo:", algo.name)
+            draw_seq_graph(
+                model=task.model,
+                input=next(iter(task.test_loader)).clean,
+                prune_scores=prune_scores,
+                seq_labels=task.test_loader.seq_labels,
+            )
+            break
+        break
 
-compute_metric_measurements = True
-save_metric_measurements = True
+if False:
+    prune_scores_similartity_fig = prune_score_similarities_plotly(
+        task_prune_scores, [], ground_truths=True
+    )
+    prune_scores_similartity_fig.show()
+    figs.append(prune_scores_similartity_fig)
+
+compute_task_completeness_scores = False
+save_task_completeness_scores = False
+load_task_completeness_scores = True
+task_completeness_scores: TaskCompletenessScores = {}
+if compute_task_completeness_scores:
+    task_completeness_scores: TaskCompletenessScores = run_same_under_knockouts(
+        task_prune_scores,
+        # algo_keys=["Official Circuit", "Circuit Probing", "Random"],
+        algo_keys=["Official Circuit", "Random"],
+        learning_rate=0.01,
+        epochs=100,
+        regularize_lambda=0,
+        hard_concrete_threshold=0.0,
+    )
+cache_folder_name = ".completeness_scores"
+if save_task_completeness_scores:
+    base_filename = "task-completeness-scores"
+    save_cache(task_completeness_scores, cache_folder_name, base_filename)
+if load_task_completeness_scores:
+    # IOI and Docstring [100, 1000, ...] circuits
+    # 2000 epochs pruning - 500 epochs completeness
+    # filename = "task-completeness-scores-02-02-2024_02-05-58.pkl"
+    # filename = "task-completeness-scores-02-02-2024_04-50-10.pkl"
+    filename = "combined_task_completeness_scores-06-02-2024_18-56-54.pkl"
+    task_completeness_scores = load_cache(cache_folder_name, filename)
+if task_completeness_scores:
+    completeness_fig = same_under_knockouts_fig(task_completeness_scores)
+    completeness_fig.show()
+
+compute_metric_measurements = False
+save_metric_measurements = False
 load_metric_measurements = False
 
 cache_folder_name = ".measurement_cache"
+metric_measurements = None
 if compute_metric_measurements:
     metric_measurements = measure_circuit_metrics(
         METRICS, task_prune_scores, PatchType.TREE_PATCH, reverse_clean_corrupt=False
@@ -297,13 +364,22 @@ if compute_metric_measurements:
     if save_metric_measurements:
         base_filename = "seq-circuit"
         save_cache(metric_measurements, cache_folder_name, base_filename)
-else:
-    assert load_metric_measurements
+if load_metric_measurements:
     # filename = "seq-circuit-13-12-2023_06-30-20.pkl"
     # filename = "seq-circuit-24-01-2024_20-17-35.pkl"
 
-    # IOI and Docstring [100, 1000, ...] circuits
-    filename = "seq-circuit-31-01-2024_02-20-11.pkl"
+    # IOI and Docstring [100, 1000, ...] circuits 2000 epochs
+    # filename = "seq-circuit-31-01-2024_02-20-11.pkl"
+    # Sports Players 500 epochs
+    # filename = "seq-circuit-01-02-2024_03-39-54.pkl"
+    # 2 above combined
+    # filename = "icml-2024-sports-ioi-docstring-02-02-2024_04-35-30.pkl"
+    # Mean ablate sports ground truth only
+    # ("icml-2024-sports-ioi-dostring" +
+    # "mean-ablate-sport-ground-truth-02-02-2024_06-17-46.pkl")
+    # filename = "icml-2024-all3-fix-official-02-02-2024_07-28-15.pkl"
+    filename = "icml-2024-all3-fix-official-02-02-2024_07-38-20.pkl"
+    # filename = "icml-2024-all3-fix-official-mean-ablate-02-02-2024_07-45-23.pkl"
 
     metric_measurements = load_cache(cache_folder_name, filename)
 
@@ -312,11 +388,12 @@ else:
 #     "Measure experiment metric": measure_experiment_metrics,
 #     "Draw figures": measurement_figs
 # }
-figs = measurement_figs(metric_measurements)
-for i, fig in enumerate(figs):
-    fig.show()
-    folder: Path = repo_path_to_abs_path("figures-12")
-    # Save figure as pdf in figures folder
-    # fig.write_image(str(folder / f"new {i}.pdf"))
+if metric_measurements is not None:
+    figs += list(measurement_figs(metric_measurements))
+    for i, fig in enumerate(figs):
+        fig.show()
+        folder: Path = repo_path_to_abs_path("figures-12")
+        # Save figure as pdf in figures folder
+        # fig.write_image(str(folder / f"new {i}.pdf"))
 
 #%%

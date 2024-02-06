@@ -61,8 +61,17 @@ def run_pruned(
         else:
             raise NotImplementedError
 
+        # patch_outs: Dict[SrcNode, t.Tensor]
+        # patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
+        # patch_src_outs = t.stack(list(patch_outs.values()))
+        # repeats = [patch_src_outs.shape[0]] + [1] * (patch_src_outs.ndim - 1)
+        # patch_src_outs: t.Tensor = (
+        #     patch_src_outs.mean(dim=0, keepdim=True).repeat(repeats).detach()
+        # )
+
         patch_outs: Dict[SrcNode, t.Tensor]
         patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
+
         curr_src_outs: t.Tensor = t.zeros_like(patch_src_outs)
 
         patched_edge_val = 0.0 if patch_type == PatchType.TREE_PATCH else 1.0
@@ -85,12 +94,12 @@ def run_pruned(
                 )
             for edge_idx in (edge_pbar := tqdm(range(len(edges) + 1))):
                 if edge_idx in test_edge_counts:
+                    edge_pbar.set_description_str(f"Pruning {edge_idx} Edges")
                     with t.inference_mode():
                         model_output = model(batch_input)[out_slice]
                     pruned_outs[edge_idx].append(model_output.detach().clone())
                 if edge_idx < len(edges):
                     edge = edges[edge_idx]
-                    edge_pbar.set_description_str(f"Prune Edge {edge}", refresh=False)
                     edge.patch_mask(model).data[edge.patch_idx] = patched_edge_val
         del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
     return pruned_outs

@@ -157,7 +157,9 @@ def make_model_patchable(
             seq_shape = [seq_len] if seq_len is not None else []
             head_shape = [module_dest_count] if head_dim is not None else []
             mask_shape = seq_shape + head_shape + [prev_src_count]
-            patch_mask = t.zeros(mask_shape, device=device, dtype=dtype)
+            patch_mask = t.zeros(
+                mask_shape, device=device, dtype=dtype, requires_grad=False
+            )
         wrapper = PatchWrapper(
             module=module,
             head_dim=head_dim,
@@ -205,18 +207,23 @@ def set_all_masks(model: PatchableModel, val: float) -> None:
 
 
 @contextmanager
-def train_mask_mode(model: PatchableModel) -> Iterator[List[t.nn.Parameter]]:
+def train_mask_mode(
+    model: PatchableModel, requires_grad: bool = True
+) -> Iterator[List[t.nn.Parameter]]:
     model.eval()
     model.zero_grad()
     parameters: List[t.nn.Parameter] = []
     for wrapper in model.dest_wrappers:
-        parameters.append(wrapper.patch_mask)
+        patch_mask = wrapper.patch_mask
+        patch_mask.detach_().requires_grad_(requires_grad)
+        parameters.append(patch_mask)
         wrapper.train()
     try:
         yield parameters
     finally:
         for wrapper in model.dest_wrappers:
             wrapper.eval()
+            wrapper.patch_mask.detach_().requires_grad_(False)
 
 
 @contextmanager
@@ -243,7 +250,9 @@ def edge_counts_util(
 
     # Work out default setting for test_counts
     if test_counts is None:
-        if prune_scores is not None and len(set(prune_scores.values())) < n_edges / 2:
+        if prune_scores is not None and len(set(prune_scores.values())) < min(
+            n_edges / 2, 100
+        ):
             test_counts = EdgeCounts.GROUPS
         else:
             test_counts = EdgeCounts.LOGARITHMIC if n_edges > 200 else EdgeCounts.ALL

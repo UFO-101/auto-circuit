@@ -75,6 +75,7 @@ def edge_patching_plot(
         range_y=None if y_max is None else [y_min, y_max * 0.8],
         # range_y=[-45, 120],
         facet_col_spacing=0.03 if y_axes_match else 0.06,
+        markers=True,
     )
     fig.update_layout(
         # title=f"{main_title}: {metric_name} vs. Patched Edges",
@@ -82,15 +83,15 @@ def edge_patching_plot(
         template="plotly",
         # width=335 * len(set([d["Task"] for d in data])) + 280,
         width=365 * len(set([d["Task"] for d in data])) - 10,
-        height=600,
+        height=500,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-1.15,
+            y=-0.7,
             xanchor="left",
             x=0.0,
             entrywidthmode="fraction",
-            entrywidth=0.67,
+            entrywidth=0.25,
         ),
     )
     task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
@@ -111,7 +112,7 @@ def edge_patching_plot(
                     showlegend=task_idx == 0,
                     marker=dict(color="black", size=10, symbol="x-thin"),
                     marker_line_width=2,
-                    name=f"{algo.short_name} = {algo.name}",
+                    name=algo.short_name,
                 )
 
     fig.update_yaxes(matches=None, showticklabels=True) if not y_axes_match else None
@@ -156,17 +157,17 @@ def roc_plot(
         # title=f"{main_title}: ROC Curves",
         template="plotly",
         yaxis_title="True Positive Rate",
-        height=600,
+        height=500,
         # width=335 * len(set([d["Task"] for d in data])) + 280,
         width=365 * len(set([d["Task"] for d in data])) - 10,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-1.15,
+            y=-0.75,
             xanchor="left",
             x=0.0,
             entrywidthmode="fraction",
-            entrywidth=0.67,
+            entrywidth=0.3,
         ),
     )
     return fig

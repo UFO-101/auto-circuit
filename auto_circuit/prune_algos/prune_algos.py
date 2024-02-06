@@ -119,7 +119,7 @@ SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=2000,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -131,11 +131,11 @@ CIRCUIT_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=2000,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
-        circuit_sizes=["true_size", 1000],
+        circuit_sizes=["true_size"],
     ),
     short_name="CP",
 )
@@ -146,7 +146,7 @@ SUBNETWORK_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=2000,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -159,11 +159,11 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=500,
+        epochs=4000,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
-        circuit_sizes=[100, "true_size", 1000, 10000, 100000],
+        circuit_sizes=["true_size"],
         tree_optimisation=True,
     ),
     short_name="TP",

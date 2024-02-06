@@ -33,10 +33,9 @@ def sports_players_true_edges(
     n_heads = model.cfg.n_heads
     head_outs_0 = [f"A0.{head}" for head in range(n_heads)]
     head_outs_01 = [f"A{layer}.{head}" for layer in range(2) for head in range(n_heads)]
-    head_ins_01 = [f"{head}.{qkv}" for head in head_outs_01 for qkv in ["Q", "K", "V"]]
 
     # Many of these are not real edges. We filter them out at the end of this function.
-    non_final_name_tok_nodes = ["Resid Start", "MLP 0"] + head_outs_0 + head_ins_01
+    non_final_name_tok_nodes = ["Resid Start", "MLP 0"] + head_outs_0
     for src_node in non_final_name_tok_nodes:
         for dest_node in non_final_name_tok_nodes:
             edges_present[f"{src_node}->{dest_node}"] = non_final_name_toks_idxs
@@ -44,7 +43,7 @@ def sports_players_true_edges(
     # We include every edge in the first 2 layers and every MLP from layers 2-8 at the
     # last name token
     mlps = [f"MLP {layer}" for layer in range(0, 9)]
-    final_name_tok_nodes = ["Resid Start"] + head_outs_01 + head_ins_01 + mlps
+    final_name_tok_nodes = ["Resid Start"] + head_outs_01 + mlps
     for src_node in final_name_tok_nodes:
         for dest_node in final_name_tok_nodes:
             edges_present[f"{src_node}->{dest_node}"] = [final_name_tok_idx]
@@ -53,12 +52,12 @@ def sports_players_true_edges(
     # Lookup to main attention head
     main_attn_head = "A16.20"
     for src_node in final_name_tok_nodes:
-        edges_present[f"{src_node}->{main_attn_head}.V"] = [final_name_tok_idx]
+        edges_present[f"{src_node}->{main_attn_head}"] = [final_name_tok_idx]
 
     # V-composition from A16.20 to the other important attention heads
     secondary_attn_heads = ["A21.9", "A22.17", "A22.15", "A17.30", "A19.24"]
     for attn_head in secondary_attn_heads:
-        edges_present[f"{main_attn_head}->{attn_head}.V"] = [final_name_tok_idx]
+        edges_present[f"{main_attn_head}->{attn_head}"] = [final_name_tok_idx]
 
     # Attention heads to Resid End
     for attn_head in [main_attn_head] + secondary_attn_heads:

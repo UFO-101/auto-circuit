@@ -130,6 +130,9 @@ class Task:
                 )
             MODEL_CACHE[model_cache_key] = model
 
+        for param in model.parameters():
+            param.requires_grad = False
+
         dataset_cache_key = (
             self._dataset_name,
             self.batch_size,
@@ -198,10 +201,10 @@ SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Sports Players",
     _model_def="pythia-2.8b-deduped",
     _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
-    batch_size=(10, 10),  # There are 3 sports (football, basketball, baseball),
+    batch_size=(10, 20),  # There are 3 sports (football, basketball, baseball),
     batch_count=(
         10,
-        10,
+        5,
     ),  # 70 prompts for each sport (210 total), 105 test and 105 train
     _true_edge_func=sports_players_true_edges,
     token_circuit=True,

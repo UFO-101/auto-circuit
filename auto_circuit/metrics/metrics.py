@@ -47,7 +47,7 @@ CORRUPT_KL_DIV_METRIC = Metric(
     log_x=True,
     log_y=True,
     lower_better=True,
-    y_axes_match=True,
+    y_axes_match=False,
     y_min=1e-1,
 )
 ANSWER_LOGIT_METRIC = Metric(
