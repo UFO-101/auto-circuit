@@ -351,13 +351,4 @@ for idx, (test_en_str, test_fr_str) in enumerate(zip(test_en_strs, test_fr_strs)
 
 # %%
 # FINDINGS
-# The learned translation is almost exactly equal to the mean difference between the en
-# and fr embeddings
-# Even though we learn / take the mean on the unnormalized resids, it works much better
-# if we apply layernorm to the resids before adding the vector
-
-
-# Language rotations of the embeddings seem to work reasonably well, better than a
-# translation or a linear map
-
 # See https://docs.google.com/document/d/1P_GDQb8L2rJBMtPJrm3gCmaOOvO2EtHtaIvP-HXMvWA

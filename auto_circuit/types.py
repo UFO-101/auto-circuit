@@ -84,7 +84,7 @@ class Edge:
         return self.name
 
 
-MetricKey = str
+PruneMetricKey = str
 TaskKey = str
 AlgoKey = str
 
@@ -99,4 +99,4 @@ TaskPruneScores = Dict[TaskKey, AlgoPruneScores]
 
 AlgoMeasurements = Dict[AlgoKey, Measurements]
 TaskMeasurements = Dict[TaskKey, AlgoMeasurements]
-MetricMeasurements = Dict[MetricKey, TaskMeasurements]
+PruneMetricMeasurements = Dict[PruneMetricKey, TaskMeasurements]

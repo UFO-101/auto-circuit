@@ -5,7 +5,7 @@ from typing import Optional
 import pytest
 import torch as t
 
-from auto_circuit.metrics.answer_value import measure_answer_val
+from auto_circuit.metrics.prune_metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.tasks import Task
 

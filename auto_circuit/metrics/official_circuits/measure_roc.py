@@ -1,15 +1,30 @@
 from typing import List, Optional, Set, Tuple
 
-from auto_circuit.tasks import Task
-from auto_circuit.types import Edge, Measurements, PrunedOutputs, PruneScores
+from auto_circuit.tasks import TASK_DICT, Task
+from auto_circuit.types import AlgoMeasurements, Edge, Measurements, PrunedOutputs, PruneScores, TaskMeasurements, TaskPruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
 
 
 def measure_roc(
+    task_prune_scores: TaskPruneScores
+) -> TaskMeasurements:
+    task_measurements: TaskMeasurements = {}
+    for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
+        task = TASK_DICT[task_key]
+        task_pbar.set_description_str(f"Measuring ROC Task: {task.name}")
+        algo_measurements: AlgoMeasurements = {}
+        for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
+            algo_pbar.set_description_str(f"Measuring ROC Pruning with {algo_key}")
+            algo_measurement = measure_task_roc(task, prune_scores)
+            algo_measurements[algo_key] = algo_measurement
+        task_measurements[task_key] = algo_measurements
+    return task_measurements
+
+
+def measure_task_roc(
     task: Task,
     prune_scores: Optional[PruneScores],
-    pruned_outs: Optional[PrunedOutputs],
 ) -> Measurements:
     """Measure ROC curve."""
     assert prune_scores is not None

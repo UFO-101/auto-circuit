@@ -1,29 +1,28 @@
 #%%
 from collections import defaultdict
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import List
 
-import plotly.graph_objects as go
-import torch as t
-
-from auto_circuit.completeness_algos.same_under_knockouts import (
+from auto_circuit.metrics.completeness_metrics.same_under_knockouts import (
     TaskCompletenessScores,
     run_same_under_knockouts,
     same_under_knockouts_fig,
 )
-from auto_circuit.metrics.metrics import (
+from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
+from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
+from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
+    measure_circuit_metrics,
+    measurement_figs,
+)
+from auto_circuit.metrics.prune_metrics.prune_metrics import (
     ANSWER_LOGIT_METRIC,
     ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
     CORRUPT_KL_DIV_METRIC,
     LOGIT_DIFF_METRIC,
-    METRIC_DICT,
-    ROC_METRIC,
-    Metric,
+    PruneMetric,
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
-from auto_circuit.prune import run_pruned
 from auto_circuit.prune_algos.prune_algos import (
     CIRCUIT_PROBING_PRUNE_ALGO,
     CIRCUIT_TREE_PROBING_PRUNE_ALGO,
@@ -36,7 +35,6 @@ from auto_circuit.prune_algos.prune_algos import (
     SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     PruneAlgo,
 )
-from auto_circuit.prune_algos.subnetwork_probing import subnetwork_probing_prune_scores
 from auto_circuit.tasks import (
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     IOI_TOKEN_CIRCUIT_TASK,
@@ -46,20 +44,13 @@ from auto_circuit.tasks import (
 )
 from auto_circuit.types import (
     AlgoPruneScores,
-    Edge,
-    MetricMeasurements,
     PatchType,
+    TaskMeasurements,
     TaskPruneScores,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
-from auto_circuit.utils.graph_utils import edge_counts_util
 from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
-from auto_circuit.visualize import (
-    average_auc_plot,
-    draw_seq_graph,
-    edge_patching_plot,
-    roc_plot,
-)
+from auto_circuit.visualize import draw_seq_graph
 
 
 def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPruneScores:
@@ -73,150 +64,6 @@ def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
             prune_scores_dict[prune_algo.key] = ps
         task_prune_scores[task.key] = prune_scores_dict
     return task_prune_scores
-
-
-def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPruneScores:
-    constrained_task_prune_scores: TaskPruneScores = {}
-    for task_key in (experiment_pbar := tqdm(task_prune_scores.keys())):
-        task = TASK_DICT[task_key]
-        experiment_pbar.set_description_str(f"Task: {task.name}")
-        constrained_ps: AlgoPruneScores = {}
-        algo_prune_scores = task_prune_scores[task_key]
-        for algo_key, algo_ps in (prune_score_pbar := tqdm(algo_prune_scores.items())):
-            if (
-                algo_key.startswith("Constrained")
-                or algo_key not in ["Official Circuit", "Tree Probing"]
-                or True
-            ):
-                continue
-            sorted_edges: List[Edge] = list(
-                sorted(algo_ps.keys(), key=lambda x: abs(algo_ps[x]), reverse=True)
-            )
-            algo_circuit = set([e for e in sorted_edges[: task.true_edge_count]])
-            prune_score_pbar.set_description_str(f"Constrained Pruning: {algo_key}")
-            constrained_algo = PruneAlgo(
-                key="Constrained Circuit Probing " + algo_key,
-                name=f"Not {PRUNE_ALGO_DICT[algo_key].name} Circuit Probing",
-                short_name=f"¬{PRUNE_ALGO_DICT[algo_key].short_name} TP",
-                func=partial(
-                    subnetwork_probing_prune_scores,
-                    learning_rate=0.1,
-                    epochs=2000,
-                    regularize_lambda=0.1,
-                    mask_fn="hard_concrete",
-                    show_train_graph=True,
-                    circuit_size="true_size",
-                    tree_optimisation=True,
-                    avoid_edges=algo_circuit,
-                    avoid_lambda=0.3,
-                ),
-            )
-            PRUNE_ALGO_DICT[constrained_algo.key] = constrained_algo
-            if constrained_algo.key not in algo_prune_scores:
-                print(f"Running {constrained_algo.name}")
-                constrained_ps[constrained_algo.key] = constrained_algo.func(task)
-            else:
-                print(f"Already ran {constrained_algo.name}")
-        constrained_task_prune_scores[task_key] = constrained_ps
-    return constrained_task_prune_scores
-
-
-def default_factory() -> Dict[Any, Dict[Any, Any]]:
-    return defaultdict(dict)
-
-
-def measure_circuit_metrics(
-    metrics: List[Metric],
-    task_prune_scores: TaskPruneScores,
-    patch_type: PatchType,
-    reverse_clean_corrupt: bool = False,
-) -> MetricMeasurements:
-    measurements: MetricMeasurements = defaultdict(default_factory)
-    for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
-        task = TASK_DICT[task_key]
-        task_pbar.set_description_str(f"Task: {task.name}")
-        test_loader = task.test_loader
-        for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
-            algo = PRUNE_ALGO_DICT[algo_key]
-            algo_pbar.set_description_str(f"Pruning with {algo.name}")
-            pruned_outs = run_pruned(
-                model=task.model,
-                dataloader=test_loader,
-                test_edge_counts=edge_counts_util(task.model.edges, None, prune_scores),
-                prune_scores=prune_scores,
-                patch_type=patch_type,
-                reverse_clean_corrupt=reverse_clean_corrupt,
-                render_graph=False,
-                render_prune_scores=True,
-                render_top_n=30,
-                render_file_path="figures-6/docstring-viz.pdf",
-            )
-            for metric in (metric_pbar := tqdm(metrics)):
-                metric_pbar.set_description_str(f"Measuring {metric.name}")
-                measurement = metric.metric_func(task, prune_scores, pruned_outs)
-                measurements[metric.key][task.key][algo.key] = measurement
-            del pruned_outs
-            t.cuda.empty_cache()
-    return measurements
-
-
-def measurement_figs(measurements: MetricMeasurements) -> Tuple[go.Figure, ...]:
-    figs = []
-    for metric_key, task_measurements in measurements.items():
-        token_circuit = TASK_DICT[list(task_measurements.keys())[0]].token_circuit
-        metric = METRIC_DICT[metric_key]
-        data, y_max = [], 0.0
-        for task_key, algo_measurements in task_measurements.items():
-            task = TASK_DICT[task_key]
-            # Assert all tasks have the same token_circuit value
-            assert task.token_circuit == token_circuit
-
-            for algo_key, points in algo_measurements.items():
-                algo = PRUNE_ALGO_DICT[algo_key]
-                if len(points) > 1:
-                    for x, y in points:
-                        data.append(
-                            {
-                                "Task": task.name,
-                                "Algorithm": algo.name,
-                                "X": max(x, 0.5) if metric.log_x else x,
-                                "Y": y
-                                if metric.y_min is None
-                                else max(y, metric.y_min),
-                            }
-                        )
-                        # !!!! Make multiple different ones if not sharing y-axis
-                        # Also, why are the x-values not quite right?
-                        y_max = max(y_max, y)
-
-        if metric == ROC_METRIC:
-            figs.append(roc_plot(data, task_measurements))
-        else:
-            y_max = None if metric.y_min is None or not metric.y_axes_match else y_max
-            figs.append(
-                edge_patching_plot(
-                    data,
-                    task_measurements,
-                    metric.name,
-                    metric.log_x,
-                    metric.log_y,
-                    metric.y_axes_match,
-                    token_circuit,
-                    y_max,
-                    metric.y_min,
-                )
-            )
-        figs.append(
-            average_auc_plot(
-                task_measurements,
-                metric.name,
-                metric.log_x,
-                metric.log_y,
-                metric.y_min,
-                metric.lower_better,
-            )
-        )
-    return tuple(figs)
 
 
 TASKS: List[Task] = [
@@ -251,8 +98,7 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     CIRCUIT_TREE_PROBING_PRUNE_ALGO,
 ]
 
-METRICS: List[Metric] = [
-    ROC_METRIC,
+PRUNE_METRICS: List[PruneMetric] = [
     CLEAN_KL_DIV_METRIC,
     CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
@@ -262,19 +108,16 @@ METRICS: List[Metric] = [
 ]
 figs = []
 
+# ------------------------------------ Prune Scores ------------------------------------
+
 compute_prune_scores = False
 save_prune_scores = False
-load_prune_scores = False
+load_prune_scores = True
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
 if compute_prune_scores:
-    prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
-    print("prune_scores.keys():", prune_scores.keys())
-    constrained_ps = run_constrained_prune_funcs(prune_scores)
-    print("constrained_ps.keys():", constrained_ps.keys())
-    task_prune_scores = {k: v | constrained_ps[k] for k, v in prune_scores.items()}
-    print("task_prune_scores.keys():", task_prune_scores.keys())
+    task_prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
 if load_prune_scores:
     # filename = "task-prune-scores-09-01-2024_20-13-48.pkl"
     # filename = "task-prune-scores-19-01-2024_20-19-04.pkl"
@@ -295,10 +138,11 @@ if load_prune_scores:
 
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
-    run_constrained_prune_funcs(task_prune_scores)
 if save_prune_scores:
     base_filename = "task-prune-scores"
     save_cache(task_prune_scores, cache_folder_name, base_filename)
+
+# -------------------------------- Draw Circuit Graphs ---------------------------------
 
 if False:
     for task_key, algo_prune_scores in task_prune_scores.items():
@@ -315,6 +159,8 @@ if False:
             break
         break
 
+# ------------------------------ Prune Scores Similarity -------------------------------
+
 if False:
     prune_scores_similartity_fig = prune_score_similarities_plotly(
         task_prune_scores, [], ground_truths=True
@@ -322,9 +168,11 @@ if False:
     prune_scores_similartity_fig.show()
     figs.append(prune_scores_similartity_fig)
 
+# ------------------------------------ Completeness ------------------------------------
+
 compute_task_completeness_scores = False
 save_task_completeness_scores = False
-load_task_completeness_scores = True
+load_task_completeness_scores = False
 task_completeness_scores: TaskCompletenessScores = {}
 if compute_task_completeness_scores:
     task_completeness_scores: TaskCompletenessScores = run_same_under_knockouts(
@@ -350,21 +198,49 @@ if load_task_completeness_scores:
 if task_completeness_scores:
     completeness_fig = same_under_knockouts_fig(task_completeness_scores)
     completeness_fig.show()
+    figs.append(completeness_fig)
 
-compute_metric_measurements = False
-save_metric_measurements = False
-load_metric_measurements = False
+
+# ---------------------------------------- ROC -----------------------------------------
+
+compute_roc_measurements = False
+save_roc_measurements = False
+load_roc_measurements = False
+roc_measurements: TaskMeasurements = {}
+roc_cache_folder_name = ".roc_measurements"
+if compute_roc_measurements:
+    roc_measurements: TaskMeasurements = measure_roc(task_prune_scores)
+if save_roc_measurements:
+    base_filename = "roc-measurements"
+    save_cache(roc_measurements, cache_folder_name, base_filename)
+if load_roc_measurements:
+    filename = "lala.pkl"
+    roc_measurements = load_cache(roc_cache_folder_name, filename)
+if roc_measurements:
+    roc_fig = roc_plot(roc_measurements)
+    roc_fig.show()
+    figs.append(roc_fig)
+
+
+# ----------------------------- Prune Metric Measurements ------------------------------
+
+compute_prune_metric_measurements = False
+save_prune_metric_measurements = False
+load_prune_metric_measurements = False
 
 cache_folder_name = ".measurement_cache"
 metric_measurements = None
-if compute_metric_measurements:
+if compute_prune_metric_measurements:
     metric_measurements = measure_circuit_metrics(
-        METRICS, task_prune_scores, PatchType.TREE_PATCH, reverse_clean_corrupt=False
+        PRUNE_METRICS,
+        task_prune_scores,
+        PatchType.TREE_PATCH,
+        reverse_clean_corrupt=False,
     )
-    if save_metric_measurements:
+    if save_prune_metric_measurements:
         base_filename = "seq-circuit"
         save_cache(metric_measurements, cache_folder_name, base_filename)
-if load_metric_measurements:
+if load_prune_metric_measurements:
     # filename = "seq-circuit-13-12-2023_06-30-20.pkl"
     # filename = "seq-circuit-24-01-2024_20-17-35.pkl"
 
@@ -383,11 +259,8 @@ if load_metric_measurements:
 
     metric_measurements = load_cache(cache_folder_name, filename)
 
-# experiment_steps: Dict[str, Callable] = {
-#     "Calculate prune scores": run_prune_funcs,
-#     "Measure experiment metric": measure_experiment_metrics,
-#     "Draw figures": measurement_figs
-# }
+# -------------------------------------- Figures ---------------------------------------
+
 if metric_measurements is not None:
     figs += list(measurement_figs(metric_measurements))
     for i, fig in enumerate(figs):

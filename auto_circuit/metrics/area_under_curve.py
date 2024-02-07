@@ -5,8 +5,8 @@ from auto_circuit.types import (
     AlgoKey,
     AlgoMeasurements,
     Measurements,
-    MetricKey,
-    MetricMeasurements,
+    PruneMetricKey,
+    PruneMetricMeasurements,
     TaskKey,
     TaskMeasurements,
 )
@@ -74,8 +74,11 @@ def task_measurements_auc(
 
 
 def metric_measurements_auc(
-    points: MetricMeasurements, log_x: bool, log_y: bool, y_min: Optional[float] = None
-) -> Dict[MetricKey, Dict[TaskKey, Dict[AlgoKey, float]]]:
+    points: PruneMetricMeasurements,
+    log_x: bool,
+    log_y: bool,
+    y_min: Optional[float] = None,
+) -> Dict[PruneMetricKey, Dict[TaskKey, Dict[AlgoKey, float]]]:
     return {
         metric_key: task_measurements_auc(task_measurements, log_x, log_y, y_min)
         for metric_key, task_measurements in points.items()

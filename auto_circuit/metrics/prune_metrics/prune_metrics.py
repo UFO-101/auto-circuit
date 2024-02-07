@@ -2,18 +2,21 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Callable, Dict, List, Optional
 
-from auto_circuit.metrics.answer_diff import measure_answer_diff
-from auto_circuit.metrics.answer_diff_percent import measure_answer_diff_percent
-from auto_circuit.metrics.answer_value import measure_answer_val
-from auto_circuit.metrics.kl_div import measure_kl_div
-from auto_circuit.metrics.ROC import measure_roc
+from auto_circuit.metrics.prune_metrics.answer_diff import measure_answer_diff
+from auto_circuit.metrics.prune_metrics.answer_diff_percent import measure_answer_diff_percent
+from auto_circuit.metrics.prune_metrics.answer_value import measure_answer_val
+from auto_circuit.metrics.prune_metrics.kl_div import measure_kl_div
 from auto_circuit.tasks import Task
-from auto_circuit.types import Measurements, MetricKey, PrunedOutputs, PruneScores
+from auto_circuit.types import Measurements, PruneMetricKey, PrunedOutputs, PruneScores
 
+"""
+PruneMetrics take the outputs of a pruned model and return some measurement of the
+model's performance.
+"""
 
 @dataclass(frozen=True)
-class Metric:
-    key: MetricKey
+class PruneMetric:
+    key: PruneMetricKey
     name: str
     metric_func: Callable[
         [Task, Optional[PruneScores], Optional[PrunedOutputs]], Measurements
@@ -29,8 +32,7 @@ class Metric:
             assert self.y_min is not None
 
 
-ROC_METRIC = Metric(key="ROC", name="ROC", metric_func=measure_roc)
-CLEAN_KL_DIV_METRIC = Metric(
+CLEAN_KL_DIV_METRIC = PruneMetric(
     key="Clean KL Div",
     name="KL Divergence",
     metric_func=partial(measure_kl_div, compare_to_clean=True),
@@ -40,7 +42,7 @@ CLEAN_KL_DIV_METRIC = Metric(
     y_axes_match=False,
     y_min=1e-2,
 )
-CORRUPT_KL_DIV_METRIC = Metric(
+CORRUPT_KL_DIV_METRIC = PruneMetric(
     key="Corrupt KL Div",
     name="KL Divergence",
     metric_func=partial(measure_kl_div, compare_to_clean=False),
@@ -50,7 +52,7 @@ CORRUPT_KL_DIV_METRIC = Metric(
     y_axes_match=False,
     y_min=1e-1,
 )
-ANSWER_LOGIT_METRIC = Metric(
+ANSWER_LOGIT_METRIC = PruneMetric(
     key="Answer Logit",
     name="Answer Logit",
     metric_func=partial(measure_answer_val, prob_func="logits"),
@@ -59,7 +61,7 @@ ANSWER_LOGIT_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-ANSWER_PROB_METRIC = Metric(
+ANSWER_PROB_METRIC = PruneMetric(
     key="Answer Prob",
     name="Answer Probability",
     metric_func=partial(measure_answer_val, prob_func="softmax"),
@@ -68,7 +70,7 @@ ANSWER_PROB_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-ANSWER_LOGPROB_METRIC = Metric(
+ANSWER_LOGPROB_METRIC = PruneMetric(
     key="Answer Logprob",
     name="Answer Log Probability",
     metric_func=partial(measure_answer_val, prob_func="log_softmax"),
@@ -78,7 +80,7 @@ ANSWER_LOGPROB_METRIC = Metric(
     y_axes_match=False,
     y_min=1e-6,
 )
-LOGIT_DIFF_METRIC = Metric(
+LOGIT_DIFF_METRIC = PruneMetric(
     key="Logit Diff",
     name="Logit Difference",
     metric_func=partial(measure_answer_diff, prob_func="logits"),
@@ -87,7 +89,7 @@ LOGIT_DIFF_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-PROB_DIFF_METRIC = Metric(
+PROB_DIFF_METRIC = PruneMetric(
     key="Prob Diff",
     name="Probability Difference",
     metric_func=partial(measure_answer_diff, prob_func="softmax"),
@@ -96,7 +98,7 @@ PROB_DIFF_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-LOGPROB_DIFF_METRIC = Metric(
+LOGPROB_DIFF_METRIC = PruneMetric(
     key="Logprob Diff",
     name="Log Probability Difference",
     metric_func=partial(measure_answer_diff, prob_func="log_softmax"),
@@ -106,7 +108,7 @@ LOGPROB_DIFF_METRIC = Metric(
     y_axes_match=False,
     y_min=1e-6,
 )
-LOGIT_DIFF_PERCENT_METRIC = Metric(
+LOGIT_DIFF_PERCENT_METRIC = PruneMetric(
     key="Logit Diff Percent",
     name="Logit Difference Percent",
     metric_func=partial(measure_answer_diff_percent, prob_func="logits"),
@@ -115,7 +117,7 @@ LOGIT_DIFF_PERCENT_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-PROB_DIFF_PERCENT_METRIC = Metric(
+PROB_DIFF_PERCENT_METRIC = PruneMetric(
     key="Prob Diff Percent",
     name="Probability Difference Percent",
     metric_func=partial(measure_answer_diff_percent, prob_func="softmax"),
@@ -124,7 +126,7 @@ PROB_DIFF_PERCENT_METRIC = Metric(
     lower_better=False,
     y_axes_match=False,
 )
-LOBPROB_DIFF_PERCENT_METRIC = Metric(
+LOBPROB_DIFF_PERCENT_METRIC = PruneMetric(
     key="LogProb Diff Percent",
     name="Log Probability Difference Percent",
     metric_func=partial(measure_answer_diff_percent, prob_func="log_softmax"),
@@ -134,8 +136,7 @@ LOBPROB_DIFF_PERCENT_METRIC = Metric(
     y_axes_match=False,
 )
 
-METRICS: List[Metric] = [
-    ROC_METRIC,
+PRUNE_METRICS: List[PruneMetric] = [
     CLEAN_KL_DIV_METRIC,
     CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
@@ -148,4 +149,4 @@ METRICS: List[Metric] = [
     PROB_DIFF_PERCENT_METRIC,
     LOBPROB_DIFF_PERCENT_METRIC,
 ]
-METRIC_DICT: Dict[MetricKey, Metric] = {metric.key: metric for metric in METRICS}
+PRUNE_METRIC_DICT: Dict[PruneMetricKey, PruneMetric] = {metric.key: metric for metric in PRUNE_METRICS}

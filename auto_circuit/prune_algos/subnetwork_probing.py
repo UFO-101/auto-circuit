@@ -4,7 +4,7 @@
 # https://arxiv.org/abs/2104.03514
 
 import math
-from typing import Dict, Optional, Set
+from typing import Dict, Literal, Optional, Set
 
 import plotly.graph_objects as go
 import torch as t
@@ -21,7 +21,7 @@ from auto_circuit.utils.graph_utils import (
     train_mask_mode,
 )
 from auto_circuit.utils.patch_wrapper import sample_hard_concrete
-from auto_circuit.utils.tensor_ops import MaskFn
+from auto_circuit.utils.tensor_ops import MaskFn, batch_avg_answer_val
 
 # Constants are copied from the paper's code
 mask_p, left, right, temp = 0.9, -0.1, 1.1, 2 / 3
@@ -45,6 +45,7 @@ def subnetwork_probing_prune_scores(
     tree_optimisation: bool = False,
     avoid_edges: Optional[Set[Edge]] = None,
     avoid_lambda: float = 1.0,
+    faithfulness_target: Literal["kl_div", "answer", "wrong_answer"] = "kl_div",
 ) -> PruneScores:
     """Optimize the patch masks using gradient descent."""
     model = task.model
@@ -64,24 +65,30 @@ def subnetwork_probing_prune_scores(
         patch_outs = get_sorted_src_outs(model, patch_batch)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
-    losses, kl_divs, regularizes = [], [], []
+    losses, faithfulnesses, regularizes = [], [], []
     set_all_masks(model, val=-init_val if tree_optimisation else init_val)
     with train_mask_mode(model) as patch_masks, mask_fn_mode(model, mask_fn, dropout_p):
         optim = t.optim.Adam(patch_masks, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
-            desc = f"Loss: {losses[-1]:.3f}, KL: {kl_divs[-1]:.3f}" if epoch > 0 else ""
+            faithfulness_str = f"{faithfulness_target} loss: {faithfulnesses[-1]:.3f}"
+            desc = f"Loss: {losses[-1]:.3f}, {faithfulness_str}" if epoch > 0 else ""
             epoch_pbar.set_description_str(f"{SP} Epoch {epoch} " + desc, refresh=False)
             for batch in task.train_loader:
                 input_batch = batch.clean if tree_optimisation else batch.corrupt
                 patch_outs = src_outs_dict[batch.key].clone().detach()
                 with patch_mode(model, t.zeros_like(patch_outs), patch_outs):
-                    train_logprob = log_softmax(model(input_batch)[out_slice], dim=-1)
-                    kl_div_term = kl_div(
-                        train_logprob,
-                        clean_logprobs[batch.key],
-                        reduction="batchmean",
-                        log_target=True,
-                    )
+                    train_logits = model(input_batch)[out_slice]
+                    if faithfulness_target == "kl_div":
+                        faithful_term = kl_div(
+                            log_softmax(train_logits, dim=-1),
+                            clean_logprobs[batch.key],
+                            reduction="batchmean",
+                            log_target=True,
+                        )
+                    else:
+                        assert faithfulness_target in ["answer", "wrong_answer"]
+                        wrong = faithfulness_target == "wrong_answer"
+                        faithful_term = batch_avg_answer_val(train_logits, batch, wrong)
                     masks = t.cat([patch_mask.flatten() for patch_mask in patch_masks])
                     if mask_fn == "hard_concrete":
                         masks = sample_hard_concrete(masks, batch_size=1)
@@ -98,9 +105,9 @@ def subnetwork_probing_prune_scores(
                         if mask_fn is not None:
                             penalty = t.sigmoid(penalty - const)
                         regularize += wgt * penalty
-                    loss = kl_div_term + regularize * regularize_lambda
+                    loss = faithful_term + regularize * regularize_lambda
                     losses.append(loss.item())
-                    kl_divs.append(kl_div_term.item())
+                    faithfulnesses.append(faithful_term.item())
                     regularizes.append(regularize.item() * regularize_lambda)
                     model.zero_grad()
                     loss.backward()
@@ -113,7 +120,7 @@ def subnetwork_probing_prune_scores(
         title = "Subnetwork Probing Loss History"
         fig = go.Figure()
         fig.add_trace(go.Scatter(y=losses, name="Loss"))
-        fig.add_trace(go.Scatter(y=kl_divs, name="KL Divergence"))
+        fig.add_trace(go.Scatter(y=faithfulnesses, name=faithfulness_target.title()))
         fig.add_trace(go.Scatter(y=regularizes, name="Regularization"))
         fig.update_layout(title=title, xaxis_title="Iteration", yaxis_title="Loss")
         fig.show()

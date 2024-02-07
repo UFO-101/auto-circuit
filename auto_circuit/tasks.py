@@ -5,14 +5,16 @@ import torch as t
 import transformer_lens as tl
 
 from auto_circuit.data import PromptDataLoader, load_datasets_from_json
-from auto_circuit.metrics.official_circuits.docstring_official import (
+from auto_circuit.metrics.official_circuits.circuits.docstring_official import (
     docstring_true_edges,
 )
-from auto_circuit.metrics.official_circuits.greaterthan_official import (
+from auto_circuit.metrics.official_circuits.circuits.greaterthan_official import (
     greaterthan_true_edges,
 )
-from auto_circuit.metrics.official_circuits.ioi_official import ioi_true_edges
-from auto_circuit.metrics.official_circuits.sports_players_official import (
+from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
+    ioi_true_edges,
+)
+from auto_circuit.metrics.official_circuits.circuits.sports_players_official import (
     sports_players_true_edges,
 )
 from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
