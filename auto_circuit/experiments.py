@@ -29,6 +29,7 @@ from auto_circuit.prune_algos.prune_algos import (
     GROUND_TRUTH_PRUNE_ALGO,
     INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
     SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
@@ -60,7 +61,7 @@ def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
         prune_scores_dict: AlgoPruneScores = {}
         for prune_algo in (prune_score_pbar := tqdm(prune_algos)):
             prune_score_pbar.set_description_str(f"Prune scores: {prune_algo.name}")
-            ps = dict(list(prune_algo.func(task).items())[: task.true_edge_count])
+            ps = dict(list(prune_algo.func(task).items()))
             prune_scores_dict[prune_algo.key] = ps
         task_prune_scores[task.key] = prune_scores_dict
     return task_prune_scores
@@ -68,8 +69,8 @@ def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
 
 TASKS: List[Task] = [
     # Token Circuits
-    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
+    # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+    # IOI_TOKEN_CIRCUIT_TASK,
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
@@ -112,7 +113,7 @@ figs = []
 
 compute_prune_scores = False
 save_prune_scores = False
-load_prune_scores = True
+load_prune_scores = False
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
@@ -200,6 +201,28 @@ if task_completeness_scores:
     completeness_fig.show()
     figs.append(completeness_fig)
 
+# ----------------------------- Opposite Task Prune Scores -----------------------------
+
+compute_opposite_task_prune_scores = True
+save_opposite_task_prune_scores = False
+load_opposite_task_prune_scores = False
+opposite_task_prune_scores: TaskPruneScores = {}
+opposite_prune_scores_cache_folder_name = ".opposite_prune_scores_cache"
+if compute_opposite_task_prune_scores:
+    opposite_task_prune_scores = run_prune_funcs(TASKS, [OPPOSITE_TREE_PROBING_PRUNE_ALGO])
+if save_opposite_task_prune_scores:
+    base_filename = "opposite-task-prune-scores"
+    save_cache(opposite_task_prune_scores, opposite_prune_scores_cache_folder_name, base_filename)
+if load_opposite_task_prune_scores:
+    filename = "opposite-task-prune-scores-07-02-2024_17-34-33.pkl"
+    opposite_task_prune_scores = load_cache(opposite_prune_scores_cache_folder_name, filename)
+if opposite_task_prune_scores:
+    opposite_prune_metric_measurements = measure_circuit_metrics(
+        [ANSWER_PROB_METRIC, LOGIT_DIFF_METRIC],
+        opposite_task_prune_scores,
+        PatchType.TREE_PATCH
+    )
+    figs += list(measurement_figs(opposite_prune_metric_measurements))
 
 # ---------------------------------------- ROC -----------------------------------------
 
