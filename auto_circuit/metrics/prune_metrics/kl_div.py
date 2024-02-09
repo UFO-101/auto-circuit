@@ -1,39 +1,37 @@
-from typing import Optional
+from typing import Dict, List
 
 import torch as t
+from torch.nn.functional import log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import Measurements, PrunedOutputs, PruneScores
+from auto_circuit.types import BatchKey, CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.tensor_ops import multibatch_kl_div
 
 
 def measure_kl_div(
     task: Task,
-    prune_scores: Optional[PruneScores],
-    pruned_outs: Optional[PrunedOutputs],
+    circuit_outs: CircuitOutputs,
     compare_to_clean: bool = True,
 ) -> Measurements:
     """Measure KL divergence between the default model and the pruned model."""
-    assert pruned_outs is not None
-    kl_divs = []
-    out_slice = task.model.out_slice
+    circuit_kl_divs: Measurements = []
+    default_logprobs: Dict[BatchKey, t.Tensor] = {}
     with t.inference_mode():
-        default_outs = []
         for batch in task.test_loader:
             default_batch = batch.clean if compare_to_clean else batch.corrupt
-            default_outs.append(task.model(default_batch)[out_slice])
-    default_logprobs = t.nn.functional.log_softmax(t.cat(default_outs), dim=-1)
+            logits = task.model(default_batch)[task.model.out_slice]
+            default_logprobs[batch.key] = log_softmax(logits, dim=-1)
 
-    for edge_count, pruned_out in (pruned_out_pbar := tqdm(pruned_outs.items())):
+    for edge_count, circuit_out in (pruned_out_pbar := tqdm(circuit_outs.items())):
         pruned_out_pbar.set_description_str(f"KL Div for {edge_count} edges")
-        pruned_out = t.cat(pruned_out)
-        pruned_logprobs = t.nn.functional.log_softmax(pruned_out, dim=-1)
-        kl = t.nn.functional.kl_div(
-            pruned_logprobs,
-            default_logprobs,
-            reduction="batchmean",
-            log_target=True,
-        )
+        circuit_logprob_list: List[t.Tensor] = []
+        default_logprob_list: List[t.Tensor] = []
+        for batch in task.test_loader:
+            circuit_logprob_list.append(log_softmax(circuit_out[batch.key], dim=-1))
+            default_logprob_list.append(default_logprobs[batch.key])
+        kl = multibatch_kl_div(t.cat(circuit_logprob_list), t.cat(default_logprob_list))
+
         # Numerical errors can cause tiny negative values in KL divergence
-        kl_divs.append((edge_count, max(kl.mean().item(), 0)))
-    return kl_divs
+        circuit_kl_divs.append((edge_count, max(kl.item(), 0)))
+    return circuit_kl_divs

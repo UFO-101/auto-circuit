@@ -17,10 +17,17 @@ from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
 from auto_circuit.metrics.official_circuits.circuits.sports_players_official import (
     sports_players_true_edges,
 )
+from auto_circuit.metrics.official_circuits.circuits.tracr.reverse_official import (
+    tracr_reverse_true_edges,
+)
+from auto_circuit.metrics.official_circuits.circuits.tracr.xproportion_official import (
+    tracr_xproportion_official_edges,
+)
 from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
     AutoencoderTransformer,
     sae_model,
 )
+from auto_circuit.model_utils.tracr.tracr_models import get_tracr_model
 from auto_circuit.types import AutoencoderInput, Edge, OutputSlice, TaskKey
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
@@ -204,10 +211,7 @@ SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK: Task = Task(
     _model_def="pythia-2.8b-deduped",
     _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
     batch_size=(10, 20),  # There are 3 sports (football, basketball, baseball),
-    batch_count=(
-        10,
-        5,
-    ),  # 70 prompts for each sport (210 total), 105 test and 105 train
+    batch_count=(10, 5),  # 70 prompts for each sport (210 total), 105 test + 105 train
     _true_edge_func=sports_players_true_edges,
     token_circuit=True,
     separate_qkv=False,
@@ -325,6 +329,32 @@ CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
     autoencoder_pythia_size="2_32768",
     autoencoder_prune_with_corrupt=False,
 )
+TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK: Task = Task(
+    key="Tracr xproportion Token Circuit",
+    name="Tracr xproportion",
+    _model_def=get_tracr_model(
+        "xproportion", "cuda" if t.cuda.is_available() else "cpu"
+    )[0],
+    _dataset_name="tracr/tracr_xproportion_len_5_prompts",
+    batch_size=64,  # 1024 possible prompts
+    batch_count=8,  # (64 * 8) + (64 * 8) = 512 train + 512 test
+    _true_edge_func=tracr_xproportion_official_edges,
+    token_circuit=True,
+    slice_output="not_first_seq",
+)
+TRACR_REVERSE_TOKEN_CIRCUIT_TASK: Task = Task(
+    key="Tracr reverse Token Circuit",
+    name="Tracr reverse",
+    _model_def=get_tracr_model("reverse", "cuda" if t.cuda.is_available() else "cpu")[
+        0
+    ],
+    _dataset_name="tracr/tracr_reverse_len_5_prompts",
+    batch_size=11,  # 243 possible prompts
+    batch_count=11,  # (11 * 11) + (11 * 11) = 121 train + 121 test
+    _true_edge_func=tracr_reverse_true_edges,
+    token_circuit=True,
+    slice_output="not_first_seq",
+)
 
 TASKS: List[Task] = [
     SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
@@ -338,5 +368,7 @@ TASKS: List[Task] = [
     GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
+    TRACR_REVERSE_TOKEN_CIRCUIT_TASK,
 ]
 TASK_DICT: Dict[TaskKey, Task] = {task.key: task for task in TASKS}

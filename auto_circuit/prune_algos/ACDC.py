@@ -8,9 +8,9 @@ from ordered_set import OrderedSet
 
 from auto_circuit.tasks import Task
 from auto_circuit.types import (
+    CircuitOutputs,
     Edge,
     PatchType,
-    PrunedOutputs,
     PruneScores,
     SrcNode,
 )
@@ -20,6 +20,7 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
+from auto_circuit.utils.tensor_ops import multibatch_kl_div
 
 
 def acdc_prune_scores(
@@ -27,7 +28,7 @@ def acdc_prune_scores(
     tao_exps: List[int] = list(range(-5, -1)),
     tao_bases: List[int] = [1, 3, 5, 7, 9],
     test_mode: bool = False,
-    run_pruned_ref: Optional[Callable[..., PrunedOutputs]] = None,
+    run_pruned_ref: Optional[Callable[..., CircuitOutputs]] = None,
     show_graphs: bool = False,
     draw_seq_graph_ref: Optional[Callable[..., None]] = None,
 ) -> PruneScores:
@@ -122,19 +123,16 @@ def acdc_prune_scores(
                         prune_scores=tree,
                         patch_type=PatchType.TREE_PATCH,
                         render_graph=render,
-                    )[n_edges][0]
+                    )[n_edges][train_batch.key]
                     test_out_logprobs = t.nn.functional.log_softmax(test_out, dim=-1)
                     print("Test_out:", test_out) if render else None
                     assert t.allclose(out_logprobs, test_out_logprobs, atol=1e-3)
 
-                kl_div = t.nn.functional.kl_div(
-                    out_logprobs, clean_logprobs, reduction="batchmean", log_target=True
-                )
-                mean_kl_div = kl_div.mean().item()
-                if mean_kl_div - prev_kl_div < tao:  # Edge is unimportant
+                mean_kl = multibatch_kl_div(out_logprobs, clean_logprobs).mean().item()
+                if mean_kl - prev_kl_div < tao:  # Edge is unimportant
                     removed_edges.add(edge)
                     prune_scores[edge] = min(tao, prune_scores[edge])
-                    prev_kl_div = mean_kl_div
+                    prev_kl_div = mean_kl
                 else:  # Edge is important
                     edge.patch_mask(model).data[edge.patch_idx] = 0.0
     return prune_scores

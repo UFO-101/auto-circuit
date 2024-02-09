@@ -1,3 +1,4 @@
+import math
 from typing import Literal, Optional
 
 import torch as t
@@ -23,7 +24,7 @@ def batch_avg_answer_val(
 ) -> t.Tensor:
     answers = batch.answers if not wrong_answer else batch.wrong_answers
     if isinstance(answers, t.Tensor):
-        return t.gather(vals, dim=1, index=answers).mean()
+        return t.gather(vals, dim=-1, index=answers).mean()
     else:
         assert isinstance(answers, list)
         answer_probs = []
@@ -38,8 +39,8 @@ def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
     answers = batch.answers
     wrong_answers = batch.wrong_answers
     if isinstance(answers, t.Tensor) and isinstance(wrong_answers, t.Tensor):
-        ans_avg = t.gather(vals, dim=1, index=answers).mean()
-        wrong_ans_avg = t.gather(vals, dim=1, index=wrong_answers).mean()
+        ans_avg = t.gather(vals, dim=-1, index=answers).mean()
+        wrong_ans_avg = t.gather(vals, dim=-1, index=wrong_answers).mean()
         return ans_avg - wrong_ans_avg
     else:
         assert isinstance(answers, list) and isinstance(wrong_answers, list)
@@ -55,3 +56,20 @@ def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
                 ).mean()
             )
         return t.stack(answer_probs).mean() - t.stack(wrong_answers_probs).mean()
+
+
+def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.Tensor:
+    """
+    Compute the average KL divergence between two sets of log probabilities.
+    Assumes the last dimension is the log probability of each class.
+    The other dimensions are batch dimensions.
+    """
+    assert input_logprobs.shape == target_logprobs.shape
+    kl_div_sum = t.nn.functional.kl_div(
+        input_logprobs,
+        target_logprobs,
+        reduction="sum",
+        log_target=True,
+    )
+    n_batch = math.prod(input_logprobs.shape[:-1])
+    return kl_div_sum / n_batch

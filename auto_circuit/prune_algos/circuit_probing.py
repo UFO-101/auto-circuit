@@ -23,13 +23,14 @@ def circuit_probing_prune_scores(
     tree_optimisation: bool = False,
     avoid_edges: Optional[Set[Edge]] = None,
     avoid_lambda: float = 1.0,
+    faithfulness_target: Literal["kl_div", "mse", "answer", "wrong_answer"] = "kl_div",
 ) -> PruneScores:
 
     sizes = []
     for size in circuit_sizes:
         if size == "true_size":
             assert task.true_edges is not None
-            size = len(task.true_edges)
+            size = task.true_edge_count
         assert isinstance(size, int) and size > 0
         sizes.append(size)
     assert len(set(sizes)) == len(sizes)
@@ -53,6 +54,7 @@ def circuit_probing_prune_scores(
             tree_optimisation=tree_optimisation,
             avoid_edges=avoid_edges,
             avoid_lambda=avoid_lambda,
+            faithfulness_target=faithfulness_target,
         )
         for edge in new_prune_scores.keys():
             if edge not in prune_scores:

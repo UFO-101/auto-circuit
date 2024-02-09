@@ -5,9 +5,10 @@ import torch as t
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import (
+    CircuitOutputs,
     Edge,
     PatchType,
-    PrunedOutputs,
+    PruneScores,
     SrcNode,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
@@ -20,11 +21,11 @@ from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.visualize import draw_seq_graph
 
 
-def run_pruned(
+def run_circuits(
     model: PatchableModel,
     dataloader: PromptDataLoader,
     test_edge_counts: List[int],
-    prune_scores: Dict[Edge, float],
+    prune_scores: PruneScores,
     patch_type: PatchType = PatchType.EDGE_PATCH,
     reverse_clean_corrupt: bool = False,
     render_graph: bool = False,
@@ -32,7 +33,7 @@ def run_pruned(
     render_patched_edge_only: bool = True,
     render_top_n: int = 50,
     render_file_path: Optional[str] = None,
-) -> PrunedOutputs:
+) -> CircuitOutputs:
     """Run the model with the given pruned edges.
     Tree Patching runs the clean input and patches corrupt activations into every edge
     _not_ in the circuit.
@@ -40,8 +41,7 @@ def run_pruned(
     _in_ the circuit.
     Unless reverse_clean_corrupt is True, in which case clean and corrupt are swapped.
     """
-    out_slice = model.out_slice
-    pruned_outs: Dict[int, List[t.Tensor]] = defaultdict(list)
+    circuit_outs: CircuitOutputs = defaultdict(dict)
     edges: List[Edge] = list(
         sorted(prune_scores.keys(), key=lambda x: abs(prune_scores[x]), reverse=True)
     )
@@ -96,10 +96,10 @@ def run_pruned(
                 if edge_idx in test_edge_counts:
                     edge_pbar.set_description_str(f"Pruning {edge_idx} Edges")
                     with t.inference_mode():
-                        model_output = model(batch_input)[out_slice]
-                    pruned_outs[edge_idx].append(model_output.detach().clone())
+                        model_output = model(batch_input)[model.out_slice]
+                    circuit_outs[edge_idx][batch.key] = model_output.detach().clone()
                 if edge_idx < len(edges):
                     edge = edges[edge_idx]
                     edge.patch_mask(model).data[edge.patch_idx] = patched_edge_val
         del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
-    return pruned_outs
+    return circuit_outs

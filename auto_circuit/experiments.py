@@ -11,7 +11,7 @@ from auto_circuit.metrics.completeness_metrics.same_under_knockouts import (
 from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
 from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
 from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
-    measure_circuit_metrics,
+    measure_prune_metrics,
     measurement_figs,
 )
 from auto_circuit.metrics.prune_metrics.prune_metrics import (
@@ -24,23 +24,17 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
-    CIRCUIT_PROBING_PRUNE_ALGO,
-    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
-    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
-    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    LOGIT_MSE_GRAD_PRUNE_ALGO,
+    MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
-    SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
-    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     PruneAlgo,
 )
 from auto_circuit.tasks import (
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
-    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
+    TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
     Task,
 )
 from auto_circuit.types import (
@@ -71,7 +65,7 @@ TASKS: List[Task] = [
     # Token Circuits
     # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     # IOI_TOKEN_CIRCUIT_TASK,
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    # DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -82,6 +76,9 @@ TASKS: List[Task] = [
     # GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK
     # ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     # CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
+    # Tracr Token Circuits
+    TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
+    # TRACR_REVERSE_TOKEN_CIRCUIT_TASK
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
@@ -90,13 +87,15 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
-    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
+    # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
-    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
-    SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
-    CIRCUIT_PROBING_PRUNE_ALGO,
-    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
-    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    # LOGPROB_DIFF_GRAD_PRUNE_ALGO,  # Use this
+    LOGIT_MSE_GRAD_PRUNE_ALGO,
+    # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
+    # CIRCUIT_PROBING_PRUNE_ALGO,
+    # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
+    # CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
 ]
 
 PRUNE_METRICS: List[PruneMetric] = [
@@ -111,7 +110,7 @@ figs = []
 
 # ------------------------------------ Prune Scores ------------------------------------
 
-compute_prune_scores = False
+compute_prune_scores = True
 save_prune_scores = False
 load_prune_scores = False
 
@@ -203,30 +202,38 @@ if task_completeness_scores:
 
 # ----------------------------- Opposite Task Prune Scores -----------------------------
 
-compute_opposite_task_prune_scores = True
+compute_opposite_task_prune_scores = False
 save_opposite_task_prune_scores = False
 load_opposite_task_prune_scores = False
 opposite_task_prune_scores: TaskPruneScores = {}
 opposite_prune_scores_cache_folder_name = ".opposite_prune_scores_cache"
 if compute_opposite_task_prune_scores:
-    opposite_task_prune_scores = run_prune_funcs(TASKS, [OPPOSITE_TREE_PROBING_PRUNE_ALGO])
+    opposite_task_prune_scores = run_prune_funcs(
+        TASKS, [OPPOSITE_TREE_PROBING_PRUNE_ALGO]
+    )
 if save_opposite_task_prune_scores:
     base_filename = "opposite-task-prune-scores"
-    save_cache(opposite_task_prune_scores, opposite_prune_scores_cache_folder_name, base_filename)
+    save_cache(
+        opposite_task_prune_scores,
+        opposite_prune_scores_cache_folder_name,
+        base_filename,
+    )
 if load_opposite_task_prune_scores:
     filename = "opposite-task-prune-scores-07-02-2024_17-34-33.pkl"
-    opposite_task_prune_scores = load_cache(opposite_prune_scores_cache_folder_name, filename)
+    opposite_task_prune_scores = load_cache(
+        opposite_prune_scores_cache_folder_name, filename
+    )
 if opposite_task_prune_scores:
-    opposite_prune_metric_measurements = measure_circuit_metrics(
+    opposite_prune_metric_measurements = measure_prune_metrics(
         [ANSWER_PROB_METRIC, LOGIT_DIFF_METRIC],
         opposite_task_prune_scores,
-        PatchType.TREE_PATCH
+        PatchType.TREE_PATCH,
     )
-    figs += list(measurement_figs(opposite_prune_metric_measurements))
+    figs += list(measurement_figs(opposite_prune_metric_measurements, auc_plots=False))
 
 # ---------------------------------------- ROC -----------------------------------------
 
-compute_roc_measurements = False
+compute_roc_measurements = True
 save_roc_measurements = False
 load_roc_measurements = False
 roc_measurements: TaskMeasurements = {}
@@ -241,7 +248,6 @@ if load_roc_measurements:
     roc_measurements = load_cache(roc_cache_folder_name, filename)
 if roc_measurements:
     roc_fig = roc_plot(roc_measurements)
-    roc_fig.show()
     figs.append(roc_fig)
 
 
@@ -252,9 +258,9 @@ save_prune_metric_measurements = False
 load_prune_metric_measurements = False
 
 cache_folder_name = ".measurement_cache"
-metric_measurements = None
+prune_metric_measurements = None
 if compute_prune_metric_measurements:
-    metric_measurements = measure_circuit_metrics(
+    prune_metric_measurements = measure_prune_metrics(
         PRUNE_METRICS,
         task_prune_scores,
         PatchType.TREE_PATCH,
@@ -262,7 +268,7 @@ if compute_prune_metric_measurements:
     )
     if save_prune_metric_measurements:
         base_filename = "seq-circuit"
-        save_cache(metric_measurements, cache_folder_name, base_filename)
+        save_cache(prune_metric_measurements, cache_folder_name, base_filename)
 if load_prune_metric_measurements:
     # filename = "seq-circuit-13-12-2023_06-30-20.pkl"
     # filename = "seq-circuit-24-01-2024_20-17-35.pkl"
@@ -280,16 +286,17 @@ if load_prune_metric_measurements:
     filename = "icml-2024-all3-fix-official-02-02-2024_07-38-20.pkl"
     # filename = "icml-2024-all3-fix-official-mean-ablate-02-02-2024_07-45-23.pkl"
 
-    metric_measurements = load_cache(cache_folder_name, filename)
+    prune_metric_measurements = load_cache(cache_folder_name, filename)
+
+if prune_metric_measurements is not None:
+    figs += list(measurement_figs(prune_metric_measurements))
 
 # -------------------------------------- Figures ---------------------------------------
 
-if metric_measurements is not None:
-    figs += list(measurement_figs(metric_measurements))
-    for i, fig in enumerate(figs):
-        fig.show()
-        folder: Path = repo_path_to_abs_path("figures-12")
-        # Save figure as pdf in figures folder
-        # fig.write_image(str(folder / f"new {i}.pdf"))
+for i, fig in enumerate(figs):
+    fig.show()
+    folder: Path = repo_path_to_abs_path("figures-12")
+    # Save figure as pdf in figures folder
+    # fig.write_image(str(folder / f"new {i}.pdf"))
 
 #%%

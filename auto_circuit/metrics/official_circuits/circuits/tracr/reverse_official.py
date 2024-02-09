@@ -12,13 +12,12 @@ def tracr_reverse_true_edges(
     The sequence positions assume prompts of length 6 (including BOS), as in
     tracr/tracr_reverse_len_5_prompts.json
     """
-    assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"
+    assert model.cfg.model_name == "tracr-reverse"
 
+    tok_seq_pos = [1, 2, 3, 4, 5]
     edges_present: Dict[str, List[int]] = {}
-    # edges_present["Resid Start->A2.0.Q"] = [15]
-
-    # reflects the value in the docstring appendix of the manual circuit as of 12th June
-    assert len(edges_present) == 24, len(edges_present)
+    edges_present["Resid Start->A3.0.V"] = tok_seq_pos
+    edges_present["A3.0->Resid End"] = tok_seq_pos
 
     true_edges: Set[Edge] = set()
     for edge in model.edges:

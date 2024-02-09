@@ -2,26 +2,15 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import plotly.express as px
 import plotly.graph_objects as go
-import plotly.io as pio
 import torch as t
 from ordered_set import OrderedSet
 
-from auto_circuit.metrics.area_under_curve import task_measurements_auc
-from auto_circuit.prune_algos.prune_algos import (
-    PRUNE_ALGO_DICT,
-    RANDOM_PRUNE_ALGO,
-)
-from auto_circuit.tasks import TASK_DICT
 from auto_circuit.types import (
-    AlgoKey,
     DestNode,
     Edge,
     Node,
     SrcNode,
-    TaskKey,
-    TaskMeasurements,
 )
 from auto_circuit.utils.graph_utils import (
     get_sorted_dest_ins,
@@ -29,100 +18,6 @@ from auto_circuit.utils.graph_utils import (
 )
 from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
-
-# Define a colorblind-friendly palette
-color_palette = [
-    "#377eb8",  # blue
-    "#ff7f00",  # orange
-    "#4daf4a",  # green
-    "#f781bf",  # pink
-    "#e41a1c",  # red
-    "#984ea3",  # purple
-    "#a65628",  # brown
-    "#999999",  # grey
-    "#dede00",  # yellow
-]
-
-# Create or modify a template
-template = pio.templates["plotly"]
-template.layout.colorway = color_palette  # type: ignore
-template.layout.font.size = 19  # type: ignore
-
-# Set the template as the default
-pio.templates.default = "plotly"
-
-
-def average_auc_plot(
-    task_measurements: TaskMeasurements,
-    metric_name: str,
-    log_x: bool,
-    log_y: bool,
-    y_min: Optional[float],
-    inverse: bool,
-) -> go.Figure:
-    """A bar chart of the average AUC for each algorithm across all tasks."""
-    task_algo_aucs: Dict[TaskKey, Dict[AlgoKey, float]] = task_measurements_auc(
-        task_measurements, log_x, log_y, y_min
-    )
-    data, totals = [], defaultdict(float)
-    for task_key, algo_aucs in task_algo_aucs.items():
-        task = TASK_DICT[task_key]
-        for algo_key, auc in reversed(algo_aucs.items()):
-            algo = PRUNE_ALGO_DICT[algo_key]
-            normalized_auc = auc / (
-                algo_aucs[RANDOM_PRUNE_ALGO.key] * len(task_algo_aucs)
-            )
-            if inverse:
-                normalized_unit = 1 / len(task_algo_aucs)
-                normalized_auc = normalized_unit + (normalized_unit - normalized_auc)
-            data.append(
-                {
-                    "Algorithm": algo.name,
-                    "Task": task.name,
-                    "Normalized AUC": normalized_auc,
-                }
-            )
-            totals[algo] += normalized_auc
-    algo_count = len(set([d["Algorithm"] for d in data]))
-    fig = px.bar(
-        data,
-        y="Algorithm",
-        x="Normalized AUC",
-        color="Task",
-        orientation="h",
-        color_discrete_sequence=color_palette[algo_count:],
-    )
-    fig.update_layout(
-        # title=f"Normalized Area Under {metric_name} Curve",
-        template="plotly",
-        width=550,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.55, xanchor="left", x=0.0),
-    )
-    max_total = max(totals.values())
-    fig.add_trace(
-        go.Scatter(
-            x=[totals[algo] + max_total * 0.2 for algo in totals],
-            y=[algo.name for algo in totals.keys()],
-            mode="text",
-            text=[f"{totals[algo]:.2f}" for algo in totals],
-            textposition="middle left",
-            showlegend=False,
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=[0.02 for _ in totals],
-            y=[algo.name for algo in totals.keys()],
-            mode="text",
-            text=[f"{algo.name}" for algo in totals.keys()],
-            textposition="middle right",
-            showlegend=False,
-            textfont=dict(color="white"),
-        )
-    )
-    fig.update_yaxes(visible=False, showticklabels=False)
-    fig.update_xaxes(title="Normalized Inverse AUC") if inverse else None
-    return fig
 
 
 def head(n: str) -> str:

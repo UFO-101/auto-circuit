@@ -7,11 +7,11 @@ from typing import Any, Dict, Set
 from auto_circuit.model_utils.tracr.tracr_models import (
     BOS,
     MAX_SEQ_LEN,
-    PROPORTION_VOCAB,
+    XPROPORTION_VOCAB,
     get_tracr_model,
 )
 
-_, tracr_model = get_tracr_model("proportion", "cpu")
+_, tracr_model = get_tracr_model("xproportion", "cpu")
 model_encode = tracr_model.input_encoder.encode  # type: ignore
 
 
@@ -38,12 +38,12 @@ def generate_prompts(vocab: Set[Any], seq_len: int) -> Dict[str, Any]:
             {
                 "clean": model_encode([BOS] + list(clean_seq)),
                 "corrupt": model_encode([BOS] + list(corrupt_seq)),
-                "answers": [clean_xproportions],
-                "wrong_answers": [corrupt_xproportions],
+                "answers": [[x] for x in clean_xproportions],
+                "wrong_answers": [[x] for x in corrupt_xproportions],
             }
         )
     return {"prompts": prompts}
 
 
 with open(f"tracr_xproportion_len_{MAX_SEQ_LEN}_prompts.json", "w") as f:
-    json.dump(generate_prompts(PROPORTION_VOCAB, MAX_SEQ_LEN), f)
+    json.dump(generate_prompts(XPROPORTION_VOCAB, MAX_SEQ_LEN), f)

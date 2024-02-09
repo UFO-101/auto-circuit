@@ -12,6 +12,8 @@ from torch.utils.data import (
 )
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
+BatchKey = int
+
 
 @dataclass(frozen=True)
 class PromptPair:
@@ -23,7 +25,7 @@ class PromptPair:
 
 @dataclass(frozen=True)
 class PromptPairBatch:
-    key: int
+    key: BatchKey
     diverge_idx: int
     clean: t.Tensor
     corrupt: t.Tensor

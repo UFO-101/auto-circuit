@@ -3,24 +3,25 @@ from functools import partial
 from typing import Callable, Dict, List, Optional
 
 from auto_circuit.metrics.prune_metrics.answer_diff import measure_answer_diff
-from auto_circuit.metrics.prune_metrics.answer_diff_percent import measure_answer_diff_percent
+from auto_circuit.metrics.prune_metrics.answer_diff_percent import (
+    measure_answer_diff_percent,
+)
 from auto_circuit.metrics.prune_metrics.answer_value import measure_answer_val
 from auto_circuit.metrics.prune_metrics.kl_div import measure_kl_div
 from auto_circuit.tasks import Task
-from auto_circuit.types import Measurements, PruneMetricKey, PrunedOutputs, PruneScores
+from auto_circuit.types import CircuitOutputs, Measurements, PruneMetricKey
 
 """
 PruneMetrics take the outputs of a pruned model and return some measurement of the
 model's performance.
 """
 
+
 @dataclass(frozen=True)
 class PruneMetric:
     key: PruneMetricKey
     name: str
-    metric_func: Callable[
-        [Task, Optional[PruneScores], Optional[PrunedOutputs]], Measurements
-    ]
+    metric_func: Callable[[Task, CircuitOutputs], Measurements]
     log_x: bool = False
     log_y: bool = False
     lower_better: bool = False
@@ -149,4 +150,6 @@ PRUNE_METRICS: List[PruneMetric] = [
     PROB_DIFF_PERCENT_METRIC,
     LOBPROB_DIFF_PERCENT_METRIC,
 ]
-PRUNE_METRIC_DICT: Dict[PruneMetricKey, PruneMetric] = {metric.key: metric for metric in PRUNE_METRICS}
+PRUNE_METRIC_DICT: Dict[PruneMetricKey, PruneMetric] = {
+    metric.key: metric for metric in PRUNE_METRICS
+}

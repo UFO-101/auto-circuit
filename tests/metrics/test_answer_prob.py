@@ -8,6 +8,7 @@ import torch as t
 from auto_circuit.metrics.prune_metrics.answer_value import measure_answer_val
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.tasks import Task
+from auto_circuit.types import BatchOutputs
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -45,21 +46,19 @@ def test_answer_prob(
     )
     model = task.model
 
-    pruned_out = [model(batch.clean)[model.out_slice] for batch in task.test_loader]
+    pruned_outs: BatchOutputs = {}
+    for batch in task.test_loader:
+        pruned_outs[batch.key] = model(batch.clean)[model.out_slice]
 
     answer_prob = measure_answer_val(
         task,
-        prune_scores=None,
-        pruned_outs={0: pruned_out},
+        pruned_outs={0: pruned_outs},
         prob_func="logits",
     )
-    pruned_out = t.stack(pruned_out)
-    for batch_idx, batch in enumerate(task.test_loader):
+    for batch in task.test_loader:
         avg_ans_prob = []
-        for prompt_idx, prompt_answers in enumerate(batch.answers):
-            probs = [
-                pruned_out[batch_idx, prompt_idx, a].item() for a in prompt_answers
-            ]
+        for prompt_idx, prompt_ans in enumerate(batch.answers):
+            probs = [pruned_outs[batch.key][prompt_idx, a].item() for a in prompt_ans]
             avg_ans_prob.append(sum(probs) / len(probs))
         assert avg_ans_prob is not None
         assert answer_prob[0][1] == pytest.approx(sum(avg_ans_prob) / len(avg_ans_prob))
@@ -81,21 +80,20 @@ def test_greaterthan_answer_prob(
         _dataset_name="greaterthan_gpt2-small_prompts",
     )
     model = task.model
-    pruned_out = [model(batch.clean)[model.out_slice] for batch in task.test_loader]
+
+    pruned_outs: BatchOutputs = {}
+    for batch in task.test_loader:
+        pruned_outs[batch.key] = model(batch.clean)[model.out_slice]
 
     answer_prob = measure_answer_val(
         task,
-        prune_scores=None,
-        pruned_outs={0: pruned_out},
+        pruned_outs={0: pruned_outs},
         prob_func="logits",
     )
-    pruned_out = t.stack(pruned_out)
-    for batch_idx, batch in enumerate(task.test_loader):
+    for batch in task.test_loader:
         avg_ans_probs = []
-        for prompt_idx, prompt_answers in enumerate(batch.answers):
-            probs = [
-                pruned_out[batch_idx, prompt_idx, a].item() for a in prompt_answers
-            ]
+        for prompt_idx, prompt_ans in enumerate(batch.answers):
+            probs = [pruned_outs[batch.key][prompt_idx, a].item() for a in prompt_ans]
             avg_ans_probs.append(sum(probs) / len(probs))
         assert avg_ans_probs is not None
         avg_ans_prob = sum(avg_ans_probs) / len(avg_ans_probs)

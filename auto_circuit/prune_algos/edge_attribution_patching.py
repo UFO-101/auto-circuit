@@ -53,10 +53,8 @@ def edge_attribution_patching_prune_scores(
         loss.backward()
         model.reset_hooks()
 
-        logits, corrupt_cache = model.run_with_cache(
-            batch.corrupt, return_type="logits"
-        )
-        logits, clean_cache = model.run_with_cache(batch.clean, return_type="logits")
+        _, corrupt_cache = model.run_with_cache(batch.corrupt, return_type="logits")
+        _, clean_cache = model.run_with_cache(batch.clean, return_type="logits")
 
         prune_scores = {}
         for edge in model.edges:

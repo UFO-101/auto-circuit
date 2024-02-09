@@ -24,14 +24,14 @@ def generate_prompts(vocab: Set[Any], seq_len: int) -> Dict[str, Any]:
         # Choose a different sequence. Make sure it's different to the clean sequence
         all_other_seqs = all_seqs[:seq_idx] + all_seqs[seq_idx + 1 :]
         corrupt_seq = random.choice(all_other_seqs)
+        answer_seq = model_encode([BOS] + list(reversed(clean_seq)))[1:]
+        wrong_answer_seq = model_encode([BOS] + list(reversed(corrupt_seq)))[1:]
         prompts.append(
             {
                 "clean": model_encode([BOS] + list(clean_seq)),
                 "corrupt": model_encode([BOS] + list(corrupt_seq)),
-                "answers": [model_encode([BOS] + list(reversed(clean_seq)))[1:]],
-                "wrong_answers": [
-                    model_encode([BOS] + list(reversed(corrupt_seq)))[1:]
-                ],
+                "answers": [[x] for x in answer_seq],
+                "wrong_answers": [[x] for x in wrong_answer_seq],
             }
         )
     return {"prompts": prompts}

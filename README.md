@@ -40,7 +40,7 @@ Pruning Algorithms are defined in `prune_algos/prune_algos.py`. They require a f
 
 ### Metrics
 
-Metrics are defined in `metrics/metrics.py`. They require a function that maps a `Task` object along with a `PruneScores` or `PrunedOutputs` objects to a list of `x,y` points (usually `x` is the number of edges and `y` is some metric of faithfulness). A `PrunedOutputs` object is dictionary mapping the number of edges pruned to the output of the pruned model.
+Metrics are defined in `metrics/`. These are usually functions that map a `Task` object along with a `PruneScores` or `CircuitOutputs` object to a list of `x,y` Measurements. (In prune_metrics/ `x` is the number of edges and `y` is some metric of faithfulness).
 
 ## Pruning
 

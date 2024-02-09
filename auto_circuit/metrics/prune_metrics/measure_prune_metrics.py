@@ -1,24 +1,33 @@
-
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
-from auto_circuit.prune import run_pruned
-from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 
-from auto_circuit.metrics.prune_metrics.prune_metrics import PRUNE_METRIC_DICT, PruneMetric
+import plotly.graph_objects as go
+import torch as t
+
+from auto_circuit.metrics.area_under_curve import average_auc_plot
+from auto_circuit.metrics.prune_metrics.prune_metrics import (
+    PRUNE_METRIC_DICT,
+    PruneMetric,
+)
 from auto_circuit.metrics.prune_metrics.prune_metrics_plot import edge_patching_plot
+from auto_circuit.prune import run_circuits
+from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.tasks import TASK_DICT
-from auto_circuit.types import PatchType, PruneMetricMeasurements, TaskPruneScores
+from auto_circuit.types import (
+    CircuitOutputs,
+    PatchType,
+    PruneMetricMeasurements,
+    TaskPruneScores,
+)
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
-import torch as t
-import plotly.graph_objects as go
 
-from auto_circuit.visualize import average_auc_plot
 
 def default_factory() -> Dict[Any, Dict[Any, Any]]:
     return defaultdict(dict)
 
-def measure_circuit_metrics(
+
+def measure_prune_metrics(
     metrics: List[PruneMetric],
     task_prune_scores: TaskPruneScores,
     patch_type: PatchType,
@@ -32,7 +41,7 @@ def measure_circuit_metrics(
         for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
             algo = PRUNE_ALGO_DICT[algo_key]
             algo_pbar.set_description_str(f"Pruning with {algo.name}")
-            pruned_outs = run_pruned(
+            circuit_outs: CircuitOutputs = run_circuits(
                 model=task.model,
                 dataloader=test_loader,
                 test_edge_counts=edge_counts_util(task.model.edges, None, prune_scores),
@@ -46,13 +55,16 @@ def measure_circuit_metrics(
             )
             for metric in (metric_pbar := tqdm(metrics)):
                 metric_pbar.set_description_str(f"Measuring {metric.name}")
-                measurement = metric.metric_func(task, prune_scores, pruned_outs)
+                measurement = metric.metric_func(task, circuit_outs)
                 measurements[metric.key][task.key][algo.key] = measurement
-            del pruned_outs
+            del circuit_outs
             t.cuda.empty_cache()
     return measurements
 
-def measurement_figs(measurements: PruneMetricMeasurements) -> Tuple[go.Figure, ...]:
+
+def measurement_figs(
+    measurements: PruneMetricMeasurements, auc_plots: bool = False
+) -> Tuple[go.Figure, ...]:
     figs = []
     for metric_key, task_measurements in measurements.items():
         token_circuit = TASK_DICT[list(task_measurements.keys())[0]].token_circuit
@@ -97,14 +109,14 @@ def measurement_figs(measurements: PruneMetricMeasurements) -> Tuple[go.Figure, 
                 metric.y_min,
             )
         )
-        figs.append(
-            average_auc_plot(
-                task_measurements,
-                metric.name,
-                metric.log_x,
-                metric.log_y,
-                metric.y_min,
-                metric.lower_better,
+        if auc_plots:
+            figs.append(
+                average_auc_plot(
+                    task_measurements,
+                    metric.log_x,
+                    metric.log_y,
+                    metric.y_min,
+                    metric.lower_better,
+                )
             )
-        )
     return tuple(figs)

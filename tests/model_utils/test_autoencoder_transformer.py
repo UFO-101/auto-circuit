@@ -14,7 +14,7 @@ from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import
 from auto_circuit.model_utils.sparse_autoencoders.sparse_autoencoder import (
     load_autoencoder,
 )
-from auto_circuit.prune import run_pruned
+from auto_circuit.prune import run_circuits
 from auto_circuit.tasks import Task
 from auto_circuit.types import AutoencoderInput, PatchType
 from auto_circuit.utils.misc import repo_path_to_abs_path, run_prompt
@@ -178,10 +178,10 @@ def test_task_autoencoder_transformer_edges(model_name: str):
     with t.inference_mode():
         batch = next(iter(task.test_loader))
         clean_logits = model(batch.clean)[model.out_slice]
-        pruned_outs = run_pruned(
+        pruned_outs = run_circuits(
             model, task.test_loader, [edge_count], resid_end_edges, PatchType.EDGE_PATCH
         )
-    patched_out = pruned_outs[edge_count][0]
+    patched_out = pruned_outs[edge_count][batch.key]
     assert patched_out.shape == clean_logits.shape
     assert t.allclose(patched_out, clean_logits, atol=1e-5)
 

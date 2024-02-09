@@ -2,10 +2,33 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
+import plotly.io as pio
 import torch as t
 
+from auto_circuit.data import BatchKey
 from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapper
+
+# Define a colorblind-friendly palette
+COLOR_PALETTE = [
+    "#377eb8",  # blue
+    "#ff7f00",  # orange
+    "#4daf4a",  # green
+    "#f781bf",  # pink
+    "#e41a1c",  # red
+    "#984ea3",  # purple
+    "#a65628",  # brown
+    "#999999",  # grey
+    "#dede00",  # yellow
+]
+
+# Create or modify a template
+template = pio.templates["plotly"]
+template.layout.colorway = COLOR_PALETTE  # type: ignore
+template.layout.font.size = 19  # type: ignore
+
+# Set the template as the default
+pio.templates.default = "plotly"
 
 
 class EdgeCounts(Enum):
@@ -90,7 +113,8 @@ AlgoKey = str
 
 
 Measurements = List[Tuple[int | float, int | float]]
-PrunedOutputs = Dict[int, List[t.Tensor]]
+BatchOutputs = Dict[BatchKey, t.Tensor]
+CircuitOutputs = Dict[int, BatchOutputs]
 PruneScores = Dict[Edge, float]
 
 

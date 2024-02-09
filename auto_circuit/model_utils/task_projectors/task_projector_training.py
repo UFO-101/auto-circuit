@@ -2,6 +2,7 @@
 import math
 from datetime import datetime
 from math import pi
+from typing import Dict
 
 import plotly.express as px
 import plotly.graph_objs as go
@@ -17,7 +18,7 @@ from auto_circuit.model_utils.task_projectors.projector_transformer import (
     get_projector_model,
 )
 from auto_circuit.model_utils.task_projectors.task_projector import TaskProjector
-from auto_circuit.types import AutoencoderInput
+from auto_circuit.types import AutoencoderInput, BatchKey
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.misc import (
     get_most_similar_embeddings,
@@ -49,7 +50,7 @@ def train_model(
     print("train_batch.diverge_idx:", diverge_idx)
 
     # Save default logprobs and initialize KV cache (one for each batch size)
-    default_logprobs = {}
+    default_logprobs: Dict[BatchKey, t.Tensor] = {}
     kv_caches = {}
     for batch in (batch_pbar := tqdm(dataloader)):
         tks = batch.clean.to(device)

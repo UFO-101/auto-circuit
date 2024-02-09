@@ -1,7 +1,9 @@
 #%%
 # Based on: https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/tracr_task/utils.py
 from typing import (
+    Any,
     Literal,
+    Set,
     Tuple,
 )
 
@@ -10,17 +12,19 @@ import numpy as np
 import torch
 from tracr.compiler import compiling
 from tracr.compiler.assemble import AssembledTransformerModel
+from tracr.compiler.lib import make_frac_prevs
 from tracr.rasp import rasp
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 BOS = "BOS"
-REVERSE_VOCAB = {1, 2, 3}
-PROPORTION_VOCAB = {"w", "x", "y", "z"}
+REVERSE_VOCAB: Set[Any] = {1, 2, 3}
+XPROPORTION_VOCAB: Set[Any] = {"w", "x", "y", "z"}
 MAX_SEQ_LEN = 5
+TRACR_TASK_KEY = Literal["reverse", "xproportion"]
 
 
 def get_tracr_model(
-    task: Literal["reverse", "proportion"], device: str
+    tracr_task_key: TRACR_TASK_KEY, device: str
 ) -> Tuple[HookedTransformer, AssembledTransformerModel]:
     """
     This function adapts Neel's TransformerLens porting of tracr
@@ -30,33 +34,26 @@ def get_tracr_model(
         all_true_selector = rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE)
         return rasp.SelectorWidth(all_true_selector)
 
-    if task == "reverse":
+    if tracr_task_key == "reverse":
         length = make_length()  # `length` is not a primitive in our implementation.
         opp_index = length - rasp.indices - 1
         flip = rasp.Select(rasp.indices, opp_index, rasp.Comparison.EQ)
         reverse = rasp.Aggregate(flip, rasp.tokens)
         model = compiling.compile_rasp_to_model(
             reverse,
-            vocab={1, 2, 3},
-            max_seq_len=5,
+            vocab=REVERSE_VOCAB,
+            max_seq_len=MAX_SEQ_LEN,
             compiler_bos=BOS,
         )
-        out = model.apply([BOS, 1, 2, 3])
-
-    elif task == "proportion":
-        from tracr.compiler.lib import make_frac_prevs
-
+    elif tracr_task_key == "xproportion":
         model = compiling.compile_rasp_to_model(
-            make_frac_prevs(rasp.tokens == 1),
-            vocab={"w", "x", "y", "z"},
-            max_seq_len=5,
+            make_frac_prevs(rasp.tokens == "x"),
+            vocab=XPROPORTION_VOCAB,
+            max_seq_len=MAX_SEQ_LEN,
             compiler_bos=BOS,
         )
-
-        out = model.apply(["BOS", "w", "x", "y", "z"])
-
     else:
-        raise ValueError(f"Unknown task {task}")
+        raise ValueError(f"Unknown task {tracr_task_key}")
 
     # Extract the model config from the Tracr model, and create a blank
     # HookedTransformer object
@@ -76,11 +73,16 @@ def get_tracr_model(
     # config.
     d_model = model.params["token_embed"]["embeddings"].shape[1]
 
-    # Equivalent to length of vocab, WITHOUT BOS and PAD at the end because we never
-    # care about these outputs
-    d_vocab_out = model.params["token_embed"]["embeddings"].shape[0] - 2
+    if tracr_task_key == "reverse":
+        # Equivalent to length of vocab, WITHOUT BOS and PAD at the end because we never
+        # care about these outputs
+        d_vocab_out = model.params["token_embed"]["embeddings"].shape[0] - 2
+    elif tracr_task_key == "xproportion":
+        # This task outputs a real number, so we only need the first residual dimension
+        d_vocab_out = 1
 
     cfg = HookedTransformerConfig(
+        model_name=f"tracr-{tracr_task_key}",
         n_layers=n_layers,
         d_model=d_model,
         d_head=d_head,
@@ -181,86 +183,20 @@ def get_tracr_model(
     tl_model.load_state_dict(sd, strict=False)
     return tl_model, model
 
-    # Create helper functions to do the tokenization and de-tokenization
 
-    INPUT_ENCODER = model.input_encoder
-    OUTPUT_ENCODER = model.output_encoder
+# tl_model, tracr_model = get_tracr_model("reverse", "cpu")
+# #%%
+# tl_model, tracr_model = get_tracr_model("reverse", "cpu")
+# tracr_encoding = tracr_model.input_encoder.encode(["BOS", 3, 2, 1])
+# print(tracr_encoding)
+# tracr_model.apply(["BOS", 3, 4, 1])
 
-    def create_model_input(input, input_encoder=INPUT_ENCODER, device=device):
-        encoding = input_encoder.encode(input)
-        return torch.tensor(encoding).unsqueeze(dim=0).to(device)
+# #%%
+# import torch as t
+# tl_model, tracr_model = get_tracr_model("xproportion", "cpu")
+# tracr_output = tracr_model.apply(["BOS", "x", "x", "y", "z"])
+# print("tracr_output:", tracr_output.decoded)
 
-    if task == "reverse":  # this doesn't make sense for proportion
-
-        def decode_model_output(
-            logits, output_encoder=OUTPUT_ENCODER, bos_token=INPUT_ENCODER.bos_token
-        ):
-            max_output_indices = logits.squeeze(dim=0).argmax(dim=-1)
-            decoded_output = output_encoder.decode(max_output_indices.tolist())
-            decoded_output_with_bos = [bos_token] + decoded_output[1:]
-            return decoded_output_with_bos
-
-    # We can now run the model!
-    if task == "reverse":
-        input = [BOS, 1, 2, 3]
-        out = model.apply(input)
-        print("Original Decoding:", out.decoded)
-
-        input_tokens_tensor = create_model_input(input)
-        logits = tl_model(input_tokens_tensor)
-        decoded_output = decode_model_output(logits)
-        print("TransformerLens Replicated Decoding:", decoded_output)
-
-    elif task == "proportion":
-        input = [BOS, "x", "w", "w", "x"]
-        out = model.apply(input)
-        print("Original Decoding:", out.decoded)
-
-        input_tokens_tensor = create_model_input(input)
-        logits = tl_model(input_tokens_tensor)
-        # decoded_output = decode_model_output(logits)
-        # print("TransformerLens Replicated Decoding:", decoded_output)
-
-    else:
-        raise ValueError("Task must be either 'reverse' or 'proportion'")
-
-    # Lets cache all intermediate activations in the model, and check that they're the
-    # same:
-
-    logits, cache = tl_model.run_with_cache(input_tokens_tensor)
-
-    for layer in range(tl_model.cfg.n_layers):
-        print(
-            f"Layer {layer} Attn Out Equality Check:",
-            np.isclose(
-                cache["attn_out", layer].detach().cpu().numpy(),
-                np.array(out.layer_outputs[2 * layer]),
-            ).all(),
-        )
-        print(
-            f"Layer {layer} MLP Out Equality Check:",
-            np.isclose(
-                cache["mlp_out", layer].detach().cpu().numpy(),
-                np.array(out.layer_outputs[2 * layer + 1]),
-            ).all(),
-        )
-
-    # Look how pretty and ordered the final residual stream is!
-    #
-    # (The logits are the first 3 dimensions of the residual stream, and we can see
-    # that they're flipped!)
-
-    import plotly.express as px
-
-    im = cache["resid_post", -1].detach().cpu().numpy()[0]
-    px.imshow(
-        im,
-        color_continuous_scale="Blues",
-        labels={"x": "Residual Stream", "y": "Position"},
-        y=[str(i) for i in input],
-    ).show()
-
-    return create_model_input, tl_model
-
-
-get_tracr_model("reverse", "cpu")
+# tracr_encoding = tracr_model.input_encoder.encode(["BOS", "x", "x", "y", "z"])
+# tl_output = tl_model(t.tensor(tracr_encoding))
+# print("tl_output:", tl_output)

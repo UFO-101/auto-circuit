@@ -87,18 +87,31 @@ INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO = PruneAlgo(
 PROB_GRAD_PRUNE_ALGO = PruneAlgo(
     key="Edge Answer Prob Gradient At Clean",
     name="Prob Gradient",
-    func=partial(simple_gradient_prune_scores, grad_function="prob"),
+    func=partial(
+        simple_gradient_prune_scores,
+        grad_function="prob",
+        answer_function="avg_val",
+        mask_val=0.0,
+    ),
 )
 LOGIT_EXP_GRAD_PRUNE_ALGO = PruneAlgo(
     key="Edge Answer Logit Exp Gradient At Clean",
     name="Exp Logit Gradient",
-    func=partial(simple_gradient_prune_scores, grad_function="logit_exp"),
+    func=partial(
+        simple_gradient_prune_scores,
+        grad_function="logit_exp",
+        answer_function="avg_val",
+        mask_val=0.0,
+    ),
 )
 LOGPROB_GRAD_PRUNE_ALGO = PruneAlgo(
     key="Edge Answer Log Prob Gradient At Clean",
     name="Logprob Gradient",
     func=partial(
-        simple_gradient_prune_scores, grad_function="logprob", answer_diff=False
+        simple_gradient_prune_scores,
+        grad_function="logprob",
+        answer_function="avg_val",
+        mask_val=0.0,
     ),
 )
 LOGPROB_DIFF_GRAD_PRUNE_ALGO = PruneAlgo(
@@ -108,10 +121,21 @@ LOGPROB_DIFF_GRAD_PRUNE_ALGO = PruneAlgo(
     func=partial(
         simple_gradient_prune_scores,
         grad_function="logprob",
-        answer_diff=True,
+        answer_function="avg_diff",
         mask_val=0.0,
     ),
 )  # USE THIS
+LOGIT_MSE_GRAD_PRUNE_ALGO = PruneAlgo(
+    key="Edge Answer Logit MSE Gradient At Clean",
+    name="Logit MSE Gradient",
+    short_name="EAP",
+    func=partial(
+        simple_gradient_prune_scores,
+        grad_function="logit",
+        answer_function="mse",
+        mask_val=0.0,
+    ),
+)
 SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     key="Subnetwork Edge Probing",
     name="Subnetwork Edge Probing",
@@ -159,7 +183,7 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=4000,
+        epochs=1000,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -167,6 +191,38 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
         tree_optimisation=True,
     ),
     short_name="TP",
+)
+MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
+    key="MSE Tree Probing",
+    name="MSE Tree Probing",
+    short_name="TP",
+    func=partial(
+        circuit_probing_prune_scores,
+        learning_rate=0.1,
+        epochs=1000,
+        regularize_lambda=0.1,
+        mask_fn="hard_concrete",
+        show_train_graph=True,
+        circuit_sizes=["true_size"],
+        tree_optimisation=True,
+        faithfulness_target="mse",
+    ),
+)
+OPPOSITE_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
+    key="Opposite Tree Probing",
+    name="Opposite Tree Probing",
+    func=partial(
+        circuit_probing_prune_scores,
+        learning_rate=0.1,
+        epochs=20,
+        regularize_lambda=0.1,
+        mask_fn="hard_concrete",
+        show_train_graph=True,
+        circuit_sizes=["true_size", 1000, 10000],
+        tree_optimisation=True,
+        faithfulness_target="wrong_answer",
+    ),
+    short_name="OTP",
 )
 
 PRUNE_ALGOS: List[PruneAlgo] = [
@@ -178,9 +234,12 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGPROB_GRAD_PRUNE_ALGO,
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    LOGIT_MSE_GRAD_PRUNE_ALGO,
     SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     CIRCUIT_PROBING_PRUNE_ALGO,
     SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    OPPOSITE_TREE_PROBING_PRUNE_ALGO,
 ]
 PRUNE_ALGO_DICT: Dict[AlgoKey, PruneAlgo] = {algo.key: algo for algo in PRUNE_ALGOS}

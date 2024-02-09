@@ -1,14 +1,19 @@
 from typing import List, Optional, Set, Tuple
 
 from auto_circuit.tasks import TASK_DICT, Task
-from auto_circuit.types import AlgoMeasurements, Edge, Measurements, PrunedOutputs, PruneScores, TaskMeasurements, TaskPruneScores
+from auto_circuit.types import (
+    AlgoMeasurements,
+    Edge,
+    Measurements,
+    PruneScores,
+    TaskMeasurements,
+    TaskPruneScores,
+)
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
 
 
-def measure_roc(
-    task_prune_scores: TaskPruneScores
-) -> TaskMeasurements:
+def measure_roc(task_prune_scores: TaskPruneScores) -> TaskMeasurements:
     task_measurements: TaskMeasurements = {}
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
         task = TASK_DICT[task_key]

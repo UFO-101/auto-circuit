@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 import torch as t
 
-from auto_circuit.prune import run_pruned
+from auto_circuit.prune import run_circuits
 from auto_circuit.prune_algos.ACDC import acdc_prune_scores
 from auto_circuit.tasks import Task
 from auto_circuit.visualize import draw_seq_graph
@@ -38,7 +38,7 @@ def test_acdc(
         tao_exps=[-3],
         tao_bases=[1],
         test_mode=True,  # The actual test logic is embedded in the function
-        run_pruned_ref=run_pruned,
+        run_pruned_ref=run_circuits,
         show_graphs=show_graphs,
         draw_seq_graph_ref=draw_seq_graph,
     )

@@ -1,9 +1,12 @@
 from typing import Any, Dict, List
+
+import plotly.express as px
+import plotly.graph_objects as go
+
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.tasks import TASK_DICT
 from auto_circuit.types import TaskMeasurements
-import plotly.graph_objects as go
-import plotly.express as px
+
 
 def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
     data = []
@@ -17,16 +20,14 @@ def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
             if len(points) > 1:
                 for x, y in points:
                     data.append(
-                        {
-                            "Task": task.name,
-                            "Algorithm": algo.name,
-                            "X": x,
-                            "Y": y
-                        }
+                        {"Task": task.name, "Algorithm": algo.name, "X": x, "Y": y}
                     )
     return roc_fig(data, task_measurements)
 
-def roc_fig(data: List[Dict[str, Any]], task_measurements: TaskMeasurements) -> go.Figure:
+
+def roc_fig(
+    data: List[Dict[str, Any]], task_measurements: TaskMeasurements
+) -> go.Figure:
     data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"], x["X"]))
     fig = px.scatter(data, x="X", y="Y", facet_col="Task", color="Algorithm")
     fig.update_traces(line=dict(shape="hv"), mode="lines")

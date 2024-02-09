@@ -4,7 +4,7 @@ import torch as t
 from torch.nn.functional import log_softmax
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import PruneScores
+from auto_circuit.types import BatchKey, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
@@ -24,7 +24,7 @@ def integrated_edge_gradients_prune_scores(
     model = task.model
     out_slice = model.out_slice
 
-    src_outs_dict: Dict[int, t.Tensor] = {}
+    src_outs_dict: Dict[BatchKey, t.Tensor] = {}
     for batch in task.train_loader:
         patch_outs = get_sorted_src_outs(model, batch.clean)
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))

@@ -15,7 +15,7 @@ from auto_circuit.types import (
 
 
 def prune_score_similarities(
-    task_key: TaskKey, algo_prune_scores: AlgoPruneScores, edge_counts: List[int]
+    algo_prune_scores: AlgoPruneScores, edge_counts: List[int]
 ) -> Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]]:
     """Measure the similarity between the prune scores of different algorithms."""
     sorted_prune_scores: AlgoPruneScores = {}
@@ -62,7 +62,7 @@ def task_prune_scores_similarities(
             assert task.true_edges is not None
             true_edge_count = [len(task.true_edges)]
         task_similarity[task_key] = prune_score_similarities(
-            task_key, algo_prune_scores, true_edge_count + edge_counts
+            algo_prune_scores, true_edge_count + edge_counts
         )
 
     return task_similarity
