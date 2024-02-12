@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -7,7 +8,20 @@ import torch as t
 
 from auto_circuit.data import BatchKey
 from auto_circuit.utils.misc import module_by_name
-from auto_circuit.utils.patch_wrapper import PatchWrapper
+
+
+class PatchWrapper(t.nn.Module, ABC):
+    """Abstract class for a wrapper around a module that can be patched."""
+
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def forward(self, *args: Any, **kwargs: Any):
+        pass
+
+
+MaskFn = Optional[Literal["hard_concrete", "sigmoid"]]
 
 # Define a colorblind-friendly palette
 COLOR_PALETTE = [
@@ -81,6 +95,9 @@ class DestNode(Node):
     """A node that is the destination of an edge."""
 
 
+PruneScores = Dict[str, t.Tensor]  # module_name -> edge scores
+
+
 @dataclass(frozen=True)
 class Edge:
     src: SrcNode
@@ -100,6 +117,9 @@ class Edge:
     def patch_mask(self, model: Any) -> t.nn.Parameter:
         return self.dest.module(model).patch_mask
 
+    def prune_score(self, prune_scores: PruneScores) -> t.Tensor:
+        return prune_scores[self.dest.module_name][self.patch_idx]
+
     def __repr__(self) -> str:
         return self.name
 
@@ -115,7 +135,6 @@ AlgoKey = str
 Measurements = List[Tuple[int | float, int | float]]
 BatchOutputs = Dict[BatchKey, t.Tensor]
 CircuitOutputs = Dict[int, BatchOutputs]
-PruneScores = Dict[Edge, float]
 
 
 AlgoPruneScores = Dict[AlgoKey, PruneScores]

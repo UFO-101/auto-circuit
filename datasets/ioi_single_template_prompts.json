@@ -1,4 +1,21 @@
 {
+  "seq_labels": [
+    "BOS",
+    "When",
+    "Mary",
+    "and",
+    "John",
+    "went",
+    "to",
+    "the",
+    "store",
+    ",",
+    "John",
+    "gave",
+    "a",
+    "drink",
+    "to"
+  ],
   "prompts": [
     {
       "clean": "When Marco and William went to the garden, William gave a computer to",

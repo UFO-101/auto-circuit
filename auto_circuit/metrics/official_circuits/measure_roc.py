@@ -1,9 +1,8 @@
-from typing import List, Optional, Set, Tuple
+from typing import List, Tuple
 
 from auto_circuit.tasks import TASK_DICT, Task
 from auto_circuit.types import (
     AlgoMeasurements,
-    Edge,
     Measurements,
     PruneScores,
     TaskMeasurements,
@@ -11,6 +10,7 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import edge_counts_util
+from auto_circuit.utils.tensor_ops import desc_prune_scores, prune_scores_threshold
 
 
 def measure_roc(task_prune_scores: TaskPruneScores) -> TaskMeasurements:
@@ -29,32 +29,31 @@ def measure_roc(task_prune_scores: TaskPruneScores) -> TaskMeasurements:
 
 def measure_task_roc(
     task: Task,
-    prune_scores: Optional[PruneScores],
+    prune_scores: PruneScores,
 ) -> Measurements:
     """Measure ROC curve."""
-    assert prune_scores is not None
     correct_edges = task.true_edges
     if correct_edges is None:
         raise ValueError("This task does not have a true edge function")
-
+    n_correct = len(correct_edges)
+    n_incorrect = task.model.n_edges - n_correct
     test_edge_counts = edge_counts_util(task.model.edges, prune_scores=prune_scores)
+    desc_ps = desc_prune_scores(prune_scores)
 
-    prune_scores = {e: prune_scores.get(e, 0.0) for e in task.model.edges}
-    assert len(prune_scores) == len(task.model.edges)
-    sort_ps = dict(sorted(prune_scores.items(), key=lambda x: abs(x[1]), reverse=True))
-    sorted_edges = list(sort_ps.keys())
+    correct_ps: PruneScores = task.model.circuit_prune_scores(correct_edges, bool=True)
+    incorrect_edges: PruneScores = dict([(mod, ~ps) for mod, ps in correct_ps.items()])
 
-    incorrect_edges = task.model.edges - correct_edges
     points: List[Tuple[float, float]] = []
-    current_edges: Set[Edge] = set()
-    for edge_idx in (prune_score_pbar := tqdm(range(len(sort_ps) + 1))):
-        if edge_idx in test_edge_counts:
-            prune_score_pbar.set_description_str(f"ROC for {edge_idx} edges")
-            true_positives = len(correct_edges & current_edges)
-            true_positive_rate = true_positives / len(correct_edges)
-            false_positives = len(incorrect_edges & current_edges)
-            false_positive_rate = false_positives / len(incorrect_edges)
-            points.append((false_positive_rate, true_positive_rate))
-        if edge_idx < len(task.model.edges):
-            current_edges.add(sorted_edges[edge_idx])
+    for edge_count in (edge_count_pbar := tqdm(test_edge_counts)):
+        edge_count_pbar.set_description_str(f"ROC for {edge_count} edges")
+        threshold = prune_scores_threshold(desc_ps, edge_count)
+        true_positives, false_positives = 0, 0
+        for mod, ps in prune_scores.items():
+            ps_circuit = ps >= threshold
+            correct_circuit, incorrect_circuit = correct_ps[mod], incorrect_edges[mod]
+            true_positives += (ps_circuit & correct_circuit).sum().item()
+            false_positives += (ps_circuit & incorrect_circuit).sum().item()
+        true_positive_rate = true_positives / n_correct
+        false_positive_rate = false_positives / n_incorrect
+        points.append((false_positive_rate, true_positive_rate))
     return points

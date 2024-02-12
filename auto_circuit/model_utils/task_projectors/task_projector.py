@@ -5,7 +5,8 @@ from einops import einsum
 from torch.nn.utils.parametrize import register_parametrization
 from transformer_lens.hook_points import HookPoint
 
-from auto_circuit.utils.tensor_ops import MaskFn, sample_hard_concrete
+from auto_circuit.types import MaskFn
+from auto_circuit.utils.tensor_ops import sample_hard_concrete
 
 # from torch.nn.init import orthogonal
 

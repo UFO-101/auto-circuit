@@ -11,7 +11,7 @@ import torch as t
 from torch.nn.functional import log_softmax, mse_loss
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import BatchKey, Edge, PruneScores
+from auto_circuit.types import BatchKey, Edge, MaskFn, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     get_sorted_src_outs,
@@ -22,7 +22,6 @@ from auto_circuit.utils.graph_utils import (
 )
 from auto_circuit.utils.patch_wrapper import sample_hard_concrete
 from auto_circuit.utils.tensor_ops import (
-    MaskFn,
     batch_avg_answer_val,
     multibatch_kl_div,
 )
@@ -54,7 +53,7 @@ def subnetwork_probing_prune_scores(
     """Optimize the patch masks using gradient descent."""
     model = task.model
     out_slice = model.out_slice
-    n_edges = len(model.edges)
+    n_edges = model.n_edges
     n_avoid = len(avoid_edges or [])
 
     clean_logprobs: Dict[BatchKey, t.Tensor] = {}
@@ -72,7 +71,8 @@ def subnetwork_probing_prune_scores(
     losses, faiths, regularizes = [], [], []
     set_all_masks(model, val=-init_val if tree_optimisation else init_val)
     with train_mask_mode(model) as patch_masks, mask_fn_mode(model, mask_fn, dropout_p):
-        optim = t.optim.Adam(patch_masks, lr=learning_rate)
+        mask_params = patch_masks.values()
+        optim = t.optim.Adam(mask_params, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
             faith_str = f"{faithfulness_target}: {faiths[-1]:.3f}" if epoch > 0 else ""
             desc = f"Loss: {losses[-1]:.3f}, {faith_str}" if epoch > 0 else ""
@@ -94,7 +94,7 @@ def subnetwork_probing_prune_scores(
                         faithful_term = -batch_avg_answer_val(
                             train_logits, batch, wrong
                         )
-                    masks = t.cat([patch_mask.flatten() for patch_mask in patch_masks])
+                    masks = t.cat([patch_mask.flatten() for patch_mask in mask_params])
                     if mask_fn == "hard_concrete":
                         masks = sample_hard_concrete(masks, batch_size=1)
                     elif mask_fn == "sigmoid":
@@ -117,23 +117,20 @@ def subnetwork_probing_prune_scores(
                     model.zero_grad()
                     loss.backward()
                     optim.step()
-        xtreme_val = max if tree_optimisation else min
-        xtreme_torch_val = t.max if tree_optimisation else t.min
-        m = abs(xtreme_val([xtreme_torch_val(mask).item() for mask in patch_masks]))
+        xtreme_f = max if tree_optimisation else min
+        xtreme_torch_f = t.max if tree_optimisation else t.min
+        xtreme_val = abs(xtreme_f([xtreme_torch_f(msk).item() for msk in mask_params]))
 
     if show_train_graph:
-        title = "Subnetwork Probing Loss History"
         fig = go.Figure()
         fig.add_trace(go.Scatter(y=losses, name="Loss"))
         fig.add_trace(go.Scatter(y=faiths, name=faithfulness_target.title()))
         fig.add_trace(go.Scatter(y=regularizes, name="Regularization"))
-        fig.update_layout(title=title, xaxis_title="Iteration", yaxis_title="Loss")
+        fig.update_layout(title="Subnetwork Probing", xaxis_title="Step")
         fig.show()
 
     sign = -1 if tree_optimisation else 1
-    ps = [(e, m + sign * e.patch_mask(model)[e.patch_idx].item()) for e in model.edges]
-    if circuit_size:
-        sorted_ps = sorted(ps, key=lambda x: x[1], reverse=True)
-        return dict([(e, 1.0) for e, _ in sorted_ps[:circuit_size]])
-    else:
-        return dict(ps)
+    prune_scores: PruneScores = {}
+    for mod_name, patch_mask in model.patch_masks.items():
+        prune_scores[mod_name] = xtreme_val + sign * patch_mask.detach().clone()
+    return prune_scores

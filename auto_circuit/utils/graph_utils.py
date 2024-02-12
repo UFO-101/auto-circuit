@@ -1,9 +1,9 @@
 #%%
 import math
-from collections import Counter, defaultdict
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
-from itertools import accumulate, chain, product
+from itertools import chain, product
 from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 import torch as t
@@ -20,17 +20,17 @@ from auto_circuit.types import (
     DestNode,
     Edge,
     EdgeCounts,
+    MaskFn,
     Node,
     OutputSlice,
+    PruneScores,
     SrcNode,
     TestEdges,
 )
 from auto_circuit.utils.misc import module_by_name, remove_hooks, set_module_by_name
-from auto_circuit.utils.patch_wrapper import PatchWrapper
+from auto_circuit.utils.patch_wrapper import PatchWrapperImpl
 from auto_circuit.utils.patchable_model import PatchableModel
-from auto_circuit.utils.tensor_ops import MaskFn
-
-#%%
+from auto_circuit.utils.tensor_ops import flat_prune_scores
 
 
 def patchable_model(
@@ -129,7 +129,7 @@ def make_model_patchable(
     device: t.device,
     seq_len: Optional[int] = None,
     seq_dim: Optional[int] = None,
-) -> Tuple[Set[PatchWrapper], Set[PatchWrapper], Set[PatchWrapper]]:
+) -> Tuple[Set[PatchWrapperImpl], Set[PatchWrapperImpl], Set[PatchWrapperImpl]]:
     node_dict: Dict[str, Set[Node]] = defaultdict(set)
     [node_dict[node.module_name].add(node) for node in nodes]
     wrappers, src_wrappers, dest_wrappers = set(), set(), set()
@@ -150,24 +150,23 @@ def make_model_patchable(
                 src_idxs = slice(min(idxs), max(idxs) + 1)
                 assert src_idxs.stop - src_idxs.start == len(idxs)
 
-        patch_mask, prev_src_count = None, None
+        mask, prev_src_count = None, None
         if is_dest := any([type(node) == DestNode for node in module_nodes]):
             module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
             prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
             seq_shape = [seq_len] if seq_len is not None else []
             head_shape = [module_dest_count] if head_dim is not None else []
             mask_shape = seq_shape + head_shape + [prev_src_count]
-            patch_mask = t.zeros(
-                mask_shape, device=device, dtype=dtype, requires_grad=False
-            )
-        wrapper = PatchWrapper(
+            mask = t.zeros(mask_shape, device=device, dtype=dtype, requires_grad=False)
+        wrapper = PatchWrapperImpl(
+            module_name=module_name,
             module=module,
             head_dim=head_dim,
             seq_dim=None if seq_len is None else seq_dim,  # Patch tokens separately
             is_src=is_src,
             src_idxs=src_idxs,
             is_dest=is_dest,
-            patch_mask=patch_mask,
+            patch_mask=mask,
             prev_src_count=prev_src_count,
         )
         set_module_by_name(model, module_name, wrapper)
@@ -209,14 +208,14 @@ def set_all_masks(model: PatchableModel, val: float) -> None:
 @contextmanager
 def train_mask_mode(
     model: PatchableModel, requires_grad: bool = True
-) -> Iterator[List[t.nn.Parameter]]:
+) -> Iterator[Dict[str, t.nn.Parameter]]:
     model.eval()
     model.zero_grad()
-    parameters: List[t.nn.Parameter] = []
+    parameters: Dict[str, t.nn.Parameter] = {}
     for wrapper in model.dest_wrappers:
         patch_mask = wrapper.patch_mask
         patch_mask.detach_().requires_grad_(requires_grad)
-        parameters.append(patch_mask)
+        parameters[wrapper.module_name] = patch_mask
         wrapper.train()
     try:
         yield parameters
@@ -242,20 +241,21 @@ def mask_fn_mode(model: PatchableModel, mask_fn: MaskFn, dropout_p: float = 0.0)
 def edge_counts_util(
     edges: Set[Edge],
     test_counts: Optional[TestEdges] = None,  # None means default
-    prune_scores: Optional[Dict[Edge, float]] = None,
-    zero_edges: Optional[bool] = None,  # None means default
-    all_edges: Optional[bool] = None,  # None means default
+    prune_scores: Optional[PruneScores] = None,
+    zero_edges: bool = True,
+    all_edges: bool = True,
 ) -> List[int]:
     n_edges = len(edges)
 
     # Work out default setting for test_counts
+    sorted_ps_count: Optional[t.Tensor] = None
     if test_counts is None:
-        if prune_scores is not None and len(set(prune_scores.values())) < min(
-            n_edges / 2, 100
-        ):
-            test_counts = EdgeCounts.GROUPS
-        else:
-            test_counts = EdgeCounts.LOGARITHMIC if n_edges > 200 else EdgeCounts.ALL
+        test_counts = EdgeCounts.LOGARITHMIC if n_edges > 200 else EdgeCounts.ALL
+        if prune_scores is not None:
+            flat_ps = flat_prune_scores(prune_scores)
+            unique_ps, sorted_ps_count = flat_ps.unique(sorted=True, return_counts=True)
+            if list(unique_ps.size())[0] < min(n_edges / 2, 100):
+                test_counts = EdgeCounts.GROUPS
 
     # Calculate the test counts
     if test_counts == EdgeCounts.ALL:
@@ -269,23 +269,25 @@ def edge_counts_util(
         ]
     elif test_counts == EdgeCounts.GROUPS:
         assert prune_scores is not None
-        score_counts = Counter(prune_scores.values())
-        sorted_counts = sorted(score_counts.items(), key=lambda x: x[0], reverse=True)
-        counts_list = list(accumulate([n for _, n in sorted_counts]))
+        if sorted_ps_count is None:
+            flat_ps = flat_prune_scores(prune_scores)
+            _, sorted_ps_count = flat_ps.unique(sorted=True, return_counts=True)
+        assert sorted_ps_count is not None
+        counts_list = sorted_ps_count.flip(dims=(0,)).cumsum(dim=0).tolist()
     elif isinstance(test_counts, List):
         counts_list = [n if type(n) == int else int(n_edges * n) for n in test_counts]
     else:
         raise NotImplementedError(f"Unknown test_counts: {test_counts}")
-
-    # Work out default setting for zero_edges and all_edges
-    zero_edges = True if len(counts_list) > 1 and zero_edges is None else zero_edges
-    all_edges = True if len(counts_list) > 1 and all_edges is None else all_edges
 
     # Add zero and all edges if necessary
     if zero_edges and 0 not in counts_list:
         counts_list = [0] + counts_list
     if all_edges and n_edges not in counts_list:
         counts_list.append(n_edges)
+    if not zero_edges and 0 in counts_list:
+        counts_list.remove(0)
+    if not all_edges and n_edges in counts_list:
+        counts_list.remove(n_edges)
 
     return counts_list
 
@@ -319,36 +321,3 @@ def get_sorted_src_outs(
     src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
     assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
     return src_outs
-
-
-def dest_in_hook(
-    module: t.nn.Module,
-    input: Tuple[t.Tensor, ...],
-    output: t.Tensor,
-    dest_nodes: List[DestNode],
-    dest_ins: Dict[DestNode, t.Tensor],
-):
-    in_0 = input[0] if type(input) == tuple else input
-    assert type(in_0) == t.Tensor
-    head_dim: Optional[int] = dest_nodes[0].head_dim
-    in_0 = in_0 if head_dim is None else in_0.split(1, dim=head_dim)
-    for d in dest_nodes:
-        dest_ins[d] = in_0 if head_dim is None else in_0[d.head_idx].squeeze(d.head_dim)
-
-
-def get_sorted_dest_ins(
-    model: PatchableModel,
-    input: t.Tensor,
-) -> Dict[DestNode, t.Tensor]:
-    dest_ins: Dict[DestNode, t.Tensor] = {}
-    dest_modules: Dict[t.nn.Module, List[DestNode]] = defaultdict(list)
-    [dest_modules[dest.module(model)].append(dest) for dest in model.dests]
-    with remove_hooks() as handles:
-        for mod, dest_nodes in dest_modules.items():
-            hook_fn = partial(dest_in_hook, dest_nodes=dest_nodes, dest_ins=dest_ins)
-            handles.add(mod.register_forward_hook(hook_fn))
-        with t.inference_mode():
-            model(input)
-    dest_ins = dict(sorted(dest_ins.items(), key=lambda x: x[0].idx))
-    assert [dest.idx for dest in dest_ins.keys()] == list(range(len(dest_ins)))
-    return dest_ins

@@ -3,12 +3,14 @@ from typing import Any, Optional
 import torch as t
 from einops import einsum
 
-from auto_circuit.utils.tensor_ops import MaskFn, sample_hard_concrete
+from auto_circuit.types import MaskFn, PatchWrapper
+from auto_circuit.utils.tensor_ops import sample_hard_concrete
 
 
-class PatchWrapper(t.nn.Module):
+class PatchWrapperImpl(PatchWrapper):
     def __init__(
         self,
+        module_name: str,
         module: t.nn.Module,
         head_dim: Optional[int] = None,
         seq_dim: Optional[int] = None,
@@ -19,6 +21,7 @@ class PatchWrapper(t.nn.Module):
         prev_src_count: Optional[int] = None,
     ):
         super().__init__()
+        self.module_name: str = module_name
         self.module: t.nn.Module = module
         self.head_dim: Optional[int] = head_dim
         self.seq_dim: Optional[int] = seq_dim
@@ -49,9 +52,7 @@ class PatchWrapper(t.nn.Module):
 
         if self.patch_mode and self.is_dest:
             assert self.patch_src_outs is not None and self.curr_src_outs is not None
-            diff = (
-                self.patch_src_outs[self.src_slice] - self.curr_src_outs[self.src_slice]
-            )
+            d = self.patch_src_outs[self.src_slice] - self.curr_src_outs[self.src_slice]
             batch_str = ""
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately
@@ -66,7 +67,7 @@ class PatchWrapper(t.nn.Module):
             mask = self.dropout_layer(mask)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
             ein_post = f"batch {self.dims} {head_str} ..."
-            arg_0 += einsum(mask, diff, f"{ein_pre} -> {ein_post}")
+            arg_0 += einsum(mask, d, f"{ein_pre} -> {ein_post}")  # Add mask times diff
 
         new_args = (arg_0,) + args[1:]
         out = self.module(*new_args, **kwargs)

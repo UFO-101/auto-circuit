@@ -1,7 +1,3 @@
-# This is supposed to be an exact replication of the technique introduced in
-# Attribution Patching Outperforms Automated Circuit Discovery (https://arxiv.org/abs/2310.10348)
-
-
 import torch as t
 import transformer_lens as tl
 
@@ -17,16 +13,35 @@ def edge_attribution_patching_prune_scores(
     task: Task,
     answer_diff: bool = True,
 ) -> PruneScores:
-    """Prune scores by Edge Attribution patching."""
+    """
+    Prune scores by Edge Attribution patching.
+
+    This is an exact replication of the technique introduced in Attribution Patching
+    Outperforms Automated Circuit Discovery (https://arxiv.org/abs/2310.10348), as
+    implemented here:
+    https://github.com/Aaquib111/edge-attribution-patching/utils/prune_utils.py
+
+    It is equivalent to simple_gradient_prune_scores with grad_function="logit" and
+    mask_val=0.0 (which we verify in test_edge_attribution_patching.py). This
+    implementation is much slower, so we don't use it in practice, but it's useful for
+    validating the correctness of the simple_gradient_prune_scores implementation.
+
+    Note: the implementation here uses clean_act - corrupt_act, as described in the
+    paper, rather than corrupt_act - clean_act, as in paper's implementation. It
+    doesn't matter either way as we only consider the magnitude of the scores.
+    """
     model = task.model
     assert model.is_transformer
     out_slice = model.out_slice
 
     set_all_masks(model, val=0.0)
     model.train()
+    for param in model.parameters():
+        param.requires_grad = True
     model.zero_grad()
-    for batch in task.train_loader:
+    prune_scores = model.new_prune_scores()
 
+    for batch in task.train_loader:
         clean_grad_cache = {}
 
         def backward_cache_hook(act: t.Tensor, hook: tl.hook_points.HookPoint):
@@ -56,7 +71,6 @@ def edge_attribution_patching_prune_scores(
         _, corrupt_cache = model.run_with_cache(batch.corrupt, return_type="logits")
         _, clean_cache = model.run_with_cache(batch.clean, return_type="logits")
 
-        prune_scores = {}
         for edge in model.edges:
             if edge.dest.head_idx is None:
                 grad = clean_grad_cache[edge.dest.module_name]
@@ -73,6 +87,9 @@ def edge_attribution_patching_prune_scores(
                     :, :, edge.src.head_idx
                 ]
             assert grad is not None
-            prune_scores[edge] = (grad * (src_clean_act - src_corrupt_act)).sum().item()
+            score = (grad * (src_corrupt_act - src_clean_act)).sum().item()
+            prune_scores[edge.dest.module_name][edge.patch_idx] += score
     model.eval()
+    for param in model.parameters():
+        param.requires_grad = False
     return prune_scores  # type: ignore

@@ -16,6 +16,7 @@ from auto_circuit.types import (
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
+    edge_counts_util,
     get_sorted_src_outs,
     patch_mode,
     set_all_masks,
@@ -38,8 +39,8 @@ def acdc_prune_scores(
     The algorithm does not assign scores to each edge, instead it finds the edges to be
     pruned given a certain value of tao. So we run the algorithm for several values of
     tao and give equal scores to all edges that are pruned for a given tao. Then we use
-    test_edge_counts to pass edge counts to run_pruned such that all edges with the same
-    score are pruned together.
+    test_edge_counts to pass edge counts to run_circuits such that all edges with the
+    same score are pruned together.
 
     Note: only the first batch of train_data is used."""
     model = task.model
@@ -49,7 +50,7 @@ def acdc_prune_scores(
         sorted(model.edges, key=lambda x: x.dest.layer, reverse=True)
     )
 
-    prune_scores = dict([(edge, float("inf")) for edge in edges])
+    prune_scores = model.new_prune_scores(init_val=t.inf)
     for tao in (
         pbar_tao := tqdm([a * 10**b for a, b in product(tao_bases, tao_exps)])
     ):
@@ -105,22 +106,26 @@ def acdc_prune_scores(
 
                 if test_mode:
                     assert test_model is not None and run_pruned_ref is not None
-                    render = show_graphs and (
-                        random() < 0.02 or len(edges) < 20 or True
-                    )
+                    render = show_graphs and (random() < 0.02 or len(edges) < 20)
 
                     print("ACDC model, with out=", out) if render else None
-                    tree = dict([(e, 1.0) for e in edges - (removed_edges | {edge})])
                     if render:
                         assert draw_seq_graph_ref is not None
-                        draw_seq_graph_ref(model, clean_batch, tree)
+                        draw_seq_graph_ref(model, clean_batch, None, True, True)
 
                     print("Test mode: running pruned model") if render else None
+                    ps = dict(
+                        [(m, (s == t.inf).float()) for m, s in prune_scores.items()]
+                    )
+                    ps[edge.dest.module_name][edge.patch_idx] = 0.0  # Not in circuit
+                    n_edges = edge_counts_util(
+                        model.edges, prune_scores=ps, zero_edges=False
+                    )[0]
                     test_out = run_pruned_ref(
                         model=test_model,
                         dataloader=task.train_loader,
-                        test_edge_counts=[n_edges := len(tree)],
-                        prune_scores=tree,
+                        test_edge_counts=[n_edges],
+                        prune_scores=ps,
                         patch_type=PatchType.TREE_PATCH,
                         render_graph=render,
                     )[n_edges][train_batch.key]
@@ -131,8 +136,9 @@ def acdc_prune_scores(
                 mean_kl = multibatch_kl_div(out_logprobs, clean_logprobs).mean().item()
                 if mean_kl - prev_kl_div < tao:  # Edge is unimportant
                     removed_edges.add(edge)
-                    prune_scores[edge] = min(tao, prune_scores[edge])
+                    curr = edge.prune_score(prune_scores)
+                    prune_scores[edge.dest.module_name][edge.patch_idx] = min(tao, curr)
                     prev_kl_div = mean_kl
-                else:  # Edge is important
+                else:  # Edge is important - don't patch it
                     edge.patch_mask(model).data[edge.patch_idx] = 0.0
     return prune_scores

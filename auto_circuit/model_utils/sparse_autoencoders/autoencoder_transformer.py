@@ -109,6 +109,9 @@ class AutoencoderTransformer(t.nn.Module):
     def add_hook(self, *args: Any, **kwargs: Any) -> Any:
         return self.wrapped_model.add_hook(*args, **kwargs)
 
+    def reset_hooks(self) -> None:
+        return self.wrapped_model.reset_hooks()
+
     @property
     def cfg(self) -> Any:
         return self.wrapped_model.cfg
@@ -178,11 +181,11 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
     """Get the source part of each edge in the factorized graph, grouped by layer.
     Graph is factorized following the Mathematical Framework paper."""
     assert model.cfg.use_attn_result  # Get attention head outputs separately
-    assert (
-        model.cfg.use_attn_in
-    )  # Get attention head inputs separately (but Q, K, V are still combined)
+    assert model.cfg.use_attn_in  # Get attention head inputs separately
     assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+    assert not model.cfg.attn_only
+
     layers, idxs = count(), count()
     nodes = set()
     nodes.add(

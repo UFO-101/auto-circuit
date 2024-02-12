@@ -1,4 +1,3 @@
-import pickle
 from contextlib import contextmanager
 from datetime import datetime
 from functools import reduce
@@ -21,14 +20,12 @@ def save_cache(data_dict: Dict[Any, Any], folder_name: str, base_filename: str):
     dt_string = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     file_path = folder / f"{base_filename}-{dt_string}.pkl"
     print(f"Saving cache to {file_path}")
-    with open(file_path, "wb") as f:
-        pickle.dump(data_dict, f)
+    t.save(data_dict, file_path)
 
 
 def load_cache(folder_name: str, filename: str) -> Dict[Any, Any]:
     folder = repo_path_to_abs_path(folder_name)
-    with open(folder / filename, "rb") as f:
-        return pickle.load(f)
+    return t.load(folder / filename)
 
 
 @contextmanager

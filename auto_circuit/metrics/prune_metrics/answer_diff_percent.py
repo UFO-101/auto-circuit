@@ -35,7 +35,7 @@ def measure_answer_diff_percent(
         default_out = task.model(batch.clean)[task.model.out_slice]
         batch_val = apply_prob_func(default_out, dim=-1)
         default_avg_ans_val.append(batch_avg_answer_diff(batch_val, batch))
-    default_val_diff = t.stack(default_avg_ans_val).mean().item()
+    default_avg_ans_diff = t.stack(default_avg_ans_val).mean().item()
 
     for edge_count, batch_outs in (pruned_out_pbar := tqdm(circuit_outs.items())):
         pruned_out_pbar.set_description_str(f"Answer Diff for {edge_count} edges")
@@ -44,5 +44,5 @@ def measure_answer_diff_percent(
             batch_probs = apply_prob_func(batch_outs[batch.key], dim=-1)
             avg_ans_diffs.append(batch_avg_answer_diff(batch_probs, batch))
         avg_ans_diff = t.stack(avg_ans_diffs).mean().item()
-        measurements.append((edge_count, (avg_ans_diff / default_val_diff) * 100))
+        measurements.append((edge_count, (avg_ans_diff / default_avg_ans_diff) * 100))
     return measurements

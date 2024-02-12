@@ -65,9 +65,12 @@ def test_reverse_tracr_task_and_avg_answer_val():
     task_model = task.model
     assert isinstance(task_model, PatchableModel)
     assert isinstance(task_model.wrapped_model, tl.HookedTransformer)
-    resid_end_node = max(task_model.dests, key=lambda x: x.layer)
-    resid_end_edges = {e: 1.0 for e in task_model.edges if e.dest == resid_end_node}
-    edge_count = len(resid_end_edges)
+
+    resid_end_mod_name = max(task_model.dests, key=lambda x: x.layer).module_name
+    prune_scores = task_model.new_prune_scores()
+    prune_scores[resid_end_mod_name] = t.ones_like(prune_scores[resid_end_mod_name])
+    edge_count = int(prune_scores[resid_end_mod_name].sum().int().item())
+
     batch = next(iter(task.test_loader))
     clean_logits = task_model(batch.clean)[task_model.out_slice]
     with t.inference_mode():
@@ -75,7 +78,7 @@ def test_reverse_tracr_task_and_avg_answer_val():
             task_model,
             task.test_loader,
             [edge_count],
-            resid_end_edges,
+            prune_scores,
             PatchType.EDGE_PATCH,
         )
     patched_out = circuit_outs[edge_count][batch.key]
@@ -132,5 +135,5 @@ def test_tracr_task_official_circuit(tracr_task_key: TRACR_TASK_KEY = "xproporti
 
 
 # test_tracr_model_outputs("xproportion")
-test_reverse_tracr_task_and_avg_answer_val()
+# test_reverse_tracr_task_and_avg_answer_val()
 # test_tracr_task_official_circuit("xproportion")

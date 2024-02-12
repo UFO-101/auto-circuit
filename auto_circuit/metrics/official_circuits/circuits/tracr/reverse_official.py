@@ -14,6 +14,7 @@ def tracr_reverse_true_edges(
     """
     assert model.cfg.model_name == "tracr-reverse"
 
+    # TODO: The middle token is the same after reversing
     tok_seq_pos = [1, 2, 3, 4, 5]
     edges_present: Dict[str, List[int]] = {}
     edges_present["Resid Start->A3.0.V"] = tok_seq_pos

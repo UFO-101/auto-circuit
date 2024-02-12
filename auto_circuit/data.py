@@ -152,8 +152,8 @@ def load_datasets_from_json(
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dict]
         diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
         diverge_idx: int = int(diverge_idxs.min().item())
-        if tail_divergence:
-            assert diverge_idx > 0
+        if tail_divergence and diverge_idx > 0:
+            seq_labels = seq_labels[diverge_idx:] if seq_labels is not None else None
             clean_prompts = clean_prompts[:, diverge_idx:]
             corrupt_prompts = corrupt_prompts[:, diverge_idx:]
             clean_len, corrupt_len = clean_prompts.shape[0], corrupt_prompts.shape[0]

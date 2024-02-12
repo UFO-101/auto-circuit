@@ -36,7 +36,7 @@ Tasks are defined in `tasks.py`. They require a model and a dataset.
 
 ### PruneAlgos
 
-Pruning Algorithms are defined in `prune_algos/prune_algos.py`. They require a function that takes a `Task` object and returns a `PruneScores` object, which is a dictionary mapping from `Edges` to floats.
+Pruning Algorithms are defined in `prune_algos/prune_algos.py`. They require a function that takes a `Task` object and returns a `PruneScores` object, which is a dictionary mapping from `nn.Module` names to tensors. Each element of the tensor represents an edge from some SrcNode to some DestNode.
 
 ### Metrics
 

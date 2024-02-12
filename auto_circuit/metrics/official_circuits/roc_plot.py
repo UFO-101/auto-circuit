@@ -20,7 +20,12 @@ def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
             if len(points) > 1:
                 for x, y in points:
                     data.append(
-                        {"Task": task.name, "Algorithm": algo.name, "X": x, "Y": y}
+                        {
+                            "Task": task.name,
+                            "Algorithm": algo.short_name,
+                            "X": x,
+                            "Y": y,
+                        }
                     )
     return roc_fig(data, task_measurements)
 

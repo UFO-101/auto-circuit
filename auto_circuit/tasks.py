@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, get_args
 
 import torch as t
 import transformer_lens as tl
@@ -27,7 +27,7 @@ from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import
     AutoencoderTransformer,
     sae_model,
 )
-from auto_circuit.model_utils.tracr.tracr_models import get_tracr_model
+from auto_circuit.model_utils.tracr.tracr_models import TRACR_TASK_KEY, get_tracr_model
 from auto_circuit.types import AutoencoderInput, Edge, OutputSlice, TaskKey
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
@@ -110,7 +110,9 @@ class Task:
         else:
             device_str = "cuda" if t.cuda.is_available() else "cpu"
             self.device: t.device = t.device(device_str)
-            if self.dtype != t.float32:
+            if self._model_def in get_args(TRACR_TASK_KEY):
+                model = get_tracr_model(self._model_def, device_str)[0]  # type: ignore
+            elif self.dtype != t.float32:
                 model = tl.HookedTransformer.from_pretrained_no_processing(
                     self._model_def, device=self.device, dtype=self.dtype
                 )
@@ -332,9 +334,7 @@ CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
 TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK: Task = Task(
     key="Tracr xproportion Token Circuit",
     name="Tracr xproportion",
-    _model_def=get_tracr_model(
-        "xproportion", "cuda" if t.cuda.is_available() else "cpu"
-    )[0],
+    _model_def="xproportion",
     _dataset_name="tracr/tracr_xproportion_len_5_prompts",
     batch_size=64,  # 1024 possible prompts
     batch_count=8,  # (64 * 8) + (64 * 8) = 512 train + 512 test
@@ -345,9 +345,7 @@ TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK: Task = Task(
 TRACR_REVERSE_TOKEN_CIRCUIT_TASK: Task = Task(
     key="Tracr reverse Token Circuit",
     name="Tracr reverse",
-    _model_def=get_tracr_model("reverse", "cuda" if t.cuda.is_available() else "cpu")[
-        0
-    ],
+    _model_def="reverse",
     _dataset_name="tracr/tracr_reverse_len_5_prompts",
     batch_size=11,  # 243 possible prompts
     batch_count=11,  # (11 * 11) + (11 * 11) = 121 train + 121 test

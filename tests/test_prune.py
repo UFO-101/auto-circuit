@@ -1,6 +1,6 @@
 #%%
 import os
-from typing import Optional
+from typing import Dict, Optional
 
 import pytest
 import torch as t
@@ -10,7 +10,7 @@ from auto_circuit.data import (
 )
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.prune import run_circuits
-from auto_circuit.types import PatchType
+from auto_circuit.types import Edge, PatchType, PruneScores
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.patchable_model import PatchableModel
 
@@ -44,11 +44,14 @@ def test_pruning(
     edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in model.edges])
 
     seq_idx = None if seq_len is None else seq_len - 1
-    prune_scores = {
-        edge_dict[(seq_idx, "Block 0 Head 1->Output")]: 3.0,
-        edge_dict[(seq_idx, "Block 0 Head 0->Block 1 Head 1")]: 2.0,
-        edge_dict[(seq_idx, "Input->Block 0 Head 0")]: 1.0,
+    prune_scores: PruneScores = model.new_prune_scores()
+    prune_edges: Dict[Edge, float] = {
+        edge_dict[(seq_idx, "B0.1->Output")]: 3.0,
+        edge_dict[(seq_idx, "B0.0->B1.1")]: 2.0,
+        edge_dict[(seq_idx, "Input->B0.0")]: 1.0,
     }
+    for edge, score in prune_edges.items():
+        prune_scores[edge.dest.module_name][edge.patch_idx] = score
 
     pruned_outs = run_circuits(
         model=model,
@@ -57,7 +60,6 @@ def test_pruning(
         prune_scores=prune_scores,
         patch_type=PatchType.EDGE_PATCH,
         render_graph=show_graphs,
-        render_patched_edge_only=False,
     )
     key = test_batch.key
     assert t.allclose(pruned_outs[0][key], corrupt_out[:, -1], atol=1e-3)
@@ -66,9 +68,9 @@ def test_pruning(
     assert t.allclose(pruned_outs[3][key], t.tensor([[-9.0, -13.0]]), atol=1e-3)
 
 
-# micro_model = micro_model()
-# micro_dataloader = micro_dataloader()
-# test_pruning(micro_model, micro_dataloader, seq_len=None, show_graphs=True)
+# model = micro_model()
+# dataloader = micro_dataloader()
+# test_pruning(model, dataloader, seq_len=None, show_graphs=True)
 
 
 def test_prune_sequence(
@@ -87,18 +89,14 @@ def test_prune_sequence(
 
     edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in model.edges])
 
-    prune_scores = {
-        edge_dict[(2, "Block 0 Head 1->Output")]: 3.0,
-        edge_dict[(2, "Block 0 Head 0->Block 1 Head 1")]: 2.0,
+    prune_scores: PruneScores = model.new_prune_scores()
+    prune_edges: Dict[Edge, float] = {
+        edge_dict[(2, "B0.1->Output")]: 3.0,
+        edge_dict[(2, "B0.0->B1.1")]: 2.0,
         edge_dict[(0, "Input->Output")]: 1.0,
-        # edge_dict[(2, "A0.0->A1.0.Q")]: 7.0,
-        # edge_dict[(2, "A0.1->A1.0.Q")]: 6.0,
-        # edge_dict[(2, "A1.0->Resid End")]: 4.0,
-        # edge_dict[(2, "Resid Start->A1.1.Q")]: 4.0,
-        # edge_dict[(0, "Resid Start->A0.0.Q")]: 3.0,
-        # edge_dict[(2, "A1.1->Resid End")]: 2.0,
-        # edge_dict[(2, "Resid Start->A0.1.Q")]: 1.0,
     }
+    for edge, score in prune_edges.items():
+        prune_scores[edge.dest.module_name][edge.patch_idx] = score
 
     pruned_outs = run_circuits(
         model=model,
@@ -107,7 +105,6 @@ def test_prune_sequence(
         prune_scores=prune_scores,
         patch_type=PatchType.EDGE_PATCH,
         render_graph=show_graphs,
-        render_patched_edge_only=True,
         render_file_path="tree_patching.png",
     )
     key = test_batch.key
@@ -117,4 +114,4 @@ def test_prune_sequence(
     assert t.allclose(pruned_outs[3][key][:, 0], t.tensor([[-69.0, -141.0]]), atol=1e-3)
 
 
-# test_prune_sequence(micro_model, micro_dataloader, show_graphs=True)
+# test_prune_sequence(model, dataloader, show_graphs=True)

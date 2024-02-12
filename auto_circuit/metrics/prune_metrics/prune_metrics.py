@@ -49,9 +49,9 @@ CORRUPT_KL_DIV_METRIC = PruneMetric(
     metric_func=partial(measure_kl_div, compare_to_clean=False),
     log_x=True,
     log_y=True,
-    lower_better=True,
+    lower_better=False,
     y_axes_match=False,
-    y_min=1e-1,
+    y_min=1e-6,
 )
 ANSWER_LOGIT_METRIC = PruneMetric(
     key="Answer Logit",

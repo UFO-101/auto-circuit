@@ -5,10 +5,9 @@ import torch as t
 from transformer_lens import HookedTransformer
 
 from auto_circuit.model_utils.task_projectors.task_projector import TaskProjector
-from auto_circuit.types import AutoencoderInput
+from auto_circuit.types import AutoencoderInput, MaskFn
 from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
-from auto_circuit.utils.tensor_ops import MaskFn
 
 
 class ProjectorTransformer(t.nn.Module):

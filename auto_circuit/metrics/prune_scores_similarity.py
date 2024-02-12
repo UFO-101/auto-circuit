@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List
 
+import torch as t
 from plotly import graph_objects as go
 from plotly import subplots
 
@@ -12,36 +13,44 @@ from auto_circuit.types import (
     TaskKey,
     TaskPruneScores,
 )
+from auto_circuit.utils.tensor_ops import desc_prune_scores, prune_scores_threshold
 
 
 def prune_score_similarities(
     algo_prune_scores: AlgoPruneScores, edge_counts: List[int]
 ) -> Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]]:
     """Measure the similarity between the prune scores of different algorithms."""
-    sorted_prune_scores: AlgoPruneScores = {}
+    desc_ps: Dict[AlgoKey, t.Tensor] = {}
     for algo_key, prune_scores in algo_prune_scores.items():
-        sorted_prune_scores[algo_key] = dict(
-            sorted(prune_scores.items(), key=lambda x: x[1], reverse=True)
-        )
+        desc_ps[algo_key] = desc_prune_scores(prune_scores)
 
     similarity_scores: Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]] = defaultdict(
         lambda: defaultdict(dict)
     )
 
-    for algo_key_1, prune_scores_1 in sorted_prune_scores.items():
-        for algo_key_2, prune_scores_2 in sorted_prune_scores.items():
+    for algo_key_1, desc_ps_1 in desc_ps.items():
+        for algo_key_2, desc_ps_2 in desc_ps.items():
             if algo_key_2 in similarity_scores[edge_counts[0]]:
                 continue
             for edge_count in edge_counts:
+                threshold_1 = prune_scores_threshold(desc_ps_1, edge_count)
+                threshold_2 = prune_scores_threshold(desc_ps_2, edge_count)
                 # Find the edges common to the top N prune scores for each algorithm
-                top_n_edges_1 = set(list(prune_scores_1.keys())[:edge_count])
-                top_n_edges_2 = set(list(prune_scores_2.keys())[:edge_count])
-                common_edges = top_n_edges_1 & top_n_edges_2
-                if edge_count > len(prune_scores_1) or edge_count > len(prune_scores_2):
+                real_edge_count_1, real_edge_count_2 = 0, 0
+                common_edge_count = 0
+                for mod, ps_1 in algo_prune_scores[algo_key_1].items():
+                    ps_2 = algo_prune_scores[algo_key_2][mod]
+                    circuit_1 = ps_1.abs() >= threshold_1
+                    circuit_2 = ps_2.abs() >= threshold_2
+                    real_edge_count_1 += circuit_1.sum().item()
+                    real_edge_count_2 += circuit_2.sum().item()
+                    common_edge_count += (circuit_1 & circuit_2).sum().item()
+
+                if real_edge_count_1 != edge_count or real_edge_count_2 != edge_count:
                     similarity_scores[edge_count][algo_key_1][algo_key_2] = float("nan")
                 else:
                     similarity_scores[edge_count][algo_key_1][algo_key_2] = (
-                        len(common_edges) / edge_count
+                        common_edge_count / edge_count
                     )
 
     return similarity_scores

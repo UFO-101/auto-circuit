@@ -172,14 +172,17 @@ def test_task_autoencoder_transformer_edges(model_name: str):
     model = task.model
     assert isinstance(model, PatchableModel)
     assert isinstance(model.wrapped_model, AutoencoderTransformer)
-    resid_end_node = max(model.dests, key=lambda x: x.layer)
-    resid_end_edges = {e: 1.0 for e in model.edges if e.dest == resid_end_node}
-    edge_count = len(resid_end_edges)
+
+    resid_end_mod_name = max(model.dests, key=lambda x: x.layer).module_name
+    prune_scores = model.new_prune_scores()
+    prune_scores[resid_end_mod_name] = t.ones_like(prune_scores[resid_end_mod_name])
+    edge_count = int(prune_scores[resid_end_mod_name].sum().int().item())
+
     with t.inference_mode():
         batch = next(iter(task.test_loader))
         clean_logits = model(batch.clean)[model.out_slice]
         pruned_outs = run_circuits(
-            model, task.test_loader, [edge_count], resid_end_edges, PatchType.EDGE_PATCH
+            model, task.test_loader, [edge_count], prune_scores, PatchType.EDGE_PATCH
         )
     patched_out = pruned_outs[edge_count][batch.key]
     assert patched_out.shape == clean_logits.shape

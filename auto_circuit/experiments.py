@@ -20,21 +20,22 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
     CLEAN_KL_DIV_METRIC,
     CORRUPT_KL_DIV_METRIC,
     LOGIT_DIFF_METRIC,
+    LOGIT_DIFF_PERCENT_METRIC,
     PruneMetric,
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
+    ACT_MAG_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
-    LOGIT_MSE_GRAD_PRUNE_ALGO,
-    MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
     PruneAlgo,
 )
 from auto_circuit.tasks import (
+    DOCSTRING_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
-    TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
     Task,
 )
 from auto_circuit.types import (
@@ -65,7 +66,7 @@ TASKS: List[Task] = [
     # Token Circuits
     # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     # IOI_TOKEN_CIRCUIT_TASK,
-    # DOCSTRING_TOKEN_CIRCUIT_TASK,
+    DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -77,25 +78,25 @@ TASKS: List[Task] = [
     # ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     # CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     # Tracr Token Circuits
-    TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
+    # TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
     # TRACR_REVERSE_TOKEN_CIRCUIT_TASK
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
     GROUND_TRUTH_PRUNE_ALGO,
-    # ACT_MAG_PRUNE_ALGO,
+    ACT_MAG_PRUNE_ALGO,
     RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
     # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
-    # LOGPROB_DIFF_GRAD_PRUNE_ALGO,  # Use this
-    LOGIT_MSE_GRAD_PRUNE_ALGO,
+    LOGPROB_DIFF_GRAD_PRUNE_ALGO,  # Use this
+    # LOGIT_MSE_GRAD_PRUNE_ALGO,
     # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     # CIRCUIT_PROBING_PRUNE_ALGO,
     # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     # CIRCUIT_TREE_PROBING_PRUNE_ALGO,
-    MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    # MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
 ]
 
 PRUNE_METRICS: List[PruneMetric] = [
@@ -104,7 +105,7 @@ PRUNE_METRICS: List[PruneMetric] = [
     ANSWER_PROB_METRIC,
     ANSWER_LOGIT_METRIC,
     LOGIT_DIFF_METRIC,
-    # LOGIT_DIFF_PERCENT_METRIC,
+    LOGIT_DIFF_PERCENT_METRIC,
 ]
 figs = []
 
@@ -132,9 +133,13 @@ if load_prune_scores:
     # filename = "task-prune-scores-31-01-2024_01-51-25.pkl"
     # Sports Players 500 epochs
     # filename = "task-prune-scores-31-01-2024_22-36-47.pkl"
-    filename = (
-        "icml-2024-sports-ioi-docstring-02-02-2024_04-09-35.pkl"  # 2 above combined
-    )
+    # filename = (
+    #     "icml-2024-sports-ioi-docstring-02-02-2024_04-09-35.pkl"  # 2 above combined
+    # )
+    # Quick docstring run with tensor prune_scores
+    # filename = "task-prune-scores-13-02-2024_00-01-12.pkl"
+    # 2000 epoch IOI Docstring tensor prune_scores
+    filename = "task-prune-scores-13-02-2024_09-22-02.pkl"
 
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
@@ -146,6 +151,8 @@ if save_prune_scores:
 
 if False:
     for task_key, algo_prune_scores in task_prune_scores.items():
+        # if not task_key.startswith("Docstring"):
+        #     continue
         task = TASK_DICT[task_key]
         for algo_key, prune_scores in algo_prune_scores.items():
             algo = PRUNE_ALGO_DICT[algo_key]
@@ -155,6 +162,7 @@ if False:
                 input=next(iter(task.test_loader)).clean,
                 prune_scores=prune_scores,
                 seq_labels=task.test_loader.seq_labels,
+                show_all_edges=False,
             )
             break
         break
@@ -165,7 +173,6 @@ if False:
     prune_scores_similartity_fig = prune_score_similarities_plotly(
         task_prune_scores, [], ground_truths=True
     )
-    prune_scores_similartity_fig.show()
     figs.append(prune_scores_similartity_fig)
 
 # ------------------------------------ Completeness ------------------------------------
@@ -180,7 +187,7 @@ if compute_task_completeness_scores:
         # algo_keys=["Official Circuit", "Circuit Probing", "Random"],
         algo_keys=["Official Circuit", "Random"],
         learning_rate=0.01,
-        epochs=100,
+        epochs=20,
         regularize_lambda=0,
         hard_concrete_threshold=0.0,
     )
@@ -233,7 +240,7 @@ if opposite_task_prune_scores:
 
 # ---------------------------------------- ROC -----------------------------------------
 
-compute_roc_measurements = True
+compute_roc_measurements = False
 save_roc_measurements = False
 load_roc_measurements = False
 roc_measurements: TaskMeasurements = {}
@@ -253,7 +260,7 @@ if roc_measurements:
 
 # ----------------------------- Prune Metric Measurements ------------------------------
 
-compute_prune_metric_measurements = False
+compute_prune_metric_measurements = True
 save_prune_metric_measurements = False
 load_prune_metric_measurements = False
 
@@ -283,8 +290,10 @@ if load_prune_metric_measurements:
     # ("icml-2024-sports-ioi-dostring" +
     # "mean-ablate-sport-ground-truth-02-02-2024_06-17-46.pkl")
     # filename = "icml-2024-all3-fix-official-02-02-2024_07-28-15.pkl"
-    filename = "icml-2024-all3-fix-official-02-02-2024_07-38-20.pkl"
+    # filename = "icml-2024-all3-fix-official-02-02-2024_07-38-20.pkl"
     # filename = "icml-2024-all3-fix-official-mean-ablate-02-02-2024_07-45-23.pkl"
+    # 2000 epoch IOI Docstring tensor prune_scores
+    filename = "seq-circuit-13-02-2024_16-03-40.pkl"
 
     prune_metric_measurements = load_cache(cache_folder_name, filename)
 

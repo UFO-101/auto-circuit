@@ -57,7 +57,7 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
         for elem in [0, 1]:
             nodes.add(
                 SrcNode(
-                    name=f"Block {layer_idx} Head {elem}",
+                    name=f"B{layer_idx}.{elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
                     layer=layer,
                     idx=next(idxs),
@@ -78,7 +78,7 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
         for elem in [0, 1]:
             nodes.add(
                 DestNode(
-                    name=f"Block {layer_idx} Head {elem}",
+                    name=f"B{layer_idx}.{elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
                     layer=layer,
                     idx=next(idxs),

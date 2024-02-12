@@ -3,9 +3,8 @@ from typing import Optional
 import pytest
 import torch as t
 import transformer_lens as tl
-from torch.utils.data import DataLoader
 
-from auto_circuit.data import PromptPairBatch, load_datasets_from_json
+from auto_circuit.data import PromptDataLoader, load_datasets_from_json
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.utils.misc import repo_path_to_abs_path
 
@@ -59,7 +58,7 @@ def hooked_transformer(
 @pytest.fixture(scope="session")
 def micro_dataloader(
     multiple_answers: bool = False, batch_count: int = 1, batch_size: int = 1
-) -> DataLoader[PromptPairBatch]:
+) -> PromptDataLoader:
     dataloader_len = batch_size * batch_count
     file_name = f"micro_model_inputs{'_multiple_answers' if multiple_answers else ''}"
     _, test_loader = load_datasets_from_json(

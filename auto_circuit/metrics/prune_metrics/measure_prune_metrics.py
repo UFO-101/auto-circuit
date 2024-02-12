@@ -48,10 +48,6 @@ def measure_prune_metrics(
                 prune_scores=prune_scores,
                 patch_type=patch_type,
                 reverse_clean_corrupt=reverse_clean_corrupt,
-                render_graph=False,
-                render_prune_scores=True,
-                render_top_n=30,
-                render_file_path="figures-6/docstring-viz.pdf",
             )
             for metric in (metric_pbar := tqdm(metrics)):
                 metric_pbar.set_description_str(f"Measuring {metric.name}")
@@ -85,7 +81,7 @@ def measurement_figs(
                         data.append(
                             {
                                 "Task": task.name,
-                                "Algorithm": algo.name,
+                                "Algorithm": algo.short_name,
                                 "X": max(x, 0.5) if metric.log_x else x,
                                 "Y": y
                                 if metric.y_min is None

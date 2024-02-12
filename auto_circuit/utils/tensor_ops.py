@@ -1,11 +1,9 @@
 import math
-from typing import Literal, Optional
 
 import torch as t
 
 from auto_circuit.data import PromptPairBatch
-
-MaskFn = Optional[Literal["hard_concrete", "sigmoid"]]
+from auto_circuit.types import PruneScores
 
 # Copied from Subnetwork Probing paper: https://github.com/stevenxcao/subnetwork-probing
 left, right, temp = -0.1, 1.1, 2 / 3
@@ -73,3 +71,28 @@ def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.
     )
     n_batch = math.prod(input_logprobs.shape[:-1])
     return kl_div_sum / n_batch
+
+
+def flat_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+    return t.cat([ps.flatten() for _, ps in prune_scores.items()])
+
+
+def desc_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+    return flat_prune_scores(prune_scores).abs().sort(descending=True).values
+
+
+def prune_scores_threshold(
+    prune_scores: PruneScores | t.Tensor, edge_count: int
+) -> t.Tensor:
+    """
+    Return the minimum absolute value of the top `edge_count` prune scores.
+    Supports passing in a pre-sorted tensor of prune scores to avoid re-sorting.
+    """
+    if edge_count == 0:
+        return t.tensor(float("inf"))  # return the maximum value so no edges are pruned
+
+    if isinstance(prune_scores, t.Tensor):
+        assert prune_scores.ndim == 1
+        return prune_scores[edge_count - 1]
+    else:
+        return desc_prune_scores(prune_scores)[edge_count - 1]

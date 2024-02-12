@@ -29,7 +29,7 @@ def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPrune
             constrained_algo = PruneAlgo(
                 key="Constrained Circuit Probing " + algo_key,
                 name=f"Not {PRUNE_ALGO_DICT[algo_key].name} Circuit Probing",
-                short_name=f"¬{PRUNE_ALGO_DICT[algo_key].short_name} TP",
+                _short_name=f"¬{PRUNE_ALGO_DICT[algo_key].short_name} TP",
                 func=partial(
                     circuit_probing_prune_scores,
                     learning_rate=0.1,

@@ -38,13 +38,12 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                     weight_head_dim=0,
                 )
             )
-        layer = layer if model.cfg.parallel_attn_mlp else next(layers)
         if not model.cfg.attn_only:
             nodes.add(
                 SrcNode(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_out",
-                    layer=layer,
+                    layer=layer if model.cfg.parallel_attn_mlp else next(layers),
                     idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_out",
                 )

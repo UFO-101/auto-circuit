@@ -7,21 +7,21 @@ import torch as t
 from ordered_set import OrderedSet
 
 from auto_circuit.types import (
-    DestNode,
     Edge,
     Node,
-    SrcNode,
-)
-from auto_circuit.utils.graph_utils import (
-    get_sorted_dest_ins,
-    get_sorted_src_outs,
+    PruneScores,
 )
 from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.utils.patchable_model import PatchableModel
 
 
-def head(n: str) -> str:
-    return n[:-2] if n.startswith("A") and len(n) > 5 else n
+def node_name(n: str) -> str:
+    if n == "Resid End":
+        return ""
+    elif n == "Resid Start":
+        return "Embed"
+    else:
+        return n[:-2] if n[-1] in ["Q", "K", "V"] else n
 
 
 def t_fmt(x: Any, idx: Any = None, replace_line_break: str = "\n") -> str:
@@ -36,66 +36,80 @@ def net_viz(
     model: PatchableModel,
     seq_edges: Set[Edge],
     input: t.Tensor,
-    prune_scores: Dict[Edge, float],
+    prune_scores: Optional[PruneScores],
     vert_interval: Tuple[float, float],
     seq_idx: Optional[int] = None,
-    show_prune_scores: bool = False,
     show_all_edges: bool = False,
 ) -> go.Sankey:
+    """
+    Draw the sankey for a single token position.
+    If prune_scores is None, the diagram will show the current activations and edge
+    scores of the model. If prune_scores is provided, the diagram will use these edge
+    scores and won't show activations.
+    """
     nodes: OrderedSet[Node] = OrderedSet(model.nodes)
     seq_dim: int = model.seq_dim
     seq_sl = (-1 if input.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
-    label_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
-
-    src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, input)
-    dest_ins: Dict[DestNode, t.Tensor] = get_sorted_dest_ins(model, input)
-    node_ins = dict([(head(k.name), v) for k, v in dest_ins.items()])
-    defaultdict(str, node_ins)
+    lbl_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
 
     # Define the sankey nodes
-    viz_nodes = dict([(head(n.name), n) for n in nodes])
-    viz_node_head_idxs = [n.head_idx for n in viz_nodes.values()]
-    n_layers = max([n.layer for n in nodes])
-    n_head = max([n.head_idx for n in nodes if n.head_idx is not None])
-    graph_nodes = {
-        "label": [
-            name
-            # + ("<br>In: " if node_labels[name] != "" else "")
-            # + (t_fmt(node_labels[name], label_slice, "<br>"))
-            for name, _ in viz_nodes.items()
-        ],
-        "x": [(n.layer + 1) / (n_layers + 2) for n in viz_nodes.values()],
-        "y": [0.5 if h is None else (h + 1) / (n_head + 2) for h in viz_node_head_idxs],
-        "pad": 10,
-    }
+    viz_nodes: Dict[str, Node] = dict([(node_name(n.name), n) for n in nodes])
+    node_idxs: Dict[str, int] = dict([(n, i) for i, n in enumerate(viz_nodes.keys())])
+    lyr_nodes: Dict[int, List[str]] = defaultdict(list)
+    for n in viz_nodes.values():
+        lyr_nodes[n.layer].append(n.name)
+    graph_nodes = {"label": ["" for _, _ in viz_nodes.items()]}
 
     # Define the sankey edges
     sources, targets, values, labels, colors = [], [], [], [], []
+    included_layer_nodes: Dict[int, List[str]] = defaultdict(list)
     for e in seq_edges:
-        label = src_outs[e.src]
-
-        if show_prune_scores:
-            patched_edge = e in prune_scores
+        if prune_scores is None:
+            edge_score = e.patch_mask(model).data[e.patch_idx].item()
+            if edge_score == 1.0:  # Show the patched edge activation
+                lbl = e.dest.module(model).patch_src_outs[e.src.idx]
+            else:
+                lbl = e.dest.module(model).curr_src_outs[e.src.idx]
         else:
-            if patched_edge := (e.patch_mask(model)[e.patch_idx].item() == 1.0):
-                label = e.dest.module(model).patch_src_outs[e.src.idx]  # type: ignore
+            edge_score = prune_scores[e.dest.module_name][e.patch_idx].item()
+            lbl = None
 
-        sources.append(list(viz_nodes).index(head(e.src.name)))
-        targets.append(list(viz_nodes).index(head(e.dest.name)))
-        values.append(
-            abs(prune_scores[e])
-            if e in prune_scores
-            else 0.8
-            if show_all_edges
-            else 0.01
-        )
-        labels.append(e.name + "<br>" + t_fmt(label, label_slice, "<br>"))
-        normal_color = "rgba(0,0,0,0.2)" if show_all_edges else "rgba(0,0,0,0.0)"
-        ptch_col = f"rgba({'0,0,255' if prune_scores.get(e, 0) > 0 else '255,0,0'},0.3)"
-        colors.append(ptch_col if patched_edge else normal_color)
+        if edge_score == 0 and not show_all_edges:
+            continue
+
+        sources.append(node_idxs[node_name(e.src.name)])
+        graph_nodes["label"][node_idxs[node_name(e.src.name)]] = node_name(e.src.name)
+        targets.append(node_idxs[node_name(e.dest.name)])
+        graph_nodes["label"][node_idxs[node_name(e.dest.name)]] = node_name(e.dest.name)
+        values.append(0.8 if prune_scores is None else edge_score)
+        lbl = e.name + "<br>" + t_fmt(lbl, lbl_slice, "<br>") + f"<br>{edge_score:.2f}"
+        labels.append(lbl)
+        if edge_score == 0:
+            edge_color = "rgba(0,0,0,0.1)"
+        elif edge_score > 0:
+            edge_color = "rgba(0,0,255,0.3)"
+        else:
+            edge_color = "rgba(255,0,0,0.3)"
+        colors.append(edge_color)
+        included_layer_nodes[e.src.layer].append(e.src.name)
+        included_layer_nodes[e.dest.layer].append(e.dest.name)
+
+    # # Add ghost edges to horizontally align nodes to the correct layer
+    for i in lyr_nodes.keys():
+        if i not in included_layer_nodes:
+            included_layer_nodes[i] = [lyr_nodes[i][0]]
+    ordered_layer_nodes = [nodes for _, nodes in sorted(included_layer_nodes.items())]
+    for lyr_1_nodes, lyr_2_nodes in zip(ordered_layer_nodes, ordered_layer_nodes[1:]):
+        for first_node in lyr_1_nodes:
+            for second_node in lyr_2_nodes:
+                sources.append(node_idxs[node_name(first_node)])
+                targets.append(node_idxs[node_name(second_node)])
+                values.append(0.01)
+                labels.append("")
+                colors.append("rgba(0,255,0,0.0)")
 
     return go.Sankey(
-        arrangement="snap",
+        arrangement="perpendicular",
         node=graph_nodes,
         link={
             "arrowlen": 25,
@@ -112,63 +126,84 @@ def net_viz(
 def draw_seq_graph(
     model: PatchableModel,
     input: t.Tensor,
-    prune_scores: Dict[Edge, float],
-    show_prune_scores: bool = False,  # Show edges batched on mask or prune scores
+    prune_scores: Optional[PruneScores] = None,
     show_all_edges: bool = False,
     show_all_seq_pos: bool = False,
     seq_labels: Optional[List[str]] = None,
     display_ipython: bool = True,
     file_path: Optional[str] = None,
 ) -> None:
+    """
+    Draw the sankey for all token positions.
+    If prune_scores is None, the diagram will show the current activations and edge
+    scores of the model. If prune_scores is provided, the diagram will use these edge
+    scores and won't show activations.
+    """
     n_layers = max([n.layer for n in model.nodes])
+    seq_len = model.seq_len or 1
 
     # Calculate the vertical interval for each sub-diagram
-    total_prune_score = sum([abs(v) for v in prune_scores.values()])
-    sankey_heights: Dict[Optional[int], float] = defaultdict(float)
-    for edge, score in prune_scores.items():
-        sankey_heights[edge.seq_idx] += abs(score)
-    for seq_idx in model.edge_dict:
-        if seq_idx not in sankey_heights and show_all_seq_pos:
-            sankey_heights[seq_idx] = total_prune_score / (len(model.edge_dict) * 2)
-    margin_height: float = total_prune_score / ((n_figs := len(sankey_heights)) * 2)
-    total_height = sum(sankey_heights.values()) + margin_height * (n_figs - 1)
-    intervals, interval_start = {}, total_height
-    for seq_idx, height in sorted(sankey_heights.items(), key=lambda x: (x is None, x)):
-        interval_end = interval_start - (margin_height if len(intervals) > 0 else 0)
-        interval_start = interval_end - height
-        intervals[seq_idx] = max(interval_start / total_height, 1e-6), min(
-            interval_end / total_height, 1 - 1e-6
-        )
+    if prune_scores is None:
+        edge_scores = dict([(m, mask.data) for m, mask in model.patch_masks.items()])
+    else:
+        edge_scores = prune_scores
+    total_ps = max(sum([v.abs().sum().item() for v in edge_scores.values()]), 1e-2)
+    if seq_len > 1:
+        sankey_heights: Dict[Optional[int], float] = {}
+        for patch_mask in edge_scores.values():
+            ps_seq_tots = patch_mask.abs().sum(dim=list(range(1, patch_mask.ndim)))
+            for seq_idx, ps_seq_tot in enumerate(ps_seq_tots):
+                if ps_seq_tot > 1e-6:
+                    if seq_idx not in sankey_heights:
+                        sankey_heights[seq_idx] = 0
+                    sankey_heights[seq_idx] += ps_seq_tot.item()
+
+        for seq_idx in model.edge_dict.keys():
+            min_height = total_ps / (len(model.edge_dict) * 2)
+            if show_all_seq_pos:
+                sankey_heights[seq_idx] = max(sankey_heights[seq_idx], min_height)
+        margin_height: float = total_ps / ((n_figs := len(sankey_heights)) * 2)
+        total_height = sum(sankey_heights.values()) + margin_height * (n_figs - 1)
+        intervals, interval_start = {}, total_height
+        for seq_idx, height in sorted(
+            sankey_heights.items(), key=lambda x: (x is None, x)
+        ):
+            interval_end = interval_start - (margin_height if len(intervals) > 0 else 0)
+            interval_start = interval_end - height
+            intervals[seq_idx] = max(interval_start / total_height, 1e-6), min(
+                interval_end / total_height, 1 - 1e-6
+            )
+    else:
+        intervals = {None: (0, 1)}
 
     # Draw the sankey for each token position
     sankeys = []
     for seq_idx, vert_interval in intervals.items():
         edge_set = set(model.edge_dict[seq_idx])
         viz = net_viz(
-            model,
-            edge_set,
-            input,
-            prune_scores,
-            vert_interval,
-            seq_idx,
-            show_prune_scores,
-            show_all_edges,
+            model=model,
+            seq_edges=edge_set,
+            input=input,
+            prune_scores=prune_scores,
+            vert_interval=vert_interval,
+            seq_idx=seq_idx,
+            show_all_edges=show_all_edges,
         )
         sankeys.append(viz)
 
     layout = go.Layout(
         height=250 * len(sankeys),
-        width=300 * n_layers,
+        width=110 * n_layers,
         plot_bgcolor="blue",
     )
     fig = go.Figure(data=sankeys, layout=layout)
     for fig_idx, seq_idx in enumerate(intervals.keys()) if seq_labels else []:
         assert seq_labels is not None
-        seq_label = seq_labels[seq_idx]
+        seq_label = "All tokens" if seq_idx is None else seq_labels[seq_idx]
         assert model.seq_len is not None
         y_range: Tuple[float, float] = fig.data[fig_idx].domain["y"]  # type: ignore
         fig.add_annotation(
-            x=0.05,
+            x=-0.03,
             y=(y_range[0] + y_range[1]) / 2,
             text=f"<b>{seq_label}</b>",
             showarrow=False,
