@@ -1,7 +1,9 @@
 #%%
 from pytest import approx
 
-from auto_circuit.metrics.prune_metrics.prune_metrics import LOGIT_DIFF_METRIC
+from auto_circuit.metrics.prune_metrics.prune_metrics import (
+    LOGIT_DIFF_METRIC,
+)
 from auto_circuit.prune import run_circuits
 from auto_circuit.tasks import IOI_TOKEN_CIRCUIT_TASK
 from auto_circuit.types import AblationType, CircuitOutputs, Measurements, PatchType

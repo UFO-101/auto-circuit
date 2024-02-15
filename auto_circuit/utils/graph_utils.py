@@ -243,8 +243,8 @@ def edge_counts_util(
     edges: Set[Edge],
     test_counts: Optional[TestEdges] = None,  # None means default
     prune_scores: Optional[PruneScores] = None,
-    zero_edges: bool = True,
-    all_edges: bool = True,
+    zero_edges: Optional[bool] = None,  # None means default
+    all_edges: Optional[bool] = None,  # None means default
 ) -> List[int]:
     n_edges = len(edges)
 
@@ -279,6 +279,12 @@ def edge_counts_util(
         counts_list = [n if type(n) == int else int(n_edges * n) for n in test_counts]
     else:
         raise NotImplementedError(f"Unknown test_counts: {test_counts}")
+
+    # Choose default. If len(count_lists) <= 2, this is likely a binary circuit encoding
+    if zero_edges is None:
+        zero_edges = True if len(counts_list) > 2 else False
+    if all_edges is None:
+        all_edges = True if len(counts_list) > 2 else False
 
     # Add zero and all edges if necessary
     if zero_edges and 0 not in counts_list:

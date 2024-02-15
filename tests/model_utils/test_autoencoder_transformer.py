@@ -193,7 +193,7 @@ def test_task_autoencoder_transformer_edges(model_name: str):
 # model_name = "pythia-70m-deduped"
 # autoencoder_input = "resid_delta_mlp"
 # pythia_size = "2_32768"
-# model = hooked_transformer(None, model_name=model_name)
+# model = get_transformer(None, model_name=model_name)
 
 # for i in range(3):
 # test_single_autoencoder_output_similarity(model)

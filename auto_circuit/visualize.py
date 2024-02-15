@@ -153,7 +153,7 @@ def draw_seq_graph(
         for patch_mask in edge_scores.values():
             ps_seq_tots = patch_mask.abs().sum(dim=list(range(1, patch_mask.ndim)))
             for seq_idx, ps_seq_tot in enumerate(ps_seq_tots):
-                if ps_seq_tot > 1e-6:
+                if ps_seq_tot > 1e-6 or show_all_seq_pos:
                     if seq_idx not in sankey_heights:
                         sankey_heights[seq_idx] = 0
                     sankey_heights[seq_idx] += ps_seq_tot.item()

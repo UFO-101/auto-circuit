@@ -106,12 +106,15 @@ def load_datasets_from_json(
     return_seq_length: bool = False,
     tail_divergence: bool = False,  # Remove all tokens before divergence
     random_subet: bool = True,
+    random_seed: int = 42,
     pad: bool = True,
 ) -> Tuple[PromptDataLoader, PromptDataLoader]:
     """Load a dataset from a json file. The file should specify a list of
     dictionaries with keys "clean_prompt" and "corrupt_prompt"."""
     with open(path, "r") as f:
         data = json.load(f)
+    random.seed(random_seed)
+    t.random.manual_seed(random_seed)
     random.shuffle(data["prompts"]) if random_subet else None
     clean_prompts = [d["clean"] for d in data["prompts"]][:length_limit]
     corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:length_limit]
@@ -119,6 +122,8 @@ def load_datasets_from_json(
     wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:length_limit]
     seq_labels = data.get("seq_labels", None)
     kvs = []
+    diverge_idx: int = 0
+
     if model is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
@@ -126,7 +131,6 @@ def load_datasets_from_json(
         wrong_answers = [t.tensor(a).to(device) for a in wrong_answer_strs]
         seq_len = clean_prompts[0].shape[0]
         assert not tail_divergence
-        diverge_idx = 0
     else:
         tokenizer: Any = model.tokenizer
         if prepend_bos:
@@ -150,12 +154,12 @@ def load_datasets_from_json(
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
         answers = [a["input_ids"].squeeze(-1).to(device) for a in ans_dict]
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dict]
-        diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
-        diverge_idx: int = int(diverge_idxs.min().item())
-        if tail_divergence and diverge_idx > 0:
+
+        if tail_divergence:
+            diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
+            diverge_idx = int(diverge_idxs.min().item())
+        if diverge_idx > 0:
             seq_labels = seq_labels[diverge_idx:] if seq_labels is not None else None
-            clean_prompts = clean_prompts[:, diverge_idx:]
-            corrupt_prompts = corrupt_prompts[:, diverge_idx:]
             clean_len, corrupt_len = clean_prompts.shape[0], corrupt_prompts.shape[0]
             prefixs, cfg, device = [], model.cfg, model.cfg.device
             if isinstance(batch_size, tuple):
@@ -182,6 +186,10 @@ def load_datasets_from_json(
                 assert seq_len is not None
                 seq_len -= diverge_idx
             print("seq_len after divergence", seq_len)
+
+            # This must be done AFTER gathering the kv caches
+            clean_prompts = clean_prompts[:, diverge_idx:]
+            corrupt_prompts = corrupt_prompts[:, diverge_idx:]
 
     dataset = PromptDataset(clean_prompts, corrupt_prompts, answers, wrong_answers)
     train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)

@@ -63,7 +63,8 @@ class SparseAutoencoder(t.nn.Module):
     ) -> "SparseAutoencoder":
         n_latents, n_inputs = state_dict["encode_weight"].shape
         autoencoder = cls(wrapped_hook, n_latents, n_inputs)
-        autoencoder.load_state_dict(state_dict, strict=True)
+        autoencoder.load_state_dict(state_dict, strict=True, assign=True)
+        autoencoder.reset_activated_latents()
         return autoencoder
 
     def prune_latents(self, idxs: t.Tensor):

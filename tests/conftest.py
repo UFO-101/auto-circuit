@@ -8,7 +8,7 @@ from auto_circuit.data import PromptDataLoader, load_datasets_from_json
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.utils.misc import repo_path_to_abs_path
 
-DEVICE = t.device("cpu")
+DEVICE = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 
 
 @pytest.fixture(scope="session")
@@ -22,14 +22,12 @@ def mini_tl_transformer() -> tl.HookedTransformer:
         d_head=2,
         act_fn="gelu",
         tokenizer_name="gpt2",
-        # device=str(DEVICE),
-        device="cpu",
+        device=str(DEVICE),
     )
     mini_tl_model = tl.HookedTransformer(cfg)
     model = mini_tl_model
     model.init_weights()
     model.tokenizer.padding_side = "left"  # type: ignore
-
     model.cfg.use_attn_result = True
     model.cfg.use_attn_in = True
     model.cfg.use_split_qkv_input = True
@@ -37,8 +35,7 @@ def mini_tl_transformer() -> tl.HookedTransformer:
     return model
 
 
-@pytest.fixture(scope="session")
-def hooked_transformer(
+def get_transformer(
     request: Optional[pytest.FixtureRequest], model_name: Optional[str] = None
 ) -> tl.HookedTransformer:
     name = request.param if request is not None else None
@@ -53,6 +50,18 @@ def hooked_transformer(
     model.cfg.use_split_qkv_input = True
     model.cfg.use_hook_mlp_in = True
     return model
+
+
+@pytest.fixture(scope="session")
+def hooked_transformer(
+    request: pytest.FixtureRequest, model_name: Optional[str] = None
+) -> tl.HookedTransformer:
+    return get_transformer(request, model_name)
+
+
+@pytest.fixture(scope="session")
+def gpt2() -> tl.HookedTransformer:
+    return get_transformer(None, "gpt2")
 
 
 @pytest.fixture(scope="session")
@@ -75,4 +84,4 @@ def micro_dataloader(
 
 @pytest.fixture(scope="session")
 def micro_model() -> MicroModel:
-    return MicroModel(n_layers=2)
+    return MicroModel(n_layers=2).to(DEVICE)

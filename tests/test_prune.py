@@ -13,6 +13,7 @@ from auto_circuit.prune import run_circuits
 from auto_circuit.types import Edge, PatchType, PruneScores
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.patchable_model import PatchableModel
+from tests.conftest import DEVICE
 
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
@@ -29,7 +30,7 @@ def test_pruning(
 
     To visualize, set render_graph=True in run_pruned."""
     model: PatchableModel = patchable_model(
-        micro_model, True, True, "last_seq", seq_len=seq_len
+        micro_model, True, True, "last_seq", seq_len=seq_len, device=DEVICE
     )
     test_loader = micro_dataloader
 
@@ -38,8 +39,8 @@ def test_pruning(
         clean_out = model(test_batch.clean)
         corrupt_out = model(test_batch.corrupt)
 
-    assert t.allclose(clean_out[:, -1], t.tensor([[25.0, 49.0]]))
-    assert t.allclose(corrupt_out[:, -1], t.tensor([[-25.0, -49.0]]))
+    assert t.allclose(clean_out[:, -1].cpu(), t.tensor([[25.0, 49.0]]))
+    assert t.allclose(corrupt_out[:, -1].cpu(), t.tensor([[-25.0, -49.0]]))
 
     edge_dict = dict([((edge.seq_idx, edge.name), edge) for edge in model.edges])
 
@@ -53,7 +54,7 @@ def test_pruning(
     for edge, score in prune_edges.items():
         prune_scores[edge.dest.module_name][edge.patch_idx] = score
 
-    pruned_outs = run_circuits(
+    circ_outs = run_circuits(
         model=model,
         dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
@@ -62,10 +63,10 @@ def test_pruning(
         render_graph=show_graphs,
     )
     key = test_batch.key
-    assert t.allclose(pruned_outs[0][key], corrupt_out[:, -1], atol=1e-3)
-    assert t.allclose(pruned_outs[1][key], t.tensor([[-19.0, -41.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[2][key], t.tensor([[-13.0, -25.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[3][key], t.tensor([[-9.0, -13.0]]), atol=1e-3)
+    assert t.allclose(circ_outs[0][key], corrupt_out[:, -1], atol=1e-3)
+    assert t.allclose(circ_outs[1][key].cpu(), t.tensor([[-19.0, -41.0]]), atol=1e-3)
+    assert t.allclose(circ_outs[2][key].cpu(), t.tensor([[-13.0, -25.0]]), atol=1e-3)
+    assert t.allclose(circ_outs[3][key].cpu(), t.tensor([[-9.0, -13.0]]), atol=1e-3)
 
 
 # model = micro_model()
@@ -79,7 +80,9 @@ def test_prune_sequence(
     show_graphs: bool = False,
 ):
     """Test pruning different positions in the sequence."""
-    model: PatchableModel = patchable_model(micro_model, True, False, None, seq_len=3)
+    model: PatchableModel = patchable_model(
+        micro_model, True, False, None, seq_len=3, device=DEVICE
+    )
     test_loader = micro_dataloader
 
     test_batch = next(iter(test_loader))
@@ -98,20 +101,19 @@ def test_prune_sequence(
     for edge, score in prune_edges.items():
         prune_scores[edge.dest.module_name][edge.patch_idx] = score
 
-    pruned_outs = run_circuits(
+    outs = run_circuits(
         model=model,
         dataloader=test_loader,
         test_edge_counts=[0, 1, 2, 3],
         prune_scores=prune_scores,
         patch_type=PatchType.EDGE_PATCH,
         render_graph=show_graphs,
-        render_file_path="tree_patching.png",
     )
     key = test_batch.key
-    assert t.allclose(pruned_outs[0][key], corrupt_out, atol=1e-3)
-    assert t.allclose(pruned_outs[1][key][:, 2], t.tensor([[-19.0, -41.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[2][key][:, 2], t.tensor([[-13.0, -25.0]]), atol=1e-3)
-    assert t.allclose(pruned_outs[3][key][:, 0], t.tensor([[-69.0, -141.0]]), atol=1e-3)
+    assert t.allclose(outs[0][key], corrupt_out, atol=1e-3)
+    assert t.allclose(outs[1][key][:, 2].cpu(), t.tensor([[-19.0, -41.0]]), atol=1e-3)
+    assert t.allclose(outs[2][key][:, 2].cpu(), t.tensor([[-13.0, -25.0]]), atol=1e-3)
+    assert t.allclose(outs[3][key][:, 0].cpu(), t.tensor([[-69.0, -141.0]]), atol=1e-3)
 
 
 # test_prune_sequence(model, dataloader, show_graphs=True)
