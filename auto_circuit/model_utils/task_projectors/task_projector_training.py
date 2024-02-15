@@ -46,8 +46,8 @@ def train_model(
     model.eval()
     device = model.cfg.device
 
-    diverge_idx = next(iter(dataloader)).diverge_idx
-    print("train_batch.diverge_idx:", diverge_idx)
+    batch_diverge_idx = next(iter(dataloader)).batch_diverge_idx
+    print("train_batch.batch_diverge_idx:", batch_diverge_idx)
 
     # Save default logprobs and initialize KV cache (one for each batch size)
     default_logprobs: Dict[BatchKey, t.Tensor] = {}
@@ -58,7 +58,7 @@ def train_model(
         kv_cache = HookedTransformerKeyValueCache.init_cache(
             model.cfg, model.cfg.device, batch_size
         )
-        common_prefix_batch = tks[:, : batch.diverge_idx]
+        common_prefix_batch = tks[:, : batch.batch_diverge_idx]
         with t.inference_mode():
             model(common_prefix_batch, past_kv_cache=kv_cache)
             default_logprobs[batch.key] = log_softmax(model(tks)[:, -1], dim=-1).clone()
@@ -76,7 +76,7 @@ def train_model(
         layer_idxs=[2, 5, 23],
         # layer_idxs=[2],
         # layers=[0, 2, 22],
-        seq_idxs=[i - diverge_idx for i in [15, 19]],
+        seq_idxs=[i - batch_diverge_idx for i in [15, 19]],
         layernorm=layernorm,
         load_file_task_name="sports_players",
         load_file_date="18-01-2024_22-16-14",
@@ -100,7 +100,7 @@ def train_model(
         for batch in (batch_pbar := tqdm(dataloader)):
             toks = batch.clean.to(device)
             kv_cache = kv_caches[toks.shape[0]]
-            toks = toks[:, batch.diverge_idx :]
+            toks = toks[:, batch.batch_diverge_idx :]
             optim.zero_grad()
             final_tok_logits = projector_model(toks, past_kv_cache=kv_cache)[:, -1]
             proj_logprobs = log_softmax(final_tok_logits, dim=-1)
@@ -179,9 +179,9 @@ projector_model = train_model(
 )
 
 # %%
-diverge_idx = next(iter(test_dataloader)).diverge_idx
+batch_diverge_idx = next(iter(test_dataloader)).batch_diverge_idx
 seq_idxs = (
-    [idx + diverge_idx for idx in projector_model.seq_idxs]
+    [idx + batch_diverge_idx for idx in projector_model.seq_idxs]
     if projector_model.seq_idxs
     else None
 )
@@ -211,7 +211,7 @@ for batch in (batch_pbar := tqdm(dataloader)):
     kv_cache = HookedTransformerKeyValueCache.init_cache(
         model.cfg, model.cfg.device, batch_size
     )
-    common_prefix_batch = tks[:, : batch.diverge_idx]
+    common_prefix_batch = tks[:, : batch.batch_diverge_idx]
     with t.inference_mode():
         model(common_prefix_batch, past_kv_cache=kv_cache)
     kv_cache.freeze()
@@ -219,7 +219,7 @@ for batch in (batch_pbar := tqdm(dataloader)):
 
 for batch in dataloader:
     default_logprobs.append(log_softmax(model(batch.clean)[:, -1], dim=-1))
-    toks = batch.clean[:, diverge_idx:]
+    toks = batch.clean[:, batch_diverge_idx:]
     batch_size = toks.shape[0]
     kv_cache = test_kv_caches[batch_size]
     proj_out = projector_model(toks, past_kv_cache=kv_cache)[:, -1]
@@ -280,7 +280,9 @@ answers = []
 labels = []
 for batch in train_dataloader:
     answers.extend(model.to_string(batch.answers))
-    labels.extend(model.to_string(batch.clean[:, diverge_idx : diverge_idx + 3]))
+    labels.extend(
+        model.to_string(batch.clean[:, batch_diverge_idx : batch_diverge_idx + 3])
+    )
     with t.inference_mode():
         _, cache = model.run_with_cache(batch.clean)
     for idx, projector in enumerate(projector_model.projectors):

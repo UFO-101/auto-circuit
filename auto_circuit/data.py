@@ -26,7 +26,7 @@ class PromptPair:
 @dataclass(frozen=True)
 class PromptPairBatch:
     key: BatchKey
-    diverge_idx: int
+    batch_diverge_idx: int
     clean: t.Tensor
     corrupt: t.Tensor
     answers: List[t.Tensor] | t.Tensor
@@ -47,8 +47,8 @@ def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
     key = hash((str(clean.tolist()), str(corrupt.tolist())))
 
     diverge_idxs = (~(clean == corrupt)).int().argmax(dim=1)
-    diverge_idx: int = int(diverge_idxs.min().item())
-    return PromptPairBatch(key, diverge_idx, clean, corrupt, answers, wrong_answers)
+    batch_dvrg_idx: int = int(diverge_idxs.min().item())
+    return PromptPairBatch(key, batch_dvrg_idx, clean, corrupt, answers, wrong_answers)
 
 
 class PromptDataset(Dataset):

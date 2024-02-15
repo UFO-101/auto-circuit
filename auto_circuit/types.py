@@ -64,6 +64,15 @@ class PatchType(Enum):
         return self.name.replace("_", " ").title()
 
 
+class AblationType(Enum):
+    RESAMPLE = 1
+    ZERO = 2
+    MEAN = 3
+
+    def __str__(self) -> str:
+        return self.name.replace("_", " ").title()
+
+
 @dataclass(frozen=True)
 class Node:
     name: str

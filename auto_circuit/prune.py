@@ -5,6 +5,7 @@ import torch as t
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import (
+    AblationType,
     CircuitOutputs,
     PatchType,
     PatchWrapper,
@@ -29,6 +30,7 @@ def run_circuits(
     test_edge_counts: List[int],
     prune_scores: PruneScores,
     patch_type: PatchType = PatchType.EDGE_PATCH,
+    ablation_type: AblationType = AblationType.RESAMPLE,
     reverse_clean_corrupt: bool = False,
     render_graph: bool = False,
     render_all_edges: bool = True,
@@ -42,7 +44,7 @@ def run_circuits(
     Unless reverse_clean_corrupt is True, in which case clean and corrupt are swapped.
     """
     circ_outs: CircuitOutputs = defaultdict(dict)
-    sorted_ps: t.Tensor = desc_prune_scores(prune_scores)
+    desc_ps: t.Tensor = desc_prune_scores(prune_scores)
 
     for batch_idx, batch in enumerate(batch_pbar := tqdm(dataloader)):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
@@ -50,12 +52,12 @@ def run_circuits(
             patch_type == PatchType.EDGE_PATCH and reverse_clean_corrupt
         ):
             batch_input = batch.clean
-            patch_outs = get_sorted_src_outs(model, batch.corrupt)
+            patch_outs = get_sorted_src_outs(model, batch.corrupt, ablation_type)
         elif (patch_type == PatchType.EDGE_PATCH and not reverse_clean_corrupt) or (
             patch_type == PatchType.TREE_PATCH and reverse_clean_corrupt
         ):
             batch_input = batch.corrupt
-            patch_outs = get_sorted_src_outs(model, batch.clean)
+            patch_outs = get_sorted_src_outs(model, batch.clean, ablation_type)
         else:
             raise NotImplementedError
 
@@ -75,7 +77,7 @@ def run_circuits(
         with patch_mode(model, curr_src_outs, patch_src_outs):
             for edge_count in (edge_pbar := tqdm(test_edge_counts)):
                 edge_pbar.set_description_str(f"Running Circuit: {edge_count} Edges")
-                threshold = prune_scores_threshold(sorted_ps, edge_count)
+                threshold = prune_scores_threshold(desc_ps, edge_count)
                 # When prune_scores are tied we can't prune exactly edge_count edges
                 patch_edge_count = 0
                 for mod_name, patch_mask in prune_scores.items():

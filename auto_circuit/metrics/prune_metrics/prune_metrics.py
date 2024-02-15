@@ -56,7 +56,16 @@ CORRUPT_KL_DIV_METRIC = PruneMetric(
 ANSWER_LOGIT_METRIC = PruneMetric(
     key="Answer Logit",
     name="Answer Logit",
-    metric_func=partial(measure_answer_val, prob_func="logits"),
+    metric_func=partial(measure_answer_val, prob_func="logits", wrong_answer=False),
+    log_x=True,
+    log_y=False,
+    lower_better=False,
+    y_axes_match=False,
+)
+WRONG_ANSWER_LOGIT_METRIC = PruneMetric(
+    key="Wrong Answer Logit",
+    name="Wrong Answer Logit",
+    metric_func=partial(measure_answer_val, prob_func="logits", wrong_answer=True),
     log_x=True,
     log_y=False,
     lower_better=False,
@@ -65,7 +74,7 @@ ANSWER_LOGIT_METRIC = PruneMetric(
 ANSWER_PROB_METRIC = PruneMetric(
     key="Answer Prob",
     name="Answer Probability",
-    metric_func=partial(measure_answer_val, prob_func="softmax"),
+    metric_func=partial(measure_answer_val, prob_func="softmax", wrong_answer=False),
     log_x=True,
     log_y=False,
     lower_better=False,
@@ -142,6 +151,7 @@ PRUNE_METRICS: List[PruneMetric] = [
     CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
     ANSWER_LOGIT_METRIC,
+    WRONG_ANSWER_LOGIT_METRIC,
     ANSWER_LOGPROB_METRIC,
     LOGIT_DIFF_METRIC,
     PROB_DIFF_METRIC,

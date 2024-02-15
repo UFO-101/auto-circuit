@@ -56,6 +56,9 @@ class Conn:
 def ioi_true_edges(
     model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
 ) -> Set[Edge]:
+    """
+    Note: Assumes the prompt is 15 tokens long, as in ioi_single_template_prompts.json.
+    """
     assert model.cfg.model_name == "gpt2"
 
     special_connections: List[Conn] = [

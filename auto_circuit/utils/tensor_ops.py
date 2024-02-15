@@ -37,23 +37,23 @@ def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
     answers = batch.answers
     wrong_answers = batch.wrong_answers
     if isinstance(answers, t.Tensor) and isinstance(wrong_answers, t.Tensor):
-        ans_avg = t.gather(vals, dim=-1, index=answers).mean()
-        wrong_ans_avg = t.gather(vals, dim=-1, index=wrong_answers).mean()
-        return ans_avg - wrong_ans_avg
+        ans_avg = t.gather(vals, dim=-1, index=answers).mean(dim=-1)
+        wrong_ans_avg = t.gather(vals, dim=-1, index=wrong_answers).mean(dim=-1)
+        return (ans_avg - wrong_ans_avg).mean()
     else:
         assert isinstance(answers, list) and isinstance(wrong_answers, list)
         answer_probs = []
         wrong_answers_probs = []
         for prompt_idx, prompt_answers in enumerate(answers):
             answer_probs.append(
-                t.gather(vals[prompt_idx], dim=-1, index=prompt_answers).mean()
+                t.gather(vals[prompt_idx], dim=-1, index=prompt_answers).mean(dim=-1)
             )
             wrong_answers_probs.append(
                 t.gather(
                     vals[prompt_idx], dim=-1, index=wrong_answers[prompt_idx]
-                ).mean()
+                ).mean(dim=-1)
             )
-        return t.stack(answer_probs).mean() - t.stack(wrong_answers_probs).mean()
+        return (t.stack(answer_probs) - t.stack(wrong_answers_probs)).mean()
 
 
 def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.Tensor:

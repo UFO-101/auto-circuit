@@ -21,51 +21,37 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
     CORRUPT_KL_DIV_METRIC,
     LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
+    WRONG_ANSWER_LOGIT_METRIC,
     PruneMetric,
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
-    ACT_MAG_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
-    LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    LOGIT_DIFF_GRAD_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
     PruneAlgo,
+    run_prune_algos,
 )
 from auto_circuit.tasks import (
     DOCSTRING_TOKEN_CIRCUIT_TASK,
+    IOI_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
 from auto_circuit.types import (
-    AlgoPruneScores,
     PatchType,
     TaskMeasurements,
     TaskPruneScores,
 )
-from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
 from auto_circuit.visualize import draw_seq_graph
-
-
-def run_prune_funcs(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPruneScores:
-    task_prune_scores: TaskPruneScores = {}
-    for task in (experiment_pbar := tqdm(tasks)):
-        experiment_pbar.set_description_str(f"Task: {task.name}")
-        prune_scores_dict: AlgoPruneScores = {}
-        for prune_algo in (prune_score_pbar := tqdm(prune_algos)):
-            prune_score_pbar.set_description_str(f"Prune scores: {prune_algo.name}")
-            ps = dict(list(prune_algo.func(task).items()))
-            prune_scores_dict[prune_algo.key] = ps
-        task_prune_scores[task.key] = prune_scores_dict
-    return task_prune_scores
-
 
 TASKS: List[Task] = [
     # Token Circuits
     # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-    # IOI_TOKEN_CIRCUIT_TASK,
+    IOI_TOKEN_CIRCUIT_TASK,
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
@@ -77,20 +63,18 @@ TASKS: List[Task] = [
     # GREATERTHAN_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK
     # ANIMAL_DIET_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
     # CAPITAL_CITIES_PYTHIA_70M_AUTOENCODER_COMPONENT_CIRCUIT_TASK,
-    # Tracr Token Circuits
-    # TRACR_XPROPORTION_TOKEN_CIRCUIT_TASK,
-    # TRACR_REVERSE_TOKEN_CIRCUIT_TASK
 ]
 
 PRUNE_ALGOS: List[PruneAlgo] = [
     GROUND_TRUTH_PRUNE_ALGO,
-    ACT_MAG_PRUNE_ALGO,
+    # ACT_MAG_PRUNE_ALGO,
     RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
     # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
-    LOGPROB_DIFF_GRAD_PRUNE_ALGO,  # Use this
+    # LOGPROB_DIFF_GRAD_PRUNE_ALGO,
+    LOGIT_DIFF_GRAD_PRUNE_ALGO,  # Fast implementation of Edge Attribution Patching
     # LOGIT_MSE_GRAD_PRUNE_ALGO,
     # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     # CIRCUIT_PROBING_PRUNE_ALGO,
@@ -104,6 +88,7 @@ PRUNE_METRICS: List[PruneMetric] = [
     CORRUPT_KL_DIV_METRIC,
     ANSWER_PROB_METRIC,
     ANSWER_LOGIT_METRIC,
+    WRONG_ANSWER_LOGIT_METRIC,
     LOGIT_DIFF_METRIC,
     LOGIT_DIFF_PERCENT_METRIC,
 ]
@@ -118,7 +103,7 @@ load_prune_scores = False
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
 if compute_prune_scores:
-    task_prune_scores = run_prune_funcs(TASKS, PRUNE_ALGOS)
+    task_prune_scores = run_prune_algos(TASKS, PRUNE_ALGOS)
 if load_prune_scores:
     # filename = "task-prune-scores-09-01-2024_20-13-48.pkl"
     # filename = "task-prune-scores-19-01-2024_20-19-04.pkl"
@@ -215,7 +200,7 @@ load_opposite_task_prune_scores = False
 opposite_task_prune_scores: TaskPruneScores = {}
 opposite_prune_scores_cache_folder_name = ".opposite_prune_scores_cache"
 if compute_opposite_task_prune_scores:
-    opposite_task_prune_scores = run_prune_funcs(
+    opposite_task_prune_scores = run_prune_algos(
         TASKS, [OPPOSITE_TREE_PROBING_PRUNE_ALGO]
     )
 if save_opposite_task_prune_scores:

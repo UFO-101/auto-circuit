@@ -17,6 +17,7 @@ from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import
     AutoencoderTransformer,
 )
 from auto_circuit.types import (
+    AblationType,
     DestNode,
     Edge,
     EdgeCounts,
@@ -298,7 +299,18 @@ def src_out_hook(
     out: t.Tensor,
     src_nodes: List[SrcNode],
     src_outs: Dict[SrcNode, t.Tensor],
+    ablation_type: AblationType,
 ):
+    if ablation_type == AblationType.RESAMPLE:
+        out = out
+    elif ablation_type == AblationType.ZERO:
+        out = t.zeros_like(out)
+    elif ablation_type == AblationType.MEAN:
+        repeats = [out.size(0)] + [1] * (out.ndim - 1)
+        out = out.mean(dim=0, keepdim=True).repeat(repeats)
+    else:
+        raise NotImplementedError(ablation_type)
+
     head_dim: Optional[int] = src_nodes[0].head_dim
     out = out if head_dim is None else out.split(1, dim=head_dim)
     for s in src_nodes:
@@ -308,13 +320,19 @@ def src_out_hook(
 def get_sorted_src_outs(
     model: PatchableModel,
     input: t.Tensor,
+    ablation_type: AblationType = AblationType.RESAMPLE,
 ) -> Dict[SrcNode, t.Tensor]:
     src_outs: Dict[SrcNode, t.Tensor] = {}
     src_modules: Dict[t.nn.Module, List[SrcNode]] = defaultdict(list)
     [src_modules[src.module(model)].append(src) for src in model.srcs]
     with remove_hooks() as handles:
         for mod, src_nodes in src_modules.items():
-            hook_fn = partial(src_out_hook, src_nodes=src_nodes, src_outs=src_outs)
+            hook_fn = partial(
+                src_out_hook,
+                src_nodes=src_nodes,
+                src_outs=src_outs,
+                ablation_type=ablation_type,
+            )
             handles.add(mod.register_forward_hook(hook_fn))
         with t.inference_mode():
             model(input)

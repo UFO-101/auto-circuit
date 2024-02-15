@@ -16,6 +16,7 @@ def measure_answer_val(
     task: Task,
     pruned_outs: CircuitOutputs,
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
+    wrong_answer: bool = False,
 ) -> Measurements:
     measurements = []
     if prob_func == "softmax":
@@ -31,6 +32,6 @@ def measure_answer_val(
         avg_ans_probs = []
         for batch in task.test_loader:
             batch_probs = apply_prob_func(pruned_out[batch.key], dim=-1)
-            avg_ans_probs.append(batch_avg_answer_val(batch_probs, batch))
+            avg_ans_probs.append(batch_avg_answer_val(batch_probs, batch, wrong_answer))
         measurements.append((edge_count, t.stack(avg_ans_probs).mean().item()))
     return measurements

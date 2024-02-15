@@ -66,8 +66,6 @@ def acdc_prune_scores(
             clean_out = model(clean_batch)[out_slice]
             toks, short_embd, attn_mask, resids = None, None, None, []
             if model.is_transformer:
-                assert model.tokenizer is not None
-                assert model.tokenizer.padding_side == "left"
                 _, toks, short_embd, attn_mask = model.input_to_embed(clean_batch)
                 _, cache = model.run_with_cache(clean_batch)
                 n_layers = range(model.cfg.n_layers)

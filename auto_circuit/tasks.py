@@ -128,7 +128,6 @@ class Task:
             model.cfg.use_attn_in = True
             model.cfg.use_split_qkv_input = True
             model.cfg.use_hook_mlp_in = True
-            assert model.tokenizer is not None
             model.eval()
 
             if self.autoencoder_input is not None:
@@ -236,7 +235,7 @@ IOI_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Indirect Object Identification",
     _model_def="gpt2-small",
     _dataset_name="ioi_single_template_prompts",
-    batch_size=64,
+    batch_size=128,
     batch_count=2,
     _true_edge_func=ioi_true_edges,
     token_circuit=True,
