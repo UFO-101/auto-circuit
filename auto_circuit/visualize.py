@@ -74,7 +74,7 @@ def net_viz(
             edge_score = prune_scores[e.dest.module_name][e.patch_idx].item()
             lbl = None
 
-        if edge_score == 0 and not show_all_edges:
+        if edge_score < 1e-6 and not show_all_edges:
             continue
 
         sources.append(node_idxs[node_name(e.src.name)])
@@ -104,7 +104,7 @@ def net_viz(
             for second_node in lyr_2_nodes:
                 sources.append(node_idxs[node_name(first_node)])
                 targets.append(node_idxs[node_name(second_node)])
-                values.append(0.01)
+                values.append(1e-6)
                 labels.append("")
                 colors.append("rgba(0,255,0,0.0)")
 
@@ -153,7 +153,7 @@ def draw_seq_graph(
         for patch_mask in edge_scores.values():
             ps_seq_tots = patch_mask.abs().sum(dim=list(range(1, patch_mask.ndim)))
             for seq_idx, ps_seq_tot in enumerate(ps_seq_tots):
-                if ps_seq_tot > 1e-6 or show_all_seq_pos:
+                if ps_seq_tot > 0 or show_all_seq_pos:
                     if seq_idx not in sankey_heights:
                         sankey_heights[seq_idx] = 0
                     sankey_heights[seq_idx] += ps_seq_tot.item()

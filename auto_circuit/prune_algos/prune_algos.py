@@ -78,9 +78,20 @@ ACDC_PRUNE_ALGO = PruneAlgo(
     name="ACDC",
     func=partial(
         acdc_prune_scores,
-        # tao_exps=list(range(-6, 1)),
+        tao_exps=list(range(-30, -10)),
         # tao_exps=[-5],
-        # tao_bases=[1],
+        tao_bases=[1],
+    ),
+)
+MSE_ACDC_PRUNE_ALGO = PruneAlgo(
+    key="MSE ACDC",
+    name="MSE ACDC",
+    _short_name="ACDC (MSE)",
+    func=partial(
+        acdc_prune_scores,
+        tao_bases=[1],
+        tao_exps=list(range(-10, 0)),
+        faithfulness_target="mse",
     ),
 )
 INTEGRATED_EDGE_GRADS_PRUNE_ALGO = PruneAlgo(
@@ -178,7 +189,7 @@ SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=200,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -223,22 +234,23 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=False,
-        circuit_sizes=["true_size", 1000, 10000, 100000],
+        circuit_sizes=[100, "true_size", 1000, 10000],
         tree_optimisation=True,
     ),
 )
-MSE_SUBNETWORK_EDGE_PROBING_PRUNE_ALGO = PruneAlgo(
-    key="MSE Subnetwork Edge Probing",
-    name="MSE Subnetwork Edge Probing",
-    _short_name="SEP (MSE)",
+MSE_SUBNETWORK_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
+    key="MSE Subnetwork Tree Probing",
+    name="MSE Subnetwork Tree Probing",
+    _short_name="STP (MSE)",
     func=partial(
         subnetwork_probing_prune_scores,
         learning_rate=0.1,
-        epochs=50,
+        epochs=200,
         regularize_lambda=0.5,
         mask_fn="hard_concrete",
         show_train_graph=True,
         faithfulness_target="mse",
+        tree_optimisation=True,
     ),
 )
 MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
@@ -248,7 +260,7 @@ MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=100,
+        epochs=200,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=True,
@@ -280,6 +292,7 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     RANDOM_PRUNE_ALGO,
     EDGE_ATTR_PATCH_PRUNE_ALGO,
     ACDC_PRUNE_ALGO,
+    MSE_ACDC_PRUNE_ALGO,
     INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGPROB_GRAD_PRUNE_ALGO,
     LOGPROB_DIFF_GRAD_PRUNE_ALGO,
@@ -289,7 +302,7 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     CIRCUIT_PROBING_PRUNE_ALGO,
     SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     CIRCUIT_TREE_PROBING_PRUNE_ALGO,
-    MSE_SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
+    MSE_SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
 ]

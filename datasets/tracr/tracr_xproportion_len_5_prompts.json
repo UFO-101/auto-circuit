@@ -1,4 +1,12 @@
 {
+  "seq_labels": [
+    "BOS",
+    "x",
+    "w",
+    "y",
+    "x",
+    "w"
+  ],
   "prompts": [
     {
       "clean": [

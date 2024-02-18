@@ -13,6 +13,7 @@ from auto_circuit.utils.graph_utils import (
 )
 from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
 
+from auto_circuit.utils.custom_tqdm import tqdm
 
 def mask_gradient_prune_scores(
     task: Task,
@@ -32,8 +33,8 @@ def mask_gradient_prune_scores(
         src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
 
     with train_mask_mode(model):
-        for sample in range((integrated_grad_samples or 0) + 1):
-
+        for sample in (ig_pbar:=tqdm(range((integrated_grad_samples or 0) + 1))):
+            ig_pbar.set_description_str(f"Sample: {sample}")
             # Interpolate the mask value if integrating gradients. Else set the value.
             if integrated_grad_samples is not None:
                 set_all_masks(model, val=sample / integrated_grad_samples)

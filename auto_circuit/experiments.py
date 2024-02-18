@@ -26,17 +26,21 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
+    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
+    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGIT_DIFF_GRAD_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
+    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
     PruneAlgo,
     run_prune_algos,
 )
 from auto_circuit.tasks import (
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     IOI_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
@@ -50,9 +54,9 @@ from auto_circuit.visualize import draw_seq_graph
 
 TASKS: List[Task] = [
     # Token Circuits
-    # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+    # IOI_TOKEN_CIRCUIT_TASK,
+    # DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -71,15 +75,15 @@ PRUNE_ALGOS: List[PruneAlgo] = [
     RANDOM_PRUNE_ALGO,
     # EDGE_ATTR_PATCH_PRUNE_ALGO,
     # ACDC_PRUNE_ALGO,
-    # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
+    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     # LOGPROB_GRAD_PRUNE_ALGO,
     # LOGPROB_DIFF_GRAD_PRUNE_ALGO,
     LOGIT_DIFF_GRAD_PRUNE_ALGO,  # Fast implementation of Edge Attribution Patching
     # LOGIT_MSE_GRAD_PRUNE_ALGO,
     # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
     # CIRCUIT_PROBING_PRUNE_ALGO,
-    # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
-    # CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
+    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     # MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
 ]
 
@@ -96,35 +100,22 @@ figs = []
 
 # ------------------------------------ Prune Scores ------------------------------------
 
-compute_prune_scores = True
+compute_prune_scores = False
 save_prune_scores = False
-load_prune_scores = False
+load_prune_scores = True
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
 if compute_prune_scores:
     task_prune_scores = run_prune_algos(TASKS, PRUNE_ALGOS)
 if load_prune_scores:
-    # filename = "task-prune-scores-09-01-2024_20-13-48.pkl"
-    # filename = "task-prune-scores-19-01-2024_20-19-04.pkl"
-    # filename = "task-prune-scores-21-01-2024_01-19-29.pkl"
-    # filename = "task-prune-scores-24-01-2024_20-12-00.pkl"
-    # filename = "task-prune-scores-30-01-2024_17-56-05.pkl"
+    # 2000 epoch IOI Docstring tensor prune_scores post-kv-cache-fix
+    # batch_size=128, batch_count=2, default seed (for both)
+    # filename = "task-prune-scores-16-02-2024_23-27-49.pkl"
 
-    # Sports Players 100 epochs
-    # filename = "task-prune-scores-30-01-2024_19-41-40.pkl" !!!! Don't use this one
-
-    # IOI and Docstring [100, 1000, ...] circuits 2000 epochs
-    # filename = "task-prune-scores-31-01-2024_01-51-25.pkl"
-    # Sports Players 500 epochs
-    # filename = "task-prune-scores-31-01-2024_22-36-47.pkl"
-    # filename = (
-    #     "icml-2024-sports-ioi-docstring-02-02-2024_04-09-35.pkl"  # 2 above combined
-    # )
-    # Quick docstring run with tensor prune_scores
-    # filename = "task-prune-scores-13-02-2024_00-01-12.pkl"
-    # 2000 epoch IOI Docstring tensor prune_scores
-    filename = "task-prune-scores-13-02-2024_09-22-02.pkl"
+    # 1000 epoch Sport Players tensor prune_scores post-kv-cache-fix
+    # batch_size=(10, 20), batch_count=(10, 5), default seed
+    filename = "task-prune-scores-16-02-2024_22-22-43.pkl"
 
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
@@ -162,8 +153,8 @@ if False:
 
 # ------------------------------------ Completeness ------------------------------------
 
-compute_task_completeness_scores = False
-save_task_completeness_scores = False
+compute_task_completeness_scores = True
+save_task_completeness_scores = True
 load_task_completeness_scores = False
 task_completeness_scores: TaskCompletenessScores = {}
 if compute_task_completeness_scores:
@@ -172,7 +163,7 @@ if compute_task_completeness_scores:
         # algo_keys=["Official Circuit", "Circuit Probing", "Random"],
         algo_keys=["Official Circuit", "Random"],
         learning_rate=0.01,
-        epochs=20,
+        epochs=1000,
         regularize_lambda=0,
         hard_concrete_threshold=0.0,
     )
@@ -245,7 +236,7 @@ if roc_measurements:
 
 # ----------------------------- Prune Metric Measurements ------------------------------
 
-compute_prune_metric_measurements = True
+compute_prune_metric_measurements = False
 save_prune_metric_measurements = False
 load_prune_metric_measurements = False
 
@@ -262,23 +253,8 @@ if compute_prune_metric_measurements:
         base_filename = "seq-circuit"
         save_cache(prune_metric_measurements, cache_folder_name, base_filename)
 if load_prune_metric_measurements:
-    # filename = "seq-circuit-13-12-2023_06-30-20.pkl"
-    # filename = "seq-circuit-24-01-2024_20-17-35.pkl"
-
-    # IOI and Docstring [100, 1000, ...] circuits 2000 epochs
-    # filename = "seq-circuit-31-01-2024_02-20-11.pkl"
-    # Sports Players 500 epochs
-    # filename = "seq-circuit-01-02-2024_03-39-54.pkl"
-    # 2 above combined
-    # filename = "icml-2024-sports-ioi-docstring-02-02-2024_04-35-30.pkl"
-    # Mean ablate sports ground truth only
-    # ("icml-2024-sports-ioi-dostring" +
-    # "mean-ablate-sport-ground-truth-02-02-2024_06-17-46.pkl")
-    # filename = "icml-2024-all3-fix-official-02-02-2024_07-28-15.pkl"
-    # filename = "icml-2024-all3-fix-official-02-02-2024_07-38-20.pkl"
-    # filename = "icml-2024-all3-fix-official-mean-ablate-02-02-2024_07-45-23.pkl"
-    # 2000 epoch IOI Docstring tensor prune_scores
-    filename = "seq-circuit-13-02-2024_16-03-40.pkl"
+    # 2000 epoch IOI Docstring tensor prune_scores post-kv-cache-fix
+    filename = "seq-circuit-17-02-2024_03-34-58.pkl"
 
     prune_metric_measurements = load_cache(cache_folder_name, filename)
 

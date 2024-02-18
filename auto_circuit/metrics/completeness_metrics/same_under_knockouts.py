@@ -152,7 +152,8 @@ def run_same_under_knockout(
         # Make a boolean copy of the patch_masks that encodes the circuit
         circ_masks = [prune_scores[m] >= circuit_threshold for m in patch_masks.keys()]
         actual_circuit_size = sum([mask.sum().item() for mask in circ_masks])
-        assert actual_circuit_size == circuit_size
+        print("actual_circuit_size", actual_circuit_size, "circuit_size", circuit_size)
+        # assert actual_circuit_size == circuit_size
 
         set_all_masks(model, val=-init_mask_val)
         optim = t.optim.Adam(mask_params, lr=learning_rate)

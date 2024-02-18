@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Literal, Optional
 
 import torch as t
 from ordered_set import OrderedSet
@@ -28,6 +28,7 @@ def acdc_prune_scores(
     task: Task,
     tao_exps: List[int] = list(range(-5, -1)),
     tao_bases: List[int] = [1, 3, 5, 7, 9],
+    faithfulness_target: Literal["kl_div", "mse"] = "kl_div",
     test_mode: bool = False,
     run_pruned_ref: Optional[Callable[..., CircuitOutputs]] = None,
     show_graphs: bool = False,
@@ -77,7 +78,7 @@ def acdc_prune_scores(
         patch_outs_tensor = t.stack(list(patch_outs.values())).detach()
         src_outs_tensor = t.stack(list(src_outs.values())).detach()
 
-        prev_kl_div = 0.0
+        prev_faith = 0.0
         removed_edges: OrderedSet[Edge] = OrderedSet([])
 
         set_all_masks(model, val=0.0)
@@ -100,7 +101,6 @@ def acdc_prune_scores(
                         )[out_slice]
                     else:
                         out = model(clean_batch)[out_slice]
-                out_logprobs = t.nn.functional.log_softmax(out, dim=-1)
 
                 if test_mode:
                     assert test_model is not None and run_pruned_ref is not None
@@ -131,12 +131,17 @@ def acdc_prune_scores(
                     print("Test_out:", test_out) if render else None
                     assert t.allclose(out_logprobs, test_out_logprobs, atol=1e-3)
 
-                mean_kl = multibatch_kl_div(out_logprobs, clean_logprobs).mean().item()
-                if mean_kl - prev_kl_div < tao:  # Edge is unimportant
+                if faithfulness_target == "kl_div":
+                    out_logprobs = t.nn.functional.log_softmax(out, dim=-1)
+                    faith = multibatch_kl_div(out_logprobs, clean_logprobs).mean().item()
+                elif faithfulness_target == "mse":
+                    faith = t.nn.functional.mse_loss(out, clean_out).item()
+
+                if faith - prev_faith < tao:  # Edge is unimportant
                     removed_edges.add(edge)
                     curr = edge.prune_score(prune_scores)
                     prune_scores[edge.dest.module_name][edge.patch_idx] = min(tao, curr)
-                    prev_kl_div = mean_kl
+                    prev_faith = faith
                 else:  # Edge is important - don't patch it
                     edge.patch_mask(model).data[edge.patch_idx] = 0.0
     return prune_scores
