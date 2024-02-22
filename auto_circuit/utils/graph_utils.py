@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 from itertools import chain, product
-from typing import Dict, Iterator, List, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Literal, Optional, Set, Tuple
 
 import torch as t
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
@@ -12,6 +12,7 @@ from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
 import auto_circuit.model_utils.micro_model_utils as mm_utils
 import auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer as sae_utils
 import auto_circuit.model_utils.transformer_lens_utils as tl_utils
+from auto_circuit.data import BatchKey, PromptDataLoader
 from auto_circuit.model_utils.micro_model_utils import MicroModel
 from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import (
     AutoencoderTransformer,
@@ -181,9 +182,21 @@ def make_model_patchable(
 @contextmanager
 def patch_mode(
     model: PatchableModel,
-    curr_src_outs: t.Tensor,
     patch_src_outs: t.Tensor,
+    curr_src_outs: Optional[t.Tensor] = None,
 ):
+    """Context manager to enable patching of the model.
+
+    Args:
+        curr_src_outs (t.Tensor, optional): Stores the outputs of each src node during
+            the current forward pass. The only time this need to be initialized is when
+            you are starting the forward pass at a middle layer because the outputs of
+            previous src nodes won't be cached automatically (used in ACDC, as a
+            performance optimization). Defaults to None.
+    """
+    if curr_src_outs is None:
+        curr_src_outs = t.zeros_like(patch_src_outs)
+
     for wrapper in model.wrappers:
         wrapper.patch_mode = True
         wrapper.curr_src_outs = curr_src_outs
@@ -245,6 +258,7 @@ def edge_counts_util(
     prune_scores: Optional[PruneScores] = None,
     zero_edges: Optional[bool] = None,  # None means default
     all_edges: Optional[bool] = None,  # None means default
+    true_edge_count: Optional[int] = None,
 ) -> List[int]:
     n_edges = len(edges)
 
@@ -295,6 +309,10 @@ def edge_counts_util(
         counts_list.remove(0)
     if not all_edges and n_edges in counts_list:
         counts_list.remove(n_edges)
+    # Insert true_edge_count at the correct position
+    if true_edge_count is not None and true_edge_count not in counts_list:
+        counts_list.append(true_edge_count)
+    counts_list.sort()
 
     return counts_list
 
@@ -345,3 +363,18 @@ def get_sorted_src_outs(
     src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
     assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
     return src_outs
+
+
+def batch_src_outs(
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    clean_corrupt: Literal["clean", "corrupt"],
+    ablation_type: AblationType = AblationType.RESAMPLE,
+) -> Dict[BatchKey, t.Tensor]:
+    assert clean_corrupt in ["clean", "corrupt"]
+    patch_outs: Dict[BatchKey, t.Tensor] = {}
+    for batch in dataloader:
+        input_batch = batch.clean if clean_corrupt == "clean" else batch.corrupt
+        src_outs = get_sorted_src_outs(model, input_batch, ablation_type)
+        patch_outs[batch.key] = t.stack(list(src_outs.values()))
+    return patch_outs

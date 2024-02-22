@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import plotly.graph_objects as go
 import torch as t
@@ -32,6 +32,7 @@ def measure_prune_metrics(
     task_prune_scores: TaskPruneScores,
     patch_type: PatchType,
     reverse_clean_corrupt: bool = False,
+    test_edge_counts: Optional[List[int]] = None,
 ) -> PruneMetricMeasurements:
     measurements: PruneMetricMeasurements = defaultdict(default_factory)
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
@@ -41,10 +42,16 @@ def measure_prune_metrics(
         for algo_key, prune_scores in (algo_pbar := tqdm(algo_prune_scores.items())):
             algo = PRUNE_ALGO_DICT[algo_key]
             algo_pbar.set_description_str(f"Pruning with {algo.name}")
+            default_edge_counts = edge_counts_util(
+                edges=task.model.edges,
+                test_counts=None,
+                prune_scores=prune_scores,
+                true_edge_count=task.true_edge_count,
+            )
             circuit_outs: CircuitOutputs = run_circuits(
                 model=task.model,
                 dataloader=test_loader,
-                test_edge_counts=edge_counts_util(task.model.edges, None, prune_scores),
+                test_edge_counts=test_edge_counts or default_edge_counts,
                 prune_scores=prune_scores,
                 patch_type=patch_type,
                 reverse_clean_corrupt=reverse_clean_corrupt,

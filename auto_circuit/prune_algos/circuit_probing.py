@@ -60,6 +60,7 @@ def circuit_probing_prune_scores(
             avoid_lambda=avoid_lambda,
             faithfulness_target=faithfulness_target,
         )
+        assert all([t.all(ps >= 0) for ps in new_prune_scores.values()])
         threshold = prune_scores_threshold(new_prune_scores, size)
         score = len(sorted_circuit_sizes) - size_idx
         for mod, new_ps in new_prune_scores.items():

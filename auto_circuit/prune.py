@@ -71,10 +71,9 @@ def run_circuits(
 
         patch_outs: Dict[SrcNode, t.Tensor]
         patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
-        curr_src_outs: t.Tensor = t.zeros_like(patch_src_outs)
 
         set_all_masks(model, val=1.0 if patch_type == PatchType.TREE_PATCH else 0.0)
-        with patch_mode(model, curr_src_outs, patch_src_outs):
+        with patch_mode(model, patch_src_outs):
             for edge_count in (edge_pbar := tqdm(test_edge_counts)):
                 edge_pbar.set_description_str(f"Running Circuit: {edge_count} Edges")
                 threshold = prune_scores_threshold(desc_ps, edge_count)
@@ -103,5 +102,5 @@ def run_circuits(
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,
                 )
-        del patch_outs, patch_src_outs, curr_src_outs  # Free up memory
+        del patch_outs, patch_src_outs  # Free up memory
     return circ_outs

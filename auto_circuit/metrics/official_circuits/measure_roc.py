@@ -49,7 +49,7 @@ def measure_task_roc(
         threshold = prune_scores_threshold(desc_ps, edge_count)
         true_positives, false_positives = 0, 0
         for mod, ps in prune_scores.items():
-            ps_circuit = ps >= threshold
+            ps_circuit = ps.abs() >= threshold
             correct_circuit, incorrect_circuit = correct_ps[mod], incorrect_edges[mod]
             true_positives += (ps_circuit & correct_circuit).sum().item()
             false_positives += (ps_circuit & incorrect_circuit).sum().item()

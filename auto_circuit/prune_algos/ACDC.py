@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Literal, Optional
 
 import torch as t
 from ordered_set import OrderedSet
+from torch.nn.functional import log_softmax, mse_loss
 
 from auto_circuit.tasks import Task
 from auto_circuit.types import (
@@ -61,7 +62,11 @@ def acdc_prune_scores(
         clean_batch, corrupt_batch = train_batch.clean, train_batch.corrupt
 
         patch_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, corrupt_batch)
+        patch_outs_tensor = t.stack(list(patch_outs.values())).detach()
+
+        # We set curr_src_outs manually so we can skip layers before the current edge.
         src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, clean_batch)
+        src_outs_tensor = t.stack(list(src_outs.values())).detach()
 
         with t.inference_mode():
             clean_out = model(clean_batch)[out_slice]
@@ -75,14 +80,11 @@ def acdc_prune_scores(
 
         clean_logprobs = t.nn.functional.log_softmax(clean_out, dim=-1)
 
-        patch_outs_tensor = t.stack(list(patch_outs.values())).detach()
-        src_outs_tensor = t.stack(list(src_outs.values())).detach()
-
         prev_faith = 0.0
         removed_edges: OrderedSet[Edge] = OrderedSet([])
 
         set_all_masks(model, val=0.0)
-        with patch_mode(model, src_outs_tensor, patch_outs_tensor):
+        with patch_mode(model, patch_outs_tensor, src_outs_tensor):
             for edge_idx, edge in enumerate((pbar_edge := tqdm(edges))):
                 rmvd, left = len(removed_edges), edge_idx + 1 - len(removed_edges)
                 desc = f"Removed: {rmvd}, Left: {left}, Current:'{edge}'"
@@ -112,30 +114,25 @@ def acdc_prune_scores(
                         draw_seq_graph_ref(model, clean_batch, None, True, True)
 
                     print("Test mode: running pruned model") if render else None
-                    ps = dict(
-                        [(m, (s == t.inf).float()) for m, s in prune_scores.items()]
-                    )
-                    ps[edge.dest.module_name][edge.patch_idx] = 0.0  # Not in circuit
-                    n_edges = edge_counts_util(
-                        model.edges, prune_scores=ps, zero_edges=False
-                    )[0]
+                    p = dict([(m, (s == t.inf) * 1.0) for m, s in prune_scores.items()])
+                    p[edge.dest.module_name][edge.patch_idx] = 0.0  # Not in circuit
+                    n_edge = edge_counts_util(set(edges), None, p, zero_edges=False)[0]
                     test_out = run_pruned_ref(
                         model=test_model,
                         dataloader=task.train_loader,
-                        test_edge_counts=[n_edges],
-                        prune_scores=ps,
+                        test_edge_counts=[n_edge],
+                        prune_scores=p,
                         patch_type=PatchType.TREE_PATCH,
                         render_graph=render,
-                    )[n_edges][train_batch.key]
-                    test_out_logprobs = t.nn.functional.log_softmax(test_out, dim=-1)
+                    )[n_edge][train_batch.key]
                     print("Test_out:", test_out) if render else None
-                    assert t.allclose(out_logprobs, test_out_logprobs, atol=1e-3)
+                    assert t.allclose(out, test_out, atol=1e-3)
 
                 if faithfulness_target == "kl_div":
-                    out_logprobs = t.nn.functional.log_softmax(out, dim=-1)
-                    faith = multibatch_kl_div(out_logprobs, clean_logprobs).mean().item()
+                    out_logprobs = log_softmax(out, dim=-1)
+                    faith = multibatch_kl_div(out_logprobs, clean_logprobs).item()
                 elif faithfulness_target == "mse":
-                    faith = t.nn.functional.mse_loss(out, clean_out).item()
+                    faith = mse_loss(out, clean_out).item()
 
                 if faith - prev_faith < tao:  # Edge is unimportant
                     removed_edges.add(edge)

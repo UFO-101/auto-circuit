@@ -14,7 +14,7 @@ from auto_circuit.tasks import Task
 from auto_circuit.types import BatchKey, Edge, MaskFn, PruneScores
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    get_sorted_src_outs,
+    batch_src_outs,
     mask_fn_mode,
     patch_mode,
     set_all_masks,
@@ -62,11 +62,8 @@ def subnetwork_probing_prune_scores(
             clean_out = model(batch.clean)[out_slice]
             clean_logprobs[batch.key] = log_softmax(clean_out, dim=-1)
 
-    src_outs_dict: Dict[int, t.Tensor] = {}
-    for batch in task.train_loader:
-        patch_batch = batch.corrupt if tree_optimisation else batch.clean
-        patch_outs = get_sorted_src_outs(model, patch_batch)
-        src_outs_dict[batch.key] = t.stack(list(patch_outs.values()))
+    ptype = "corrupt" if tree_optimisation else "clean"
+    src_outs: Dict[BatchKey, t.Tensor] = batch_src_outs(model, task.train_loader, ptype)
 
     losses, faiths, regularizes = [], [], []
     set_all_masks(model, val=-init_val if tree_optimisation else init_val)
@@ -79,8 +76,8 @@ def subnetwork_probing_prune_scores(
             epoch_pbar.set_description_str(f"{SP} Epoch {epoch} " + desc, refresh=False)
             for batch in task.train_loader:
                 input_batch = batch.clean if tree_optimisation else batch.corrupt
-                patch_outs = src_outs_dict[batch.key].clone().detach()
-                with patch_mode(model, t.zeros_like(patch_outs), patch_outs):
+                patch_outs = src_outs[batch.key].clone().detach()
+                with patch_mode(model, patch_outs):
                     train_logits = model(input_batch)[out_slice]
                     if faithfulness_target == "kl_div":
                         faithful_term = multibatch_kl_div(

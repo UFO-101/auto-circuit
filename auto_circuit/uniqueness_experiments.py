@@ -1,14 +1,10 @@
 #%%
-from collections import defaultdict
 from pathlib import Path
 from typing import List
+
+import plotly.graph_objects as go
 import torch as t
 
-from auto_circuit.metrics.completeness_metrics.same_under_knockouts import (
-    TaskCompletenessScores,
-    run_same_under_knockouts,
-    same_under_knockouts_fig,
-)
 from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
 from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
 from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
@@ -16,32 +12,19 @@ from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
     measurement_figs,
 )
 from auto_circuit.metrics.prune_metrics.prune_metrics import (
-    ANSWER_LOGIT_METRIC,
     ANSWER_PROB_METRIC,
-    CLEAN_KL_DIV_METRIC,
-    CORRUPT_KL_DIV_METRIC,
     LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
-    WRONG_ANSWER_LOGIT_METRIC,
-    PruneMetric,
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
-    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
-    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
-    LOGIT_DIFF_GRAD_PRUNE_ALGO,
     OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
-    RANDOM_PRUNE_ALGO,
-    SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
-    PruneAlgo,
     run_prune_algos,
 )
 from auto_circuit.tasks import (
     DOCSTRING_TOKEN_CIRCUIT_TASK,
     IOI_TOKEN_CIRCUIT_TASK,
-    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
 )
@@ -53,7 +36,6 @@ from auto_circuit.types import (
 from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
 from auto_circuit.utils.tensor_ops import prune_scores_threshold
 from auto_circuit.visualize import draw_seq_graph
-import plotly.graph_objects as go
 
 TASKS: List[Task] = [
     # Token Circuits
@@ -97,12 +79,14 @@ if True:
         for algo_key, ps in algo_prune_scores.items():
             algo = PRUNE_ALGO_DICT[algo_key]
             keys = [GROUND_TRUTH_PRUNE_ALGO.key]
-            if not algo_key in keys:
+            if algo_key not in keys:
                 continue
             th = prune_scores_threshold(ps, task.true_edge_count)
-            circ_edges = dict([(d, (m >= th).float()) for d, m in ps.items()])
+            circ_edges = dict([(d, (m.abs() >= th).float()) for d, m in ps.items()])
             print("circ_edge_count", sum([m.sum() for m in circ_edges.values()]))
-            circ = dict([(d, t.where(m >= th, m, t.zeros_like(m))) for d, m in ps.items()])
+            circ = dict(
+                [(d, t.where(m.abs() >= th, m, t.zeros_like(m))) for d, m in ps.items()]
+            )
             print("task:", task.name, "algo:", algo.name)
             draw_seq_graph(
                 model=task.model,

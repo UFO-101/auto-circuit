@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly import subplots
 
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.types import TaskMeasurements
@@ -18,37 +19,24 @@ def edge_patching_plot(
     y_max: Optional[float],
     y_min: Optional[float],
 ) -> go.Figure:
-    data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"]))
-    fig = px.line(
-        data,
-        x="X",
-        y="Y",
-        facet_col="Task",
-        color="Algorithm",
-        log_x=log_x,
-        log_y=log_y,
-        range_y=None if y_max is None else [y_min, y_max * 0.8],
-        # range_y=[-45, 120],
-        facet_col_spacing=0.03 if y_axes_match else 0.06,
-        markers=True,
-    )
-    fig.update_layout(
-        # title=f"{main_title}: {metric_name} vs. Patched Edges",
-        yaxis_title=metric_name,
-        template="plotly",
-        # width=335 * len(set([d["Task"] for d in data])) + 280,
-        width=365 * len(set([d["Task"] for d in data])) - 10,
-        height=500,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.7,
-            xanchor="left",
-            x=0.0,
-            entrywidthmode="fraction",
-            entrywidth=0.25,
-        ),
-    )
+    if len(data) > 0:
+        data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"]))
+        fig = px.line(
+            data,
+            x="X",
+            y="Y",
+            facet_col="Task",
+            color="Algorithm",
+            log_x=log_x,
+            log_y=log_y,
+            range_y=None if y_max is None else [y_min, y_max * 0.8],
+            # range_y=[-45, 120],
+            facet_col_spacing=0.03 if y_axes_match else 0.06,
+            markers=True,
+        )
+    else:
+        fig = subplots.make_subplots(rows=1, cols=len(task_measurements))
+
     task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
     for task_idx, algo_measurements in enumerate(task_measurements.values()):
         for algo_key, measurements in algo_measurements.items():
@@ -70,6 +58,23 @@ def edge_patching_plot(
                     name=algo.short_name,
                 )
 
+    fig.update_layout(
+        # title=f"{main_title}: {metric_name} vs. Patched Edges",
+        yaxis_title=metric_name,
+        template="plotly",
+        # width=335 * len(set([d["Task"] for d in data])) + 280,
+        width=max(365 * len(set([d["Task"] for d in data])) - 10, 500),
+        height=500,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.7,
+            xanchor="left",
+            x=0.0,
+            entrywidthmode="fraction",
+            entrywidth=0.25,
+        ),
+    )
     fig.update_yaxes(matches=None, showticklabels=True) if not y_axes_match else None
     fig.update_xaxes(matches=None, title="Circuit Edges")
     return fig

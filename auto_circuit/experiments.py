@@ -2,12 +2,17 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import List
+
 import torch as t
 
 from auto_circuit.metrics.completeness_metrics.same_under_knockouts import (
-    run_same_under_knockouts,
+    TaskCompletenessScores,
+    measure_same_under_knockouts,
+    same_under_knockouts_fig,
 )
-from auto_circuit.metrics.completeness_metrics.test_same_under_knockouts import TaskCompletenessScores, same_under_knockouts_fig, test_same_under_knockout, test_completeness
+from auto_circuit.metrics.completeness_metrics.train_same_under_knockouts import (
+    train_same_under_knockouts,
+)
 from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
 from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
 from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
@@ -15,13 +20,7 @@ from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
     measurement_figs,
 )
 from auto_circuit.metrics.prune_metrics.prune_metrics import (
-    ANSWER_LOGIT_METRIC,
-    ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
-    CORRUPT_KL_DIV_METRIC,
-    LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
-    WRONG_ANSWER_LOGIT_METRIC,
     PruneMetric,
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
@@ -30,7 +29,6 @@ from auto_circuit.prune_algos.prune_algos import (
     GROUND_TRUTH_PRUNE_ALGO,
     INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
     LOGIT_DIFF_GRAD_PRUNE_ALGO,
-    OPPOSITE_TREE_PROBING_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
     SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
@@ -38,8 +36,6 @@ from auto_circuit.prune_algos.prune_algos import (
     run_prune_algos,
 )
 from auto_circuit.tasks import (
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
     SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
@@ -55,9 +51,9 @@ from auto_circuit.visualize import draw_seq_graph
 
 TASKS: List[Task] = [
     # Token Circuits
-    # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+    SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     # IOI_TOKEN_CIRCUIT_TASK,
-    DOCSTRING_TOKEN_CIRCUIT_TASK,
+    # DOCSTRING_TOKEN_CIRCUIT_TASK,
     # Component Circuits
     # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
     # IOI_COMPONENT_CIRCUIT_TASK,
@@ -90,12 +86,12 @@ PRUNE_ALGOS: List[PruneAlgo] = [
 
 PRUNE_METRICS: List[PruneMetric] = [
     CLEAN_KL_DIV_METRIC,
-    CORRUPT_KL_DIV_METRIC,
-    ANSWER_PROB_METRIC,
-    ANSWER_LOGIT_METRIC,
-    WRONG_ANSWER_LOGIT_METRIC,
-    LOGIT_DIFF_METRIC,
-    LOGIT_DIFF_PERCENT_METRIC,
+    # CORRUPT_KL_DIV_METRIC,
+    # ANSWER_PROB_METRIC,
+    # ANSWER_LOGIT_METRIC,
+    # WRONG_ANSWER_LOGIT_METRIC,
+    # LOGIT_DIFF_METRIC,
+    # LOGIT_DIFF_PERCENT_METRIC,
 ]
 figs = []
 
@@ -112,11 +108,11 @@ if compute_prune_scores:
 if load_prune_scores:
     # 2000 epoch IOI Docstring tensor prune_scores post-kv-cache-fix
     # batch_size=128, batch_count=2, default seed (for both)
-    filename = "task-prune-scores-16-02-2024_23-27-49.pkl"
+    # filename = "task-prune-scores-16-02-2024_23-27-49.pkl"
 
     # 1000 epoch Sport Players tensor prune_scores post-kv-cache-fix
     # batch_size=(10, 20), batch_count=(10, 5), default seed
-    # filename = "task-prune-scores-16-02-2024_22-22-43.pkl"
+    filename = "task-prune-scores-16-02-2024_22-22-43.pkl"
 
     loaded_cache = load_cache(cache_folder_name, filename)
     task_prune_scores = {k: v | task_prune_scores[k] for k, v in loaded_cache.items()}
@@ -130,9 +126,8 @@ for task, algo_prune_scores in task_prune_scores.items():
             # Convert dtype to float32
             task_prune_scores[task][algo][module_name] = scores.float()
 
-for task_key in list(task_prune_scores.keys()):
-    if not task_key in [DOCSTRING_TOKEN_CIRCUIT_TASK.key]:
-        del task_prune_scores[task_key]
+# docstring_key = DOCSTRING_TOKEN_CIRCUIT_TASK.key
+# task_prune_scores = {docstring_key: task_prune_scores[docstring_key]}
 
 # -------------------------------- Draw Circuit Graphs ---------------------------------
 
@@ -141,18 +136,23 @@ if False:
         # if not task_key.startswith("Docstring"):
         #     continue
         task = TASK_DICT[task_key]
-        if task.key != SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK.key or task.true_edge_count is None:
+        if (
+            task.key != SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK.key
+            or task.true_edge_count is None
+        ):
             continue
         for algo_key, ps in algo_prune_scores.items():
             algo = PRUNE_ALGO_DICT[algo_key]
             # keys = [GROUND_TRUTH_PRUNE_ALGO.key, CIRCUIT_TREE_PROBING_PRUNE_ALGO.key]
             keys = [GROUND_TRUTH_PRUNE_ALGO.key]
-            if not algo_key in keys:
+            if algo_key not in keys:
                 continue
             th = prune_scores_threshold(ps, task.true_edge_count)
-            circ_edges = dict([(d, (m >= th).float()) for d, m in ps.items()])
+            circ_edges = dict([(d, (m.abs() >= th).float()) for d, m in ps.items()])
             print("circ_edge_count", sum([m.sum() for m in circ_edges.values()]))
-            circ = dict([(d, t.where(m >= th, m, t.zeros_like(m))) for d, m in ps.items()])
+            circ = dict(
+                [(d, t.where(m.abs() >= th, m, t.zeros_like(m))) for d, m in ps.items()]
+            )
             print("task:", task.name, "algo:", algo.name)
             draw_seq_graph(
                 model=task.model,
@@ -173,17 +173,16 @@ if False:
 # ------------------------------------ Completeness ------------------------------------
 
 compute_task_completeness_scores = True
-save_task_completeness_scores = False
+save_task_completeness_scores = True
 load_task_completeness_scores = False
 completeness_prune_scores: TaskPruneScores = {}
-algo_keys = ["Official Circuit", "Random"]
 
 if compute_task_completeness_scores:
-    completeness_prune_scores: TaskPruneScores = run_same_under_knockouts(
+    completeness_prune_scores: TaskPruneScores = train_same_under_knockouts(
         task_prune_scores,
-        algo_keys=algo_keys,
-        learning_rate=0.1,
-        epochs=50,
+        algo_keys=["Official Circuit", "Random"],
+        learning_rate=0.02,
+        epochs=100,
         regularize_lambda=0,
     )
 
@@ -193,47 +192,22 @@ if save_task_completeness_scores:
     save_cache(completeness_prune_scores, cache_folder_name, base_filename)
 
 if load_task_completeness_scores:
+    # for task-prune-scores-16-02-2024_23-27-49.pkl (IOI Docstring 2000 epochs)
+    # IOI Docstring 100 epoch completeness
+    filename = "task-completeness-prune-scores-20-02-2024_19-15-29.pkl"
+
+    # for task-prune-scores-16-02-2024_22-22-43.pkl (Sports Players 1000 epochs)
+    # Sports Players 100 epoch completeness
+    # filename = "task-completeness-prune-scores-20-02-2024_22-55-47.pkl"
     completeness_prune_scores = load_cache(cache_folder_name, filename)
 
 if completeness_prune_scores:
-    task_completeness_scores: TaskCompletenessScores = test_completeness(
-        task_prune_scores=task_prune_scores,
-        knockout_prune_scores=completeness_prune_scores,
-        algo_keys=algo_keys,
+    task_completeness_scores: TaskCompletenessScores = measure_same_under_knockouts(
+        circuit_ps=task_prune_scores,
+        knockout_ps=completeness_prune_scores,
     )
     completeness_fig = same_under_knockouts_fig(task_completeness_scores)
     figs.append(completeness_fig)
-
-# ----------------------------- Opposite Task Prune Scores -----------------------------
-
-compute_opposite_task_prune_scores = False
-save_opposite_task_prune_scores = False
-load_opposite_task_prune_scores = False
-opposite_task_prune_scores: TaskPruneScores = {}
-opposite_prune_scores_cache_folder_name = ".opposite_prune_scores_cache"
-if compute_opposite_task_prune_scores:
-    opposite_task_prune_scores = run_prune_algos(
-        TASKS, [OPPOSITE_TREE_PROBING_PRUNE_ALGO]
-    )
-if save_opposite_task_prune_scores:
-    base_filename = "opposite-task-prune-scores"
-    save_cache(
-        opposite_task_prune_scores,
-        opposite_prune_scores_cache_folder_name,
-        base_filename,
-    )
-if load_opposite_task_prune_scores:
-    filename = "opposite-task-prune-scores-07-02-2024_17-34-33.pkl"
-    opposite_task_prune_scores = load_cache(
-        opposite_prune_scores_cache_folder_name, filename
-    )
-if opposite_task_prune_scores:
-    opposite_prune_metric_measurements = measure_prune_metrics(
-        [ANSWER_PROB_METRIC, LOGIT_DIFF_METRIC],
-        opposite_task_prune_scores,
-        PatchType.TREE_PATCH,
-    )
-    figs += list(measurement_figs(opposite_prune_metric_measurements, auc_plots=False))
 
 # ---------------------------------------- ROC -----------------------------------------
 
@@ -257,8 +231,8 @@ if roc_measurements:
 
 # ----------------------------- Prune Metric Measurements ------------------------------
 
-compute_prune_metric_measurements = False
-save_prune_metric_measurements = False
+compute_prune_metric_measurements = True
+save_prune_metric_measurements = True
 load_prune_metric_measurements = False
 
 cache_folder_name = ".measurement_cache"
@@ -275,12 +249,12 @@ if compute_prune_metric_measurements:
         save_cache(prune_metric_measurements, cache_folder_name, base_filename)
 if load_prune_metric_measurements:
     # 2000 epoch IOI Docstring tensor prune_scores post-kv-cache-fix
-    # filename = "seq-circuit-17-02-2024_03-34-58.pkl"
+    filename = "seq-circuit-22-02-2024_20-14-25.pkl"
     # filename = "seq-circuit-18-02-2024_17-20-57.pkl"
 
     # 1000 epoch Sport Players tensor prune_scores post-kv-cache-fix
     # batch_size=(10, 20), batch_count=(10, 5), default seed
-    filename="seq-circuit-18-02-2024_22-09-26.pkl"
+    # filename="seq-circuit-18-02-2024_22-09-26.pkl"
 
     prune_metric_measurements = load_cache(cache_folder_name, filename)
 
