@@ -1,6 +1,7 @@
 # Based on:
 # https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/ioi/utils.py
 # I added the token positions based on the findings in the paper
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -78,7 +79,8 @@ def ioi_true_edges(
         Conn("name mover", "OUTPUT", [(None, 14)]),
         Conn("backup name mover", "OUTPUT", [(None, 14)]),
     ]
-    edges_present: Dict[str, int] = {}
+    edges_present: Dict[str, List[int]] = defaultdict(list)
+    # edges_present: Dict[str, List[int]] = {}
     for conn in special_connections:
         edge_src_names, edge_dests = [], []
         if conn.inp == "INPUT":
@@ -118,14 +120,88 @@ def ioi_true_edges(
 
         for src_name in edge_src_names:
             for dest_name, tok_pos in edge_dests:
-                edges_present[f"{src_name}->{dest_name}"] = tok_pos
+                edges_present[f"{src_name}->{dest_name}"].append(tok_pos)
 
     true_edges: Set[Edge] = set()
     for edge in model.edges:
         if edge.name in edges_present.keys():
             if token_positions:
-                seq_idx = edges_present[edge.name] - seq_start_idx
-                true_edges.add(Edge(edge.src, edge.dest, seq_idx))
+                assert edge.seq_idx is not None
+                if (edge.seq_idx + seq_start_idx) in edges_present[edge.name]:
+                    true_edges.add(edge)
             else:
                 true_edges.add(edge)
     return true_edges
+
+
+def ioi_head_based_official_edges(
+    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+) -> Set[Edge]:
+    """
+    Note: Assumes the prompt is 15 tokens long, as in ioi_single_template_prompts.json.
+    """
+    # Tok idxs named for their words in the example sentence:
+    # BOS When Mary and John went to the store, John gave a drink to
+    # 0   1    2    3   4    5    6  7   8    9 10   11   1213    14
+    final_tok_idx = 14
+    john_2nd_tok_idx = 10
+    john_1_plus_1_tok_idx = 4
+
+    seq_circ = model.seq_len is not None
+
+    CIRCUIT = {
+        "name mover": [(9, 9), (10, 0), (9, 6)],
+        "backup name mover": [
+            (10, 10),
+            (10, 6),
+            (10, 2),
+            (10, 1),
+            (11, 2),
+            (9, 7),
+            (9, 0),
+            (11, 9),
+        ],
+        "negative name mover": [(10, 7), (11, 10)],
+        "s2 inhibition": [(7, 3), (7, 9), (8, 6), (8, 10)],
+        "induction": [(5, 5), (5, 8), (5, 9), (6, 9)],
+        "duplicate token": [(0, 1), (0, 10), (3, 0)],
+        "previous token": [(2, 2), (4, 11)],
+    }
+
+    SEQ_POS_TO_KEEP = {
+        "name mover": final_tok_idx,
+        "backup name mover": final_tok_idx,
+        "negative name mover": final_tok_idx,
+        "s2 inhibition": final_tok_idx,
+        "induction": john_2nd_tok_idx,
+        "duplicate token": john_2nd_tok_idx,
+        "previous token": john_1_plus_1_tok_idx,
+    }
+    heads_to_keep: Set[Tuple[str, Optional[int]]] = set()
+    for head_type, head_idxs in CIRCUIT.items():
+        head_type_seq_idx = SEQ_POS_TO_KEEP[head_type]
+        for head_lyr, head_idx in head_idxs:
+            head_name = f"A{head_lyr}.{head_idx}"
+            if seq_circ:
+                heads_to_keep.add((head_name, head_type_seq_idx))
+            else:
+                heads_to_keep.add((head_name, None))
+
+    official_edges: Set[Edge] = set()
+    not_official_edges: Set[Edge] = set()
+    for edge in model.edges:
+        # The head_keys may not actually be heads. These won't be in heads_not_in_circ
+        src_is_head = edge.src.head_idx is not None
+        if edge.seq_idx is not None:
+            assert seq_circ
+            src_head_key = (edge.src.name, edge.seq_idx + seq_start_idx)
+        else:
+            assert not seq_circ
+            src_head_key = (edge.src.name, None)
+
+        if src_is_head and src_head_key not in heads_to_keep:
+            not_official_edges.add(edge)
+            continue
+
+        official_edges.add(edge)
+    return official_edges

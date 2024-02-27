@@ -8,9 +8,16 @@ from torch.nn.functional import log_softmax
 from auto_circuit.data import BatchKey
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.tasks import TASK_DICT, Task
-from auto_circuit.types import AlgoKey, PruneScores, TaskKey, TaskPruneScores
+from auto_circuit.types import (
+    AblationType,
+    AlgoKey,
+    PruneScores,
+    TaskKey,
+    TaskPruneScores,
+)
+from auto_circuit.utils.ablation_activations import batch_src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
-from auto_circuit.utils.graph_utils import batch_src_outs, patch_mode
+from auto_circuit.utils.graph_utils import patch_mode
 from auto_circuit.utils.tensor_ops import multibatch_kl_div, prune_scores_threshold
 
 # circuit_size, n_knockouts, normal_kl, knockout_kl
@@ -97,8 +104,12 @@ def same_under_knockout(
     patch_masks: Dict[str, t.nn.Parameter] = model.patch_masks
     circuit_threshold = prune_scores_threshold(circuit_ps, circuit_size)
 
-    corrupt_src_outs: Dict[BatchKey, t.Tensor] = {}
-    corrupt_src_outs = batch_src_outs(model, task.test_loader, "corrupt")
+    corrupt_src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
+        model,
+        task.test_loader,
+        ablation_type=AblationType.RESAMPLE,
+        clean_corrupt="corrupt",
+    )
 
     mask_params = list(patch_masks.values())
     # Make a boolean copy of the patch_masks that encodes the circuit

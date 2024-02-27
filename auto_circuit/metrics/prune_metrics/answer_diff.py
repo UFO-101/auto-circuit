@@ -32,5 +32,6 @@ def measure_answer_diff(
         for batch in task.test_loader:
             batch_probs = apply_prob_func(batch_outs[batch.key], dim=-1)
             avg_ans_diff.append(batch_avg_answer_diff(batch_probs, batch))
+        # PromptDataLoaders have all batches the same size, so we mean the batch means
         measurements.append((edge_count, t.stack(avg_ans_diff).mean().item()))
     return measurements

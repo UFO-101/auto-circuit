@@ -6,12 +6,14 @@ import transformer_lens as tl
 
 from auto_circuit.data import PromptDataLoader, load_datasets_from_json
 from auto_circuit.metrics.official_circuits.circuits.docstring_official import (
+    docstring_node_based_official_edges,
     docstring_true_edges,
 )
 from auto_circuit.metrics.official_circuits.circuits.greaterthan_official import (
     greaterthan_true_edges,
 )
 from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
+    ioi_head_based_official_edges,
     ioi_true_edges,
 )
 from auto_circuit.metrics.official_circuits.circuits.sports_players_official import (
@@ -211,12 +213,14 @@ SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Sports Players",
     _model_def="pythia-2.8b-deduped",
     _dataset_name="sports-players/sports_players_pythia-2.8b-deduped_prompts",
-    batch_size=(1, 2),  # There are 3 sports (football, basketball, baseball),
-    batch_count=(100, 50),  # 70 prompts for each sport (210 total)
+    # batch_size=(1, 2),  # There are 3 sports (football, basketball, baseball),
+    # batch_count=(100, 50),  # 70 prompts for each sport (210 total)
+    batch_size=(10, 20),
+    batch_count=(10, 5),
     _true_edge_func=sports_players_true_edges,
     token_circuit=True,
     separate_qkv=False,
-    dtype=t.bfloat16,
+    # dtype=t.bfloat16,
 )
 SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK: Task = Task(
     key="Sports Players Component Circuit",
@@ -235,9 +239,9 @@ IOI_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Indirect Object Identification",
     _model_def="gpt2-small",
     _dataset_name="ioi_single_template_prompts",
-    batch_size=16,
-    batch_count=16,
-    _true_edge_func=ioi_true_edges,
+    batch_size=(300, 100),
+    batch_count=(1, 1),
+    _true_edge_func=ioi_head_based_official_edges,
     token_circuit=True,
 )
 IOI_COMPONENT_CIRCUIT_TASK: Task = Task(
@@ -267,9 +271,9 @@ DOCSTRING_TOKEN_CIRCUIT_TASK: Task = Task(
     name="Docstring",
     _model_def="attn-only-4l",
     _dataset_name="docstring_prompts",
-    batch_size=16,
-    batch_count=16,
-    _true_edge_func=docstring_true_edges,
+    batch_size=128,
+    batch_count=2,
+    _true_edge_func=docstring_node_based_official_edges,
     token_circuit=True,
 )
 DOCSTRING_COMPONENT_CIRCUIT_TASK: Task = Task(

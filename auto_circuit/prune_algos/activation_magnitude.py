@@ -1,10 +1,8 @@
-from typing import Dict
-
 import torch as t
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import PruneScores, SrcNode
-from auto_circuit.utils.graph_utils import get_sorted_src_outs
+from auto_circuit.types import AblationType, PruneScores
+from auto_circuit.utils.ablation_activations import src_ablations
 
 
 def activation_magnitude_prune_scores(task: Task) -> PruneScores:
@@ -14,9 +12,8 @@ def activation_magnitude_prune_scores(task: Task) -> PruneScores:
     n_batches = len(task.train_loader)
     with t.inference_mode():
         for batch in task.train_loader:
-            src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, batch.clean)
-            src_out_stack = t.stack(list(src_outs.values()))
-            src_out_means = src_out_stack.mean(dim=list(range(1, src_out_stack.ndim)))
+            src_outs = src_ablations(model, batch.clean, AblationType.RESAMPLE)
+            src_out_means = src_outs.mean(dim=list(range(1, src_outs.ndim)))
             # prune_scores shape = seq_shape + head_shape + [prev_src_count]
             for mod, ps in prune_scores.items():
                 n_srcs = ps.size(-1)

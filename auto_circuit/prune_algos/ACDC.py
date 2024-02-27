@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Callable, Dict, List, Literal, Optional
+from typing import Callable, List, Literal, Optional
 
 import torch as t
 from ordered_set import OrderedSet
@@ -13,12 +13,11 @@ from auto_circuit.types import (
     Edge,
     PatchType,
     PruneScores,
-    SrcNode,
 )
+from auto_circuit.utils.ablation_activations import src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     edge_counts_util,
-    get_sorted_src_outs,
     patch_mode,
     set_all_masks,
 )
@@ -61,12 +60,8 @@ def acdc_prune_scores(
         train_batch = next(iter(task.train_loader))
         clean_batch, corrupt_batch = train_batch.clean, train_batch.corrupt
 
-        patch_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, corrupt_batch)
-        patch_outs_tensor = t.stack(list(patch_outs.values())).detach()
-
-        # We set curr_src_outs manually so we can skip layers before the current edge.
-        src_outs: Dict[SrcNode, t.Tensor] = get_sorted_src_outs(model, clean_batch)
-        src_outs_tensor = t.stack(list(src_outs.values())).detach()
+        patch_outs_tensor = src_ablations(model, corrupt_batch)
+        src_outs_tensor = src_ablations(model, clean_batch)
 
         with t.inference_mode():
             clean_out = model(clean_batch)[out_slice]
@@ -84,7 +79,8 @@ def acdc_prune_scores(
         removed_edges: OrderedSet[Edge] = OrderedSet([])
 
         set_all_masks(model, val=0.0)
-        with patch_mode(model, patch_outs_tensor, src_outs_tensor):
+        # We set curr_src_outs manually so we can skip layers before the current edge.
+        with patch_mode(model, patch_outs_tensor, curr_src_outs=src_outs_tensor):
             for edge_idx, edge in enumerate((pbar_edge := tqdm(edges))):
                 rmvd, left = len(removed_edges), edge_idx + 1 - len(removed_edges)
                 desc = f"Removed: {rmvd}, Left: {left}, Current:'{edge}'"

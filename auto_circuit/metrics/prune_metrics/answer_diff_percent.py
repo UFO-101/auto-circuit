@@ -43,6 +43,7 @@ def measure_answer_diff_percent(
         for batch in task.test_loader:
             batch_probs = apply_prob_func(batch_outs[batch.key], dim=-1)
             avg_ans_diffs.append(batch_avg_answer_diff(batch_probs, batch))
+        # PromptDataLoaders have all batches the same size, so we mean the batch means
         avg_ans_diff = t.stack(avg_ans_diffs).mean().item()
         measurements.append((edge_count, (avg_ans_diff / default_avg_ans_diff) * 100))
     return measurements

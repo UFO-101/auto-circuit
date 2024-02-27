@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 import plotly.graph_objects as go
 import torch as t
@@ -8,6 +8,7 @@ from torch.nn.functional import log_softmax
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT, PruneAlgo
 from auto_circuit.tasks import TASK_DICT, Task
 from auto_circuit.types import (
+    AblationType,
     AlgoKey,
     AlgoPruneScores,
     BatchKey,
@@ -15,15 +16,16 @@ from auto_circuit.types import (
     PruneScores,
     TaskPruneScores,
 )
+from auto_circuit.utils.ablation_activations import batch_src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    batch_src_outs,
     mask_fn_mode,
     patch_mode,
     set_all_masks,
     train_mask_mode,
 )
 from auto_circuit.utils.tensor_ops import (
+    batch_avg_answer_diff,
     multibatch_kl_div,
     prune_scores_threshold,
     sample_hard_concrete,
@@ -36,6 +38,7 @@ def train_same_under_knockouts(
     learning_rate: float,
     epochs: int,
     regularize_lambda: float,
+    faithfulness_target: Literal["kl_div", "logit_diff"] = "kl_div",
 ) -> TaskPruneScores:
     task_completeness_scores: TaskPruneScores = {}
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
@@ -61,6 +64,7 @@ def train_same_under_knockouts(
                 learning_rate=learning_rate,
                 epochs=epochs,
                 regularize_lambda=regularize_lambda,
+                faithfulness_target=faithfulness_target,
             )
             algo_completeness_scores[algo_key] = same_under_knockouts
         task_completeness_scores[task_key] = algo_completeness_scores
@@ -81,6 +85,7 @@ def train_same_under_knockout_prune_scores(
     epochs: int,
     regularize_lambda: float,
     mask_fn: MaskFn = "hard_concrete",
+    faithfulness_target: Literal["kl_div", "logit_diff"] = "kl_div",
 ) -> PruneScores:
     """
     Learn a subset of the circuit to knockout such that when the same edges are knocked
@@ -91,10 +96,14 @@ def train_same_under_knockout_prune_scores(
     model = task.model
     n_target = int(circuit_size / 5)
 
-    corrupt_src_outs: Dict[BatchKey, t.Tensor] = {}
-    corrupt_src_outs = batch_src_outs(model, task.test_loader, "corrupt")
+    corrupt_src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
+        model,
+        task.test_loader,
+        ablation_type=AblationType.RESAMPLE,
+        clean_corrupt="corrupt",
+    )
 
-    loss_history, kl_div_history, reg_history = [], [], []
+    loss_history, faith_history, reg_history = [], [], []
     with train_mask_mode(model) as patch_masks:
         mask_params = list(patch_masks.values())
         set_all_masks(model, val=0.0)
@@ -108,7 +117,7 @@ def train_same_under_knockout_prune_scores(
         set_all_masks(model, val=-init_mask_val)
         optim = t.optim.Adam(mask_params, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
-            kl_str = kl_div_history[-1] if len(kl_div_history) > 0 else None
+            kl_str = faith_history[-1] if len(faith_history) > 0 else None
             epoch_pbar.set_description_str(f"Epoch: {epoch}, KL Div: {kl_str}")
             for batch in task.test_loader:
                 patches = corrupt_src_outs[batch.key].clone().detach()
@@ -121,8 +130,7 @@ def train_same_under_knockout_prune_scores(
                         for circ, patch in zip(circ_masks, mask_params):
                             patch_all = t.full_like(patch.data, 99)
                             t.where(circ, patch.data, patch_all, out=patch.data)
-                    model_out = model(batch.clean)[model.out_slice]
-                    circuit_logprobs = log_softmax(model_out, dim=-1)
+                    circ_out = model(batch.clean)[model.out_slice]
 
                     # Don't patch edges not in the circuit
                     with t.no_grad():
@@ -130,23 +138,31 @@ def train_same_under_knockout_prune_scores(
                             patch_none = t.full_like(patch.data, -99)
                             t.where(cir, patch.data, patch_none, out=patch.data)
                     model_out = model(batch.clean)[model.out_slice]
-                    model_logprobs = log_softmax(model_out, dim=-1)
-                    kl_div_term = -multibatch_kl_div(circuit_logprobs, model_logprobs)
-                    kl_div_history.append(kl_div_term.item())
+
+                    if faithfulness_target == "kl_div":
+                        circuit_logprobs = log_softmax(circ_out, dim=-1)
+                        model_logprobs = log_softmax(model_out, dim=-1)
+                        faith = -multibatch_kl_div(circuit_logprobs, model_logprobs)
+                    else:
+                        assert faithfulness_target == "logit_diff"
+                        circ_logit_diff = batch_avg_answer_diff(circ_out, batch)
+                        model_logit_diff = batch_avg_answer_diff(model_out, batch)
+                        faith = -(model_logit_diff - circ_logit_diff)
+                    faith_history.append(faith.item())
 
                     flat_masks = t.cat([mask.flatten() for mask in mask_params])
                     knockouts_samples = sample_hard_concrete(flat_masks, batch_size=1)
                     reg_term = t.relu(knockouts_samples.sum() - n_target) / n_target
                     reg_history.append(reg_term.item() * regularize_lambda)
 
-                    loss = kl_div_term + reg_term * regularize_lambda
+                    loss = faith + reg_term * regularize_lambda
                     loss.backward()
                     loss_history.append(loss.item())
                     optim.step()
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(y=loss_history, name="Loss"))
-        fig.add_trace(go.Scatter(y=kl_div_history, name="KL Divergence"))
+        fig.add_trace(go.Scatter(y=faith_history, name=faithfulness_target))
         fig.add_trace(go.Scatter(y=reg_history, name="Regularization"))
         fig.update_layout(
             title=f"Same Under Knockouts for Task: {task.name}, Algo: {algo.name}"

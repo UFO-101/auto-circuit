@@ -43,12 +43,52 @@ def docstring_true_edges(
     for edge in model.edges:
         if edge.name in edges_present.keys():
             if token_positions:
-                for tok_pos in edges_present[edge.name]:
-                    true_edges.add(Edge(edge.src, edge.dest, tok_pos - seq_start_idx))
+                assert edge.seq_idx is not None
+                if (edge.seq_idx + seq_start_idx) in edges_present[edge.name]:
+                    true_edges.add(edge)
             else:
                 true_edges.add(edge)
 
     # reflects the value in the docstring appendix of the manual circuit as of 12th June
-    assert len(true_edges) == 31
+    assert len(true_edges) == 31 if token_positions else 24
 
     return true_edges
+
+
+def docstring_node_based_official_edges(
+    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+) -> Set[Edge]:
+    """
+    The heads not ablated in the final check in the Docstring blog post:
+    https://www.alignmentforum.org/posts/u6KXXmKFbXfWzoAXn#Putting_it_all_together
+    """
+    heads_in_circuit = {
+        "A1.4",
+        "A2.0",
+        "A3.0",
+        "A3.6",
+        "A0.5",
+        "A1.2",
+        "A0.2",
+        "A0.4",
+        # Extras for improved performance
+        "A1.0",
+        "A0.1",
+        "A2.3",
+    }
+    heads_not_in_circ = set()
+    for src in model.srcs:
+        if src.head_idx is not None and src.name not in heads_in_circuit:
+            heads_not_in_circ.add(src.name)
+
+    official_edges: Set[Edge] = set()
+    for edge in model.edges:
+        src_head_str = edge.src.name
+        if edge.dest.name[-1] in ["Q", "K", "V"]:
+            dest_head_str = edge.dest.name[:-2]
+        else:
+            dest_head_str = edge.dest.name
+        if src_head_str in heads_not_in_circ or dest_head_str in heads_not_in_circ:
+            continue
+        official_edges.add(edge)
+    return official_edges

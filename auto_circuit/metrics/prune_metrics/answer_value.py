@@ -33,5 +33,6 @@ def measure_answer_val(
         for batch in task.test_loader:
             batch_probs = apply_prob_func(pruned_out[batch.key], dim=-1)
             avg_ans_probs.append(batch_avg_answer_val(batch_probs, batch, wrong_answer))
+        # PromptDataLoaders have all batches the same size, so we mean the batch means
         measurements.append((edge_count, t.stack(avg_ans_probs).mean().item()))
     return measurements

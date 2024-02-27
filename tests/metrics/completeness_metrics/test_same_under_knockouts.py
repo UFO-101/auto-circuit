@@ -15,16 +15,18 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
 from auto_circuit.prune_algos.prune_algos import RANDOM_PRUNE_ALGO, PruneAlgo
 from auto_circuit.tasks import IOI_TOKEN_CIRCUIT_TASK, Task
 from auto_circuit.types import (
+    AblationMeasurements,
+    AblationType,
     AlgoPruneScores,
     Measurements,
     PatchType,
-    PruneMetricMeasurements,
     PruneScores,
     TaskPruneScores,
 )
 
 
 def test_kl_div_equal():
+    ablation: AblationType = AblationType.RESAMPLE
     task: Task = IOI_TOKEN_CIRCUIT_TASK
     rand_algo: PruneAlgo = RANDOM_PRUNE_ALGO
     kl_metric: PruneMetric = CLEAN_KL_DIV_METRIC
@@ -34,10 +36,16 @@ def test_kl_div_equal():
     algo_ps: AlgoPruneScores = {rand_algo.key: circuit_ps}
     task_ps: TaskPruneScores = {task.key: algo_ps}
 
-    prune_measurements: PruneMetricMeasurements = measure_prune_metrics(
-        [kl_metric], task_ps, PatchType.TREE_PATCH, test_edge_counts=[n_circuit_edges]
+    prune_measurements: AblationMeasurements = measure_prune_metrics(
+        [ablation],
+        [kl_metric],
+        task_ps,
+        PatchType.TREE_PATCH,
+        test_edge_counts=[n_circuit_edges],
     )
-    circ_kls: Measurements = prune_measurements[kl_metric.key][task.key][rand_algo.key]
+    circ_kls: Measurements = prune_measurements[ablation][kl_metric.key][task.key][
+        rand_algo.key
+    ]
     assert len(circ_kls) == 1
     kl_edge_count, rand_circuit_kl = circ_kls[0]
     assert kl_edge_count == n_circuit_edges

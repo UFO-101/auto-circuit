@@ -29,6 +29,7 @@ from auto_circuit.tasks import (
     Task,
 )
 from auto_circuit.types import (
+    AblationType,
     PatchType,
     TaskMeasurements,
     TaskPruneScores,
@@ -129,6 +130,7 @@ if load_opposite_task_prune_scores:
     )
 if opposite_task_prune_scores:
     opposite_prune_metric_measurements = measure_prune_metrics(
+        [AblationType.RESAMPLE],
         [ANSWER_PROB_METRIC, LOGIT_DIFF_METRIC],
         opposite_task_prune_scores,
         PatchType.TREE_PATCH,

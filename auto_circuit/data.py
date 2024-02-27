@@ -87,7 +87,11 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         kv_cache: Optional[HookedTransformerKeyValueCache] = None,
         **kwargs: Any,
     ):
-        super().__init__(*args, **kwargs)
+        """
+        A DataLoader for clean/corrupt prompt pairs with correct/incorrect answers.
+        drop_last is always True so that all batches are the same size.
+        """
+        super().__init__(*args, **kwargs, drop_last=True)
         self.seq_len = seq_len
         self.diverge_idx = diverge_idx
         self.seq_labels = seq_labels
@@ -160,17 +164,13 @@ def load_datasets_from_json(
             diverge_idx = int(diverge_idxs.min().item())
         if diverge_idx > 0:
             seq_labels = seq_labels[diverge_idx:] if seq_labels is not None else None
-            clean_len, corrupt_len = clean_prompts.shape[0], corrupt_prompts.shape[0]
             prefixs, cfg, device = [], model.cfg, model.cfg.device
             if isinstance(batch_size, tuple):
                 prefixs.append(clean_prompts[: (bs0 := batch_size[0]), :diverge_idx])
                 prefixs.append(clean_prompts[: (bs1 := batch_size[1]), :diverge_idx])
-                assert clean_len % bs0 == 0 and clean_len % bs1 == 0
-                assert corrupt_len % bs0 == 0 and corrupt_len % bs1 == 0
                 kvs.append(HookedTransformerKeyValueCache.init_cache(cfg, device, bs0))
                 kvs.append(HookedTransformerKeyValueCache.init_cache(cfg, device, bs1))
             else:
-                assert clean_len % batch_size == 0 and corrupt_len % batch_size == 0
                 prefixs.append(clean_prompts[:batch_size, :diverge_idx])
                 kvs.append(
                     HookedTransformerKeyValueCache.init_cache(cfg, device, batch_size)
@@ -202,7 +202,6 @@ def load_datasets_from_json(
         batch_size=batch_size[0] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
         collate_fn=collate_fn,
-        drop_last=tail_divergence,
     )
     test_loader = PromptDataLoader(
         test_set,
@@ -213,6 +212,5 @@ def load_datasets_from_json(
         batch_size=batch_size[1] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
         collate_fn=collate_fn,
-        drop_last=tail_divergence,
     )
     return train_loader, test_loader

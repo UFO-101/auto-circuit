@@ -11,10 +11,10 @@ import torch as t
 from torch.nn.functional import log_softmax, mse_loss
 
 from auto_circuit.tasks import Task
-from auto_circuit.types import BatchKey, Edge, MaskFn, PruneScores
+from auto_circuit.types import AblationType, BatchKey, Edge, MaskFn, PruneScores
+from auto_circuit.utils.ablation_activations import batch_src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    batch_src_outs,
     mask_fn_mode,
     patch_mode,
     set_all_masks,
@@ -62,8 +62,12 @@ def subnetwork_probing_prune_scores(
             clean_out = model(batch.clean)[out_slice]
             clean_logprobs[batch.key] = log_softmax(clean_out, dim=-1)
 
-    ptype = "corrupt" if tree_optimisation else "clean"
-    src_outs: Dict[BatchKey, t.Tensor] = batch_src_outs(model, task.train_loader, ptype)
+    src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
+        model,
+        task.train_loader,
+        ablation_type=AblationType.RESAMPLE,
+        clean_corrupt="corrupt" if tree_optimisation else "clean",
+    )
 
     losses, faiths, regularizes = [], [], []
     set_all_masks(model, val=-init_val if tree_optimisation else init_val)

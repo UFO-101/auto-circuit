@@ -5,12 +5,13 @@ import plotly.graph_objects as go
 from plotly import subplots
 
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
-from auto_circuit.types import TaskMeasurements
+from auto_circuit.types import AblationType, TaskMeasurements
 
 
 def edge_patching_plot(
     data: List[Dict[str, Any]],
     task_measurements: TaskMeasurements,
+    ablation_type: AblationType,
     metric_name: str,
     log_x: bool,
     log_y: bool,
@@ -60,7 +61,7 @@ def edge_patching_plot(
 
     fig.update_layout(
         # title=f"{main_title}: {metric_name} vs. Patched Edges",
-        yaxis_title=metric_name,
+        yaxis_title=f"{metric_name} ({ablation_type})",
         template="plotly",
         # width=335 * len(set([d["Task"] for d in data])) + 280,
         width=max(365 * len(set([d["Task"] for d in data])) - 10, 500),

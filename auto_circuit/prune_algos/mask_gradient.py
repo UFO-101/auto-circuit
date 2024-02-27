@@ -5,10 +5,10 @@ from torch.nn.functional import log_softmax
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.tasks import Task
-from auto_circuit.types import BatchKey, PruneScores
+from auto_circuit.types import AblationType, BatchKey, PruneScores
+from auto_circuit.utils.ablation_activations import batch_src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    batch_src_outs,
     patch_mode,
     set_all_masks,
     train_mask_mode,
@@ -29,7 +29,12 @@ def mask_gradient_prune_scores(
     out_slice = model.out_slice
     train_loader: PromptDataLoader = task.train_loader
 
-    src_outs: Dict[BatchKey, t.Tensor] = batch_src_outs(model, train_loader, "corrupt")
+    src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
+        model,
+        train_loader,
+        ablation_type=AblationType.RESAMPLE,
+        clean_corrupt="corrupt",
+    )
 
     with train_mask_mode(model):
         for sample in (ig_pbar := tqdm(range((integrated_grad_samples or 0) + 1))):

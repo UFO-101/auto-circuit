@@ -78,7 +78,7 @@ ACDC_PRUNE_ALGO = PruneAlgo(
     name="ACDC",
     func=partial(
         acdc_prune_scores,
-        tao_exps=list(range(-30, -10)),
+        tao_exps=list(range(-6, -2)),
         # tao_exps=[-5],
         tao_bases=[1],
     ),

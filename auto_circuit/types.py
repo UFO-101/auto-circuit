@@ -67,10 +67,30 @@ class PatchType(Enum):
 class AblationType(Enum):
     RESAMPLE = 1
     ZERO = 2
-    MEAN = 3
+    TOKENWISE_MEAN_CLEAN = 3
+    TOKENWISE_MEAN_CORRUPT = 4
+    TOKENWISE_MEAN_CLEAN_AND_CORRUPT = 5
 
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()
+
+    @property
+    def mean_over_dataset(self) -> bool:
+        return self not in {AblationType.RESAMPLE, AblationType.ZERO}
+
+    @property
+    def clean_dataset(self) -> bool:
+        return self in {
+            AblationType.TOKENWISE_MEAN_CLEAN,
+            AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT,
+        }
+
+    @property
+    def corrupt_dataset(self) -> bool:
+        return self in {
+            AblationType.TOKENWISE_MEAN_CORRUPT,
+            AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT,
+        }
 
 
 @dataclass(frozen=True)
@@ -152,3 +172,4 @@ TaskPruneScores = Dict[TaskKey, AlgoPruneScores]
 AlgoMeasurements = Dict[AlgoKey, Measurements]
 TaskMeasurements = Dict[TaskKey, AlgoMeasurements]
 PruneMetricMeasurements = Dict[PruneMetricKey, TaskMeasurements]
+AblationMeasurements = Dict[AblationType, PruneMetricMeasurements]

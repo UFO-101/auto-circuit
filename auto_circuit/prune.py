@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import torch as t
 
@@ -10,13 +10,11 @@ from auto_circuit.types import (
     PatchType,
     PatchWrapper,
     PruneScores,
-    SrcNode,
 )
+from auto_circuit.utils.ablation_activations import src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
-    get_sorted_src_outs,
     patch_mode,
-    set_all_masks,
 )
 from auto_circuit.utils.misc import module_by_name
 from auto_circuit.utils.patchable_model import PatchableModel
@@ -46,33 +44,28 @@ def run_circuits(
     circ_outs: CircuitOutputs = defaultdict(dict)
     desc_ps: t.Tensor = desc_prune_scores(prune_scores)
 
+    patch_src_outs: Optional[t.Tensor] = None
+    if ablation_type.mean_over_dataset:
+        patch_src_outs = src_ablations(model, dataloader, ablation_type)
+
     for batch_idx, batch in enumerate(batch_pbar := tqdm(dataloader)):
         batch_pbar.set_description_str(f"Pruning Batch {batch_idx}", refresh=True)
         if (patch_type == PatchType.TREE_PATCH and not reverse_clean_corrupt) or (
             patch_type == PatchType.EDGE_PATCH and reverse_clean_corrupt
         ):
             batch_input = batch.clean
-            patch_outs = get_sorted_src_outs(model, batch.corrupt, ablation_type)
+            if not ablation_type.mean_over_dataset:
+                patch_src_outs = src_ablations(model, batch.corrupt, ablation_type)
         elif (patch_type == PatchType.EDGE_PATCH and not reverse_clean_corrupt) or (
             patch_type == PatchType.TREE_PATCH and reverse_clean_corrupt
         ):
             batch_input = batch.corrupt
-            patch_outs = get_sorted_src_outs(model, batch.clean, ablation_type)
+            if not ablation_type.mean_over_dataset:
+                patch_src_outs = src_ablations(model, batch.clean, ablation_type)
         else:
             raise NotImplementedError
 
-        # patch_outs: Dict[SrcNode, t.Tensor]
-        # patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
-        # patch_src_outs = t.stack(list(patch_outs.values()))
-        # repeats = [patch_src_outs.shape[0]] + [1] * (patch_src_outs.ndim - 1)
-        # patch_src_outs: t.Tensor = (
-        #     patch_src_outs.mean(dim=0, keepdim=True).repeat(repeats).detach()
-        # )
-
-        patch_outs: Dict[SrcNode, t.Tensor]
-        patch_src_outs: t.Tensor = t.stack(list(patch_outs.values())).detach()
-
-        set_all_masks(model, val=1.0 if patch_type == PatchType.TREE_PATCH else 0.0)
+        assert patch_src_outs is not None
         with patch_mode(model, patch_src_outs):
             for edge_count in (edge_pbar := tqdm(test_edge_counts)):
                 edge_pbar.set_description_str(f"Running Circuit: {edge_count} Edges")
@@ -102,5 +95,5 @@ def run_circuits(
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,
                 )
-        del patch_outs, patch_src_outs  # Free up memory
+    del patch_src_outs
     return circ_outs

@@ -7,6 +7,9 @@ from auto_circuit.metrics.prune_metrics.answer_diff_percent import (
     measure_answer_diff_percent,
 )
 from auto_circuit.metrics.prune_metrics.answer_value import measure_answer_val
+from auto_circuit.metrics.prune_metrics.correct_answer_percent import (
+    measure_correct_ans_percent,
+)
 from auto_circuit.metrics.prune_metrics.kl_div import measure_kl_div
 from auto_circuit.tasks import Task
 from auto_circuit.types import CircuitOutputs, Measurements, PruneMetricKey
@@ -145,6 +148,26 @@ LOBPROB_DIFF_PERCENT_METRIC = PruneMetric(
     lower_better=False,
     y_axes_match=False,
 )
+CORRECT_ANSWER_PERCENT_METRIC = PruneMetric(
+    key="Correct Answer Percent",
+    name="Correct Answer Percent",
+    metric_func=measure_correct_ans_percent,
+    log_x=True,
+    log_y=False,
+    lower_better=False,
+    y_axes_match=False,
+)
+CORRECT_ANSWER_GREATER_THAN_INCORRECT_PERCENT_METRIC = PruneMetric(
+    key="Correct Answer Greater Than Incorrect Percent",
+    name="Correct Answer Greater Than Incorrect Percent",
+    metric_func=partial(
+        measure_correct_ans_percent, out_of_correct_and_incorrect_answers=True
+    ),
+    log_x=True,
+    log_y=False,
+    lower_better=False,
+    y_axes_match=False,
+)
 
 PRUNE_METRICS: List[PruneMetric] = [
     CLEAN_KL_DIV_METRIC,
@@ -159,6 +182,8 @@ PRUNE_METRICS: List[PruneMetric] = [
     LOGIT_DIFF_PERCENT_METRIC,
     PROB_DIFF_PERCENT_METRIC,
     LOBPROB_DIFF_PERCENT_METRIC,
+    CORRECT_ANSWER_PERCENT_METRIC,
+    CORRECT_ANSWER_GREATER_THAN_INCORRECT_PERCENT_METRIC,
 ]
 PRUNE_METRIC_DICT: Dict[PruneMetricKey, PruneMetric] = {
     metric.key: metric for metric in PRUNE_METRICS
