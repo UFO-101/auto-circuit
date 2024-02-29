@@ -21,6 +21,7 @@ class PatchableModel(t.nn.Module):
     dest_wrappers: Set[PatchWrapperImpl]
     patch_masks: Dict[str, t.nn.Parameter]
     out_slice: Tuple[slice | int, ...]
+    is_factorized: bool
     is_transformer: bool
     kv_caches: Optional[Dict[int, HookedTransformerKeyValueCache]]
     wrapped_model: t.nn.Module
@@ -38,6 +39,7 @@ class PatchableModel(t.nn.Module):
         src_wrappers: Set[PatchWrapperImpl],
         dest_wrappers: Set[PatchWrapperImpl],
         out_slice: Tuple[slice | int, ...],
+        is_factorized: bool,
         is_transformer: bool,
         kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...],
         wrapped_model: t.nn.Module,
@@ -58,6 +60,7 @@ class PatchableModel(t.nn.Module):
         for dest_wrapper in self.dest_wrappers:
             self.patch_masks[dest_wrapper.module_name] = dest_wrapper.patch_mask
         self.out_slice = out_slice
+        self.is_factorized = is_factorized
         self.is_transformer = is_transformer
         if all([kv_cache is None for kv_cache in kv_caches]) or len(kv_caches) == 0:
             self.kv_caches = None

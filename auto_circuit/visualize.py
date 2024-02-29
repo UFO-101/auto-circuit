@@ -98,15 +98,22 @@ def net_viz(
     for i in lyr_nodes.keys():
         if i not in included_layer_nodes:
             included_layer_nodes[i] = [lyr_nodes[i][0]]
-    ordered_layer_nodes = [nodes for _, nodes in sorted(included_layer_nodes.items())]
-    for lyr_1_nodes, lyr_2_nodes in zip(ordered_layer_nodes, ordered_layer_nodes[1:]):
-        for first_node in lyr_1_nodes:
-            for second_node in lyr_2_nodes:
-                sources.append(node_idxs[node_name(first_node)])
-                targets.append(node_idxs[node_name(second_node)])
-                values.append(1e-6)
-                labels.append("")
-                colors.append("rgba(0,255,0,0.0)")
+    ordered_lyr_nodes = [nodes for _, nodes in sorted(included_layer_nodes.items())]
+    for lyr_1_nodes, lyr_2_nodes in zip(ordered_lyr_nodes[:-1], ordered_lyr_nodes[1:]):
+        first_lyr_1_node = lyr_1_nodes[0]
+        first_lyr_2_node = lyr_2_nodes[0]
+        for lyr_1_node in lyr_1_nodes:
+            sources.append(node_idxs[node_name(lyr_1_node)])
+            targets.append(node_idxs[node_name(first_lyr_2_node)])
+            values.append(1e-6)
+            labels.append("")
+            colors.append("rgba(0,255,0,0.0)")
+        for lyr_2_node in lyr_2_nodes:
+            sources.append(node_idxs[node_name(first_lyr_1_node)])
+            targets.append(node_idxs[node_name(lyr_2_node)])
+            values.append(1e-6)
+            labels.append("")
+            colors.append("rgba(0,255,0,0.0)")
 
     return go.Sankey(
         arrangement="perpendicular",

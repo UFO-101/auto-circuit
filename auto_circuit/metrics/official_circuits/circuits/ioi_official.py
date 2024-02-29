@@ -61,6 +61,7 @@ def ioi_true_edges(
     Note: Assumes the prompt is 15 tokens long, as in ioi_single_template_prompts.json.
     """
     assert model.cfg.model_name == "gpt2"
+    assert model.is_factorized
 
     special_connections: List[Conn] = [
         Conn("INPUT", "previous token", [("q", 5), ("k", 4), ("v", 4)]),
@@ -138,7 +139,9 @@ def ioi_head_based_official_edges(
     model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
 ) -> Set[Edge]:
     """
-    Note: Assumes the prompt is 15 tokens long, as in ioi_single_template_prompts.json.
+    Note: Assumes the prompt is 15 tokens long (if token_positions is True), as in
+    ioi_single_template_prompts.json.
+    Works for both factorized and unfactorized models.
     """
     # Tok idxs named for their words in the example sentence:
     # BOS When Mary and John went to the store, John gave a drink to
@@ -147,7 +150,8 @@ def ioi_head_based_official_edges(
     john_2nd_tok_idx = 10
     john_1_plus_1_tok_idx = 4
 
-    seq_circ = model.seq_len is not None
+    assert model.cfg.model_name == "gpt2"
+    assert (model.seq_len is not None) == token_positions
 
     CIRCUIT = {
         "name mover": [(9, 9), (10, 0), (9, 6)],
@@ -182,7 +186,7 @@ def ioi_head_based_official_edges(
         head_type_seq_idx = SEQ_POS_TO_KEEP[head_type]
         for head_lyr, head_idx in head_idxs:
             head_name = f"A{head_lyr}.{head_idx}"
-            if seq_circ:
+            if token_positions:
                 heads_to_keep.add((head_name, head_type_seq_idx))
             else:
                 heads_to_keep.add((head_name, None))
@@ -190,13 +194,12 @@ def ioi_head_based_official_edges(
     official_edges: Set[Edge] = set()
     not_official_edges: Set[Edge] = set()
     for edge in model.edges:
-        # The head_keys may not actually be heads. These won't be in heads_not_in_circ
         src_is_head = edge.src.head_idx is not None
         if edge.seq_idx is not None:
-            assert seq_circ
+            assert token_positions
             src_head_key = (edge.src.name, edge.seq_idx + seq_start_idx)
         else:
-            assert not seq_circ
+            assert not token_positions
             src_head_key = (edge.src.name, None)
 
         if src_is_head and src_head_key not in heads_to_keep:

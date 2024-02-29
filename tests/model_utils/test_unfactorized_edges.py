@@ -1,12 +1,18 @@
 #%%
 from copy import deepcopy
 
+import pytest
 import torch as t
 import transformer_lens as tl
 
+from auto_circuit.data import load_datasets_from_json
+from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
+    ioi_head_based_official_edges,
+)
 from auto_circuit.types import AblationType
-from auto_circuit.utils.ablation_activations import src_ablations
+from auto_circuit.utils.ablation_activations import batch_src_ablations, src_ablations
 from auto_circuit.utils.graph_utils import patch_mode, patchable_model, set_all_masks
+from auto_circuit.utils.misc import repo_path_to_abs_path
 from auto_circuit.visualize import draw_seq_graph
 from tests.conftest import DEVICE
 
@@ -136,3 +142,88 @@ def test_mini_transformer_unfactorized_edges(
 # test_micro_model_unfactorized_edges(micro_model, debug=True)
 # mini_tl_transformer = mini_tl_transformer()
 # test_mini_transformer_unfactorized_edges(mini_tl_transformer, debug=True)
+
+
+@pytest.mark.slow
+def test_ioi_node_based_circuit_factorized_vs_unfactorized(
+    gpt2: tl.HookedTransformer, debug: bool = False
+):
+    train_loader, test_loader = load_datasets_from_json(
+        model=gpt2,
+        path=repo_path_to_abs_path("datasets/ioi_single_template_prompts.json"),
+        device=DEVICE,
+        batch_size=1,
+        train_test_split=[1, 1],
+        length_limit=2,
+        return_seq_length=True,
+        tail_divergence=True,
+    )
+    seq_len = train_loader.seq_len
+    kv_caches = train_loader.kv_cache, test_loader.kv_cache
+    diverge_idx = train_loader.diverge_idx
+    first_train_batch = next(iter(train_loader))
+
+    default_out = gpt2(first_train_batch.clean)
+
+    fctrzd_gpt2 = deepcopy(gpt2)
+    fctrzd_gpt2 = patchable_model(
+        fctrzd_gpt2,
+        factorized=True,
+        separate_qkv=False,
+        seq_len=seq_len,
+        device=DEVICE,
+        kv_caches=kv_caches,
+    )
+    fctrzd_patches = batch_src_ablations(
+        fctrzd_gpt2, train_loader, AblationType.RESAMPLE, clean_corrupt="corrupt"
+    )
+    edges_in_circuit = ioi_head_based_official_edges(
+        fctrzd_gpt2, token_positions=True, seq_start_idx=diverge_idx
+    )
+    set_all_masks(fctrzd_gpt2, 1.0)
+    for edge in fctrzd_gpt2.edges:
+        if edge in edges_in_circuit:
+            edge.patch_mask(fctrzd_gpt2).data[edge.patch_idx] = 0.0
+    fctrzd_patch = fctrzd_patches[first_train_batch.key]
+    with patch_mode(fctrzd_gpt2, fctrzd_patch):
+        fctrzd_patched_out = fctrzd_gpt2(first_train_batch.clean)
+
+    unfctrzd_gpt2 = deepcopy(gpt2)
+    unfctrzd_gpt2 = patchable_model(
+        unfctrzd_gpt2,
+        factorized=False,
+        separate_qkv=False,
+        seq_len=seq_len,
+        device=DEVICE,
+        kv_caches=kv_caches,
+    )
+    unfctrzd_patches = batch_src_ablations(
+        unfctrzd_gpt2, train_loader, AblationType.RESAMPLE, clean_corrupt="corrupt"
+    )
+    edges_in_circuit = ioi_head_based_official_edges(
+        unfctrzd_gpt2, token_positions=True, seq_start_idx=diverge_idx
+    )
+    set_all_masks(unfctrzd_gpt2, 0.0)
+    for edge in unfctrzd_gpt2.edges:
+        # We have to iterate through all edges NOT in the circuit because unfactorized
+        # models have edge masks that shouldn't be used. So we can't set_all_masks(1.0)
+        if edge not in edges_in_circuit:
+            edge.patch_mask(unfctrzd_gpt2).data[edge.patch_idx] = 1.0
+
+    unfctrzd_patch = unfctrzd_patches[first_train_batch.key]
+    with patch_mode(unfctrzd_gpt2, unfctrzd_patch):
+        unfctrzd_patched_out = unfctrzd_gpt2(first_train_batch.clean)
+        if debug:
+            draw_seq_graph(
+                unfctrzd_gpt2,
+                first_train_batch.clean,
+                show_all_edges=False,
+                seq_labels=train_loader.seq_labels,
+            )
+
+    assert not t.allclose(default_out, fctrzd_patched_out)
+    assert t.allclose(fctrzd_patched_out, unfctrzd_patched_out, atol=1e-5)
+
+
+# model = gpt2()
+# test_ioi_node_based_circuit_factorized_vs_unfactorized(model, debug=False)

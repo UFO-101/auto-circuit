@@ -72,6 +72,7 @@ def patchable_model(
         src_wrappers=src_wrappers,
         dest_wrappers=dest_wrappers,
         out_slice=out_slice,
+        is_factorized=factorized,
         is_transformer=is_transformer,
         kv_caches=kv_caches,
         wrapped_model=model,
