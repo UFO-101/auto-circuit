@@ -28,7 +28,7 @@ def test_edge_counts_util(mini_tl_transformer: tl.HookedTransformer):
 
 
 def test_groups_edge_counts(micro_model: MicroModel):
-    model = patchable_model(micro_model, factorized=True, separate_qkv=True)
+    model = patchable_model(micro_model, factorized=True)
     edges: Set[Edge] = model.edges
     edge_list = list(edges)
     edge_0 = edge_list[0]

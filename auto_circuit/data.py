@@ -91,7 +91,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         A DataLoader for clean/corrupt prompt pairs with correct/incorrect answers.
         drop_last is always True so that all batches are the same size.
         """
-        super().__init__(*args, **kwargs, drop_last=True)
+        super().__init__(*args, **kwargs, drop_last=True, collate_fn=collate_fn)
         self.seq_len = seq_len
         self.diverge_idx = diverge_idx
         self.seq_labels = seq_labels
@@ -114,7 +114,12 @@ def load_datasets_from_json(
     pad: bool = True,
 ) -> Tuple[PromptDataLoader, PromptDataLoader]:
     """Load a dataset from a json file. The file should specify a list of
-    dictionaries with keys "clean_prompt" and "corrupt_prompt"."""
+    dictionaries with keys "clean_prompt" and "corrupt_prompt".
+
+    Args:
+        tail_divergence: bool, If all prompts share a common prefix, remove it and pass
+            a kv_cache for the prefix to the DataLoader.
+    """
     with open(path, "r") as f:
         data = json.load(f)
     random.seed(random_seed)
@@ -138,10 +143,8 @@ def load_datasets_from_json(
     else:
         tokenizer: Any = model.tokenizer
         if prepend_bos:
-            clean_prompts = [tokenizer.bos_token + prompt for prompt in clean_prompts]
-            corrupt_prompts = [
-                tokenizer.bos_token + prompt for prompt in corrupt_prompts
-            ]
+            clean_prompts = [tokenizer.bos_token + p for p in clean_prompts]
+            corrupt_prompts = [tokenizer.bos_token + p for p in corrupt_prompts]
         tokenizer.padding_side = "left"
         clean_prompts = tokenizer(clean_prompts, padding=pad, return_tensors="pt")
         corrupt_prompts = tokenizer(corrupt_prompts, padding=pad, return_tensors="pt")
@@ -201,7 +204,6 @@ def load_datasets_from_json(
         kv_cache=kvs[0] if len(kvs) > 0 else None,
         batch_size=batch_size[0] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
-        collate_fn=collate_fn,
     )
     test_loader = PromptDataLoader(
         test_set,
@@ -211,6 +213,5 @@ def load_datasets_from_json(
         kv_cache=kvs[-1] if len(kvs) > 0 else None,
         batch_size=batch_size[1] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
-        collate_fn=collate_fn,
     )
     return train_loader, test_loader

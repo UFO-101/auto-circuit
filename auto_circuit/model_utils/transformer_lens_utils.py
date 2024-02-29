@@ -18,7 +18,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
             name="Resid Start",
             module_name="blocks.0.hook_resid_pre",
             layer=next(layers),
-            idx=next(idxs),
+            src_idx=next(idxs),
             weight="embed.W_E",
         )
     )
@@ -31,7 +31,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                     name=f"A{block_idx}.{head_idx}",
                     module_name=f"blocks.{block_idx}.attn.hook_result",
                     layer=layer,
-                    idx=next(idxs),
+                    src_idx=next(idxs),
                     head_dim=2,
                     head_idx=head_idx,
                     weight=f"blocks.{block_idx}.attn.W_O",
@@ -44,7 +44,7 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_out",
                     layer=layer if model.cfg.parallel_attn_mlp else next(layers),
-                    idx=next(idxs),
+                    src_idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_out",
                 )
             )
@@ -61,7 +61,7 @@ def factorized_dest_nodes(
     else:
         assert model.cfg.use_attn_in
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
-    layers, idxs = count(1), count()
+    layers = count(1)
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
@@ -73,7 +73,6 @@ def factorized_dest_nodes(
                             name=f"A{block_idx}.{head_idx}.{letter}",
                             module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
                             layer=layer,
-                            idx=next(idxs),
                             head_dim=2,
                             head_idx=head_idx,
                             weight=f"blocks.{block_idx}.attn.W_{letter}",
@@ -86,7 +85,6 @@ def factorized_dest_nodes(
                         name=f"A{block_idx}.{head_idx}",
                         module_name=f"blocks.{block_idx}.hook_attn_in",
                         layer=layer,
-                        idx=next(idxs),
                         head_dim=2,
                         head_idx=head_idx,
                         weight=f"blocks.{block_idx}.attn.W_QKV",
@@ -99,7 +97,6 @@ def factorized_dest_nodes(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_in",
                     layer=layer if model.cfg.parallel_attn_mlp else next(layers),
-                    idx=next(idxs),
                     weight=f"blocks.{block_idx}.mlp.W_in",
                 )
             )
@@ -108,7 +105,6 @@ def factorized_dest_nodes(
             name="Resid End",
             module_name=f"blocks.{model.cfg.n_layers - 1}.hook_resid_post",
             layer=next(layers),
-            idx=next(idxs),
             weight="unembed.W_U",
         )
     )
@@ -120,48 +116,68 @@ def simple_graph_nodes(
 ) -> Tuple[Set[SrcNode], Set[DestNode]]:
     """Get the nodes in the unfactorized graph."""
     assert not model.cfg.parallel_attn_mlp
-    layers, src_idxs, dest_idxs = count(), count(), count()
+    layers, src_idxs = count(), count()
     src_nodes, dest_nodes = set(), set()
+    layer = next(layers)
     for block_idx in range(model.cfg.n_layers):
-        layer = next(layers)
+        first_block = block_idx == 0
+        src_nodes.add(
+            SrcNode(
+                name="Resid Start" if first_block else f"Resid Post {block_idx -1}",
+                module_name="blocks.0.hook_resid_pre"
+                if first_block
+                else f"blocks.{block_idx - 1}.hook_resid_post",
+                layer=layer,
+                src_idx=next(src_idxs),
+            )
+        )
         for head_idx in range(model.cfg.n_heads):
             src_nodes.add(
                 SrcNode(
                     name=f"A{block_idx}.{head_idx}",
                     module_name=f"blocks.{block_idx}.attn.hook_result",
                     layer=layer,
-                    idx=next(src_idxs),
+                    src_idx=next(src_idxs),
                     head_idx=head_idx,
                     head_dim=2,
                     weight=f"blocks.{block_idx}.attn.W_O",
                     weight_head_dim=0,
                 )
             )
-        dest_nodes.add(
-            DestNode(
-                name=f"Block {block_idx} Resid Mid",
-                module_name=f"blocks.{block_idx}.hook_resid_mid",
-                layer=next(layers),
-                idx=next(dest_idxs),
+        if not (model.cfg.attn_only or model.cfg.parallel_attn_mlp):
+            layer = next(layers)
+            dest_nodes.add(
+                DestNode(
+                    name=f"Resid Mid {block_idx}",
+                    module_name=f"blocks.{block_idx}.hook_resid_mid",
+                    layer=layer,
+                )
             )
-        )
+            src_nodes.add(
+                SrcNode(
+                    name=f"Resid Mid {block_idx}",
+                    module_name=f"blocks.{block_idx}.hook_resid_mid",
+                    layer=layer,
+                    src_idx=next(src_idxs),
+                )
+            )
         if not model.cfg.attn_only:
             src_nodes.add(
                 SrcNode(
                     name=f"MLP {block_idx}",
-                    module_name=f"blocks.{block_idx}.mlp",
-                    layer=next(layers),
-                    idx=next(src_idxs),
+                    module_name=f"blocks.{block_idx}.hook_mlp_out",
+                    layer=layer,
+                    src_idx=next(src_idxs),
                     weight=f"blocks.{block_idx}.mlp.W_out",
                 )
             )
         last_block = block_idx + 1 == model.cfg.n_layers
+        layer = next(layers)
         dest_nodes.add(
             DestNode(
-                name="Resid Final" if last_block else f"Block {block_idx} Resid Post",
+                name="Resid Final" if last_block else f"Resid Post {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_resid_post",
-                layer=next(layers),
-                idx=next(dest_idxs),
+                layer=layer,
             )
         )
     return src_nodes, dest_nodes

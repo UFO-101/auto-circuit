@@ -98,7 +98,6 @@ class Node:
     name: str
     module_name: str
     layer: int  # Layer of the model (transformer blocks count as 2 layers)
-    idx: int = 0  # Index of the node across all src/dest nodes in all layers
     head_idx: Optional[int] = None
     head_dim: Optional[int] = None
     weight: Optional[str] = None
@@ -116,8 +115,11 @@ class Node:
         return self.name
 
 
+@dataclass(frozen=True)
 class SrcNode(Node):
     """A node that is the source of an edge."""
+
+    src_idx: int = 0  # Index of the node across all src nodes in all layers
 
 
 class DestNode(Node):
@@ -141,7 +143,7 @@ class Edge:
     def patch_idx(self) -> Tuple[int, ...]:
         seq_idx = [] if self.seq_idx is None else [self.seq_idx]
         head_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
-        return tuple(seq_idx + head_idx + [self.src.idx])
+        return tuple(seq_idx + head_idx + [self.src.src_idx])
 
     def patch_mask(self, model: Any) -> t.nn.Parameter:
         return self.dest.module(model).patch_mask

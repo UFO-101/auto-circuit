@@ -98,8 +98,8 @@ def src_ablations(
             model(sample)
 
     # Sort the src_outs dict by node idx
-    src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].idx))
-    assert [src.idx for src in src_outs.keys()] == list(range(len(src_outs)))
+    src_outs = dict(sorted(src_outs.items(), key=lambda x: x[0].src_idx))
+    assert [src.src_idx for src in src_outs.keys()] == list(range(len(src_outs)))
     return t.stack(list(src_outs.values())).detach()
 
 

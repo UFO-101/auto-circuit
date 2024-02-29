@@ -67,9 +67,9 @@ def net_viz(
         if prune_scores is None:
             edge_score = e.patch_mask(model).data[e.patch_idx].item()
             if edge_score == 1.0:  # Show the patched edge activation
-                lbl = e.dest.module(model).patch_src_outs[e.src.idx]
+                lbl = e.dest.module(model).patch_src_outs[e.src.src_idx]
             else:
-                lbl = e.dest.module(model).curr_src_outs[e.src.idx]
+                lbl = e.dest.module(model).curr_src_outs[e.src.src_idx]
         else:
             edge_score = prune_scores[e.dest.module_name][e.patch_idx].item()
             lbl = None
@@ -174,7 +174,7 @@ def draw_seq_graph(
                 interval_end / total_height, 1 - 1e-6
             )
     else:
-        intervals = {None: (0, 1)}
+        intervals = {list(model.edge_dict.keys())[0]: (0, 1)}
 
     # Draw the sankey for each token position
     sankeys = []
@@ -192,8 +192,8 @@ def draw_seq_graph(
         sankeys.append(viz)
 
     layout = go.Layout(
-        height=250 * len(sankeys),
-        width=110 * n_layers,
+        height=max(250 * len(sankeys), 400),
+        width=max(110 * n_layers, 400),
         plot_bgcolor="blue",
     )
     fig = go.Figure(data=sankeys, layout=layout)

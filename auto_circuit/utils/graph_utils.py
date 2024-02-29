@@ -35,13 +35,17 @@ from auto_circuit.utils.tensor_ops import flat_prune_scores
 def patchable_model(
     model: t.nn.Module,
     factorized: bool,
-    separate_qkv: bool,
     slice_output: OutputSlice = None,
     seq_len: Optional[int] = None,
+    separate_qkv: Optional[bool] = None,
     kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...] = (None,),
     device: t.device = t.device("cpu"),
 ) -> PatchableModel:
-    """Wrap a model and all of its node modules to enable patching."""
+    """Wrap a model and all of its node modules to enable patching.
+
+    Warning: Unfactorized models have edges that shouldn't be patched. Tree patching in
+    prune.py won't work because it patch all edges not in the circuit.
+    """
     nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
         model, factorized, separate_qkv, seq_len
     )
@@ -77,7 +81,7 @@ def patchable_model(
 def graph_edges(
     model: t.nn.Module,
     factorized: bool,
-    separate_qkv: bool,
+    separate_qkv: Optional[bool] = None,
     seq_len: Optional[int] = None,
 ) -> Tuple[
     Set[Node],
@@ -106,9 +110,11 @@ def graph_edges(
             srcs: Set[SrcNode] = mm_utils.factorized_src_nodes(model)
             dests: Set[DestNode] = mm_utils.factorized_dest_nodes(model)
         elif isinstance(model, HookedTransformer):
+            assert separate_qkv is not None, "separate_qkv must be specified for LLM"
             srcs: Set[SrcNode] = tl_utils.factorized_src_nodes(model)
             dests: Set[DestNode] = tl_utils.factorized_dest_nodes(model, separate_qkv)
         elif isinstance(model, AutoencoderTransformer):
+            assert separate_qkv is not None, "separate_qkv must be specified for LLM"
             srcs: Set[SrcNode] = sae_utils.factorized_src_nodes(model)
             dests: Set[DestNode] = sae_utils.factorized_dest_nodes(model, separate_qkv)
         else:
@@ -138,18 +144,15 @@ def make_model_patchable(
 
     for module_name, module_nodes in node_dict.items():
         module = module_by_name(model, module_name)
-        src_idxs = None
+        src_idxs_slice = None
         a_node = next(iter(module_nodes))
         head_dim = a_node.head_dim
         assert all([node.head_dim == head_dim for node in module_nodes])
 
         if is_src := any([type(node) == SrcNode for node in module_nodes]):
-            if len(module_nodes) == 1:
-                src_idxs = slice(a_node.idx, a_node.idx + 1)
-            else:
-                idxs = [node.idx for node in module_nodes]
-                src_idxs = slice(min(idxs), max(idxs) + 1)
-                assert src_idxs.stop - src_idxs.start == len(idxs)
+            src_idxs = [n.src_idx for n in module_nodes if type(n) == SrcNode]
+            src_idxs_slice = slice(min(src_idxs), max(src_idxs) + 1)
+            assert src_idxs_slice.stop - src_idxs_slice.start == len(src_idxs)
 
         mask, prev_src_count = None, None
         if is_dest := any([type(node) == DestNode for node in module_nodes]):
@@ -165,7 +168,7 @@ def make_model_patchable(
             head_dim=head_dim,
             seq_dim=None if seq_len is None else seq_dim,  # Patch tokens separately
             is_src=is_src,
-            src_idxs=src_idxs,
+            src_idxs=src_idxs_slice,
             is_dest=is_dest,
             patch_mask=mask,
             prev_src_count=prev_src_count,

@@ -84,7 +84,8 @@ class PatchWrapperImpl(PatchWrapper):
         return out
 
     def __repr__(self):
-        repr = [f"PatchWrapper({self.module.name})"]
+        module_str = self.module.name if hasattr(self.module, "name") else self.module
+        repr = [f"PatchWrapper({module_str})"]
         repr.append(("Src✓" if self.is_src else "") + ("Dest✓" if self.is_dest else ""))
         repr.append(f"Patch Mask: [{self.patch_mask.shape}]") if self.is_dest else None
         repr.append(str(self.patch_mask.data)) if self.is_dest else None

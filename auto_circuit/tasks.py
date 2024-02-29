@@ -189,13 +189,13 @@ class Task:
         diverge_idx = self._train_loader.diverge_idx
         kv_caches = self._train_loader.kv_cache, self._test_loader.kv_cache
         self._model = patchable_model(
-            model,
-            True,
-            self.separate_qkv,
-            self.slice_output,
-            seq_len,
-            kv_caches,
-            self.device,
+            model=model,
+            factorized=True,
+            slice_output=self.slice_output,
+            seq_len=seq_len,
+            separate_qkv=self.separate_qkv,
+            kv_caches=kv_caches,
+            device=self.device,
         )
 
         if self._true_edge_func is not None:

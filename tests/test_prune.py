@@ -30,7 +30,12 @@ def test_pruning(
 
     To visualize, set render_graph=True in run_pruned."""
     model: PatchableModel = patchable_model(
-        micro_model, True, True, "last_seq", seq_len=seq_len, device=DEVICE
+        model=micro_model,
+        factorized=True,
+        slice_output="last_seq",
+        seq_len=seq_len,
+        separate_qkv=True,
+        device=DEVICE,
     )
     test_loader = micro_dataloader
 
@@ -47,9 +52,9 @@ def test_pruning(
     seq_idx = None if seq_len is None else seq_len - 1
     prune_scores: PruneScores = model.new_prune_scores()
     prune_edges: Dict[Edge, float] = {
-        edge_dict[(seq_idx, "B0.1->Output")]: 3.0,
+        edge_dict[(seq_idx, "B0.1->Resid End")]: 3.0,
         edge_dict[(seq_idx, "B0.0->B1.1")]: 2.0,
-        edge_dict[(seq_idx, "Input->B0.0")]: 1.0,
+        edge_dict[(seq_idx, "Resid Start->B0.0")]: 1.0,
     }
     for edge, score in prune_edges.items():
         prune_scores[edge.dest.module_name][edge.patch_idx] = score
@@ -81,7 +86,7 @@ def test_prune_sequence(
 ):
     """Test pruning different positions in the sequence."""
     model: PatchableModel = patchable_model(
-        micro_model, True, False, None, seq_len=3, device=DEVICE
+        model=micro_model, factorized=True, slice_output=None, seq_len=3, device=DEVICE
     )
     test_loader = micro_dataloader
 
@@ -94,9 +99,9 @@ def test_prune_sequence(
 
     prune_scores: PruneScores = model.new_prune_scores()
     prune_edges: Dict[Edge, float] = {
-        edge_dict[(2, "B0.1->Output")]: 3.0,
+        edge_dict[(2, "B0.1->Resid End")]: 3.0,
         edge_dict[(2, "B0.0->B1.1")]: 2.0,
-        edge_dict[(0, "Input->Output")]: 1.0,
+        edge_dict[(0, "Resid Start->Resid End")]: 1.0,
     }
     for edge, score in prune_edges.items():
         prune_scores[edge.dest.module_name][edge.patch_idx] = score

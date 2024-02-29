@@ -193,7 +193,7 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
             name="Resid Start",
             module_name="blocks.0.hook_resid_pre",
             layer=next(layers),
-            idx=next(idxs),
+            src_idx=next(idxs),
             weight="embed.W_E",
         )
     )
@@ -206,7 +206,7 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
                     name=f"A{block_idx}.{head_idx}",
                     module_name=f"blocks.{block_idx}.attn.hook_result",
                     layer=layer,
-                    idx=next(idxs),
+                    src_idx=next(idxs),
                     head_dim=2,
                     head_idx=head_idx,
                     weight=f"blocks.{block_idx}.attn.W_O",
@@ -220,7 +220,7 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
                     name=f"MLP {block_idx} Latent {latent_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_out.latent_outs",
                     layer=layer,
-                    idx=next(idxs),
+                    src_idx=next(idxs),
                     head_dim=2,
                     head_idx=latent_idx,
                     weight=f"blocks.{block_idx}.hook_mlp_out.decoder.weight",
@@ -240,7 +240,7 @@ def factorized_dest_nodes(
     else:
         assert model.cfg.use_attn_in
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
-    layers, idxs = count(1), count()
+    layers = count(1)
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
@@ -252,7 +252,6 @@ def factorized_dest_nodes(
                             name=f"A{block_idx}.{head_idx}.{letter}",
                             module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
                             layer=layer,
-                            idx=next(idxs),
                             head_dim=2,
                             head_idx=head_idx,
                             weight=f"blocks.{block_idx}.attn.W_{letter}",
@@ -265,7 +264,6 @@ def factorized_dest_nodes(
                         name=f"A{block_idx}.{head_idx}",
                         module_name=f"blocks.{block_idx}.hook_attn_in",
                         layer=layer,
-                        idx=next(idxs),
                         head_dim=2,
                         head_idx=head_idx,
                         weight=f"blocks.{block_idx}.attn.W_QKV",
@@ -277,7 +275,6 @@ def factorized_dest_nodes(
                 name=f"MLP {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_mlp_in",
                 layer=layer if model.cfg.parallel_attn_mlp else next(layers),
-                idx=next(idxs),
                 weight=f"blocks.{block_idx}.mlp.W_in",
             )
         )
@@ -286,7 +283,6 @@ def factorized_dest_nodes(
             name="Resid End",
             module_name=f"blocks.{model.cfg.n_layers - 1}.hook_resid_post",
             layer=next(layers),
-            idx=next(idxs),
             weight="unembed.W_U",
         )
     )

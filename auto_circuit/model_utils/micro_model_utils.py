@@ -25,7 +25,7 @@ class Block(t.nn.Module):
 
 
 class MicroModel(t.nn.Module):
-    """A model trivial with three layers of simple operations."""
+    """A trivial model with two "heads" per layer that perform simple multiplication."""
 
     def __init__(self, n_layers: int = 2):
         super().__init__()
@@ -50,7 +50,12 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
     nodes = set()
     layers, idxs = count(), count()
     nodes.add(
-        SrcNode(name="Input", module_name="input", layer=next(layers), idx=next(idxs))
+        SrcNode(
+            name="Resid Start",
+            module_name="input",
+            layer=next(layers),
+            src_idx=next(idxs),
+        )
     )
     for layer_idx in range(model.n_layers):
         layer = next(layers)
@@ -60,7 +65,7 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
                     name=f"B{layer_idx}.{elem}",
                     module_name=f"blocks.{layer_idx}.head_outputs",
                     layer=layer,
-                    idx=next(idxs),
+                    src_idx=next(idxs),
                     head_idx=elem,
                     head_dim=2,
                     weight="weights",
@@ -72,7 +77,7 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
 
 def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
     nodes = set()
-    layers, idxs = count(1), count()
+    layers = count(1)
     for layer_idx in range(model.n_layers):
         layer = next(layers)
         for elem in [0, 1]:
@@ -81,17 +86,15 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
                     name=f"B{layer_idx}.{elem}",
                     module_name=f"blocks.{layer_idx}.head_inputs",
                     layer=layer,
-                    idx=next(idxs),
                     head_idx=elem,
                     head_dim=2,
                 )
             )
     nodes.add(
         DestNode(
-            name="Output",
+            name="Resid End",
             module_name="output",
             layer=next(layers),
-            idx=next(idxs),
         )
     )
     return nodes
@@ -99,16 +102,25 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
 
 def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
     src_nodes, dest_nodes = set(), set()
-    layers, src_idxs, dest_idxs = count(), count(), count()
+    layers, src_idxs = count(), count()
     for layer_idx in range(model.n_layers):
         layer = next(layers)
+        first_block = layer_idx == 0
+        src_nodes.add(
+            SrcNode(
+                name="Resid Start" if first_block else f"Resid Post {layer_idx -1}",
+                module_name="input" if first_block else f"resids.{layer_idx - 1}",
+                layer=layer,
+                src_idx=next(src_idxs),
+            )
+        )
         for elem in [0, 1]:
             src_nodes.add(
                 SrcNode(
-                    name=f"Block {layer_idx} Head {elem}",
-                    module_name=f"blocks.{layer_idx}.head_inputs",
+                    name=f"B{layer_idx}.{elem}",
+                    module_name=f"blocks.{layer_idx}.head_outputs",
                     layer=layer,
-                    idx=next(src_idxs),
+                    src_idx=next(src_idxs),
                     head_idx=elem,
                     head_dim=2,
                     weight="weights",
@@ -118,10 +130,9 @@ def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
         last_block = layer_idx == model.n_layers - 1
         dest_nodes.add(
             DestNode(
-                name="Output" if last_block else f"Resid Layer {layer_idx}",
+                name="Resid End" if last_block else f"Resid Post {layer_idx}",
                 module_name="output" if last_block else f"resids.{layer_idx}",
                 layer=next(layers),
-                idx=next(dest_idxs),
             )
         )
     return src_nodes, dest_nodes
