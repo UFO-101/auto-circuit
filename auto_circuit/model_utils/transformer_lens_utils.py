@@ -114,11 +114,15 @@ def factorized_dest_nodes(
 def simple_graph_nodes(
     model: tl.HookedTransformer,
 ) -> Tuple[Set[SrcNode], Set[DestNode]]:
-    """Get the nodes in the unfactorized graph."""
+    """
+    Get the nodes in the unfactorized graph.
+    make_model_patchable requires that all input SrcNodes are in the previous layer to
+    the respective DestNode.
+    """
     assert not model.cfg.parallel_attn_mlp
     layers, src_idxs = count(), count()
     src_nodes, dest_nodes = set(), set()
-    layer = next(layers)
+    layer, min_src_idx = next(layers), next(src_idxs)
     for block_idx in range(model.cfg.n_layers):
         first_block = block_idx == 0
         src_nodes.add(
@@ -128,7 +132,7 @@ def simple_graph_nodes(
                 if first_block
                 else f"blocks.{block_idx - 1}.hook_resid_post",
                 layer=layer,
-                src_idx=next(src_idxs),
+                src_idx=min_src_idx,
             )
         )
         for head_idx in range(model.cfg.n_heads):
@@ -151,14 +155,16 @@ def simple_graph_nodes(
                     name=f"Resid Mid {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_resid_mid",
                     layer=layer,
+                    min_src_idx=min_src_idx,
                 )
             )
+            min_src_idx = next(src_idxs)
             src_nodes.add(
                 SrcNode(
                     name=f"Resid Mid {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_resid_mid",
                     layer=layer,
-                    src_idx=next(src_idxs),
+                    src_idx=min_src_idx,
                 )
             )
         if not model.cfg.attn_only:
@@ -178,6 +184,8 @@ def simple_graph_nodes(
                 name="Resid Final" if last_block else f"Resid Post {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_resid_post",
                 layer=layer,
+                min_src_idx=min_src_idx,
             )
         )
+        min_src_idx = next(src_idxs)
     return src_nodes, dest_nodes

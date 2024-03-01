@@ -101,17 +101,23 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
 
 
 def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
+    """
+    Get the nodes of the unfactorized graph.
+    make_model_patchable requires that all input SrcNodes are in the previous layer to
+    the respective DestNode.
+    """
     src_nodes, dest_nodes = set(), set()
     layers, src_idxs = count(), count()
+    layer = next(layers)
     for layer_idx in range(model.n_layers):
-        layer = next(layers)
+        min_src_idx = next(src_idxs)
         first_block = layer_idx == 0
         src_nodes.add(
             SrcNode(
                 name="Resid Start" if first_block else f"Resid Post {layer_idx -1}",
                 module_name="input" if first_block else f"resids.{layer_idx - 1}",
                 layer=layer,
-                src_idx=next(src_idxs),
+                src_idx=min_src_idx,
             )
         )
         for elem in [0, 1]:
@@ -128,11 +134,13 @@ def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
                 )
             )
         last_block = layer_idx == model.n_layers - 1
+        layer = next(layers)
         dest_nodes.add(
             DestNode(
                 name="Resid End" if last_block else f"Resid Post {layer_idx}",
                 module_name="output" if last_block else f"resids.{layer_idx}",
-                layer=next(layers),
+                layer=layer,
+                min_src_idx=min_src_idx,
             )
         )
     return src_nodes, dest_nodes

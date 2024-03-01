@@ -48,6 +48,7 @@ class Task:
     token_circuit: bool
     _model_def: str | t.nn.Module
     _dataset_name: str
+    factorized: bool = True
     separate_qkv: bool = True
     _true_edge_func: Optional[Callable[..., Set[Edge]]] = None
     slice_output: OutputSlice = "last_seq"
@@ -190,7 +191,7 @@ class Task:
         kv_caches = self._train_loader.kv_cache, self._test_loader.kv_cache
         self._model = patchable_model(
             model=model,
-            factorized=True,
+            factorized=self.factorized,
             slice_output=self.slice_output,
             seq_len=seq_len,
             separate_qkv=self.separate_qkv,

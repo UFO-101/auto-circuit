@@ -203,12 +203,10 @@ def test_ioi_node_based_circuit_factorized_vs_unfactorized(
     edges_in_circuit = ioi_head_based_official_edges(
         unfctrzd_gpt2, token_positions=True, seq_start_idx=diverge_idx
     )
-    set_all_masks(unfctrzd_gpt2, 0.0)
+    set_all_masks(unfctrzd_gpt2, 1.0)
     for edge in unfctrzd_gpt2.edges:
-        # We have to iterate through all edges NOT in the circuit because unfactorized
-        # models have edge masks that shouldn't be used. So we can't set_all_masks(1.0)
-        if edge not in edges_in_circuit:
-            edge.patch_mask(unfctrzd_gpt2).data[edge.patch_idx] = 1.0
+        if edge in edges_in_circuit:
+            edge.patch_mask(unfctrzd_gpt2).data[edge.patch_idx] = 0.0
 
     unfctrzd_patch = unfctrzd_patches[first_train_batch.key]
     with patch_mode(unfctrzd_gpt2, unfctrzd_patch):

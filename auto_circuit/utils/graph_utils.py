@@ -50,7 +50,7 @@ def patchable_model(
         model, factorized, separate_qkv, seq_len
     )
     wrappers, src_wrappers, dest_wrappers = make_model_patchable(
-        model, srcs, nodes, device, seq_len, seq_dim
+        model, factorized, srcs, nodes, device, seq_len, seq_dim
     )
     if slice_output is None:
         out_slice: Tuple[slice | int, ...] = (slice(None),)
@@ -131,6 +131,7 @@ def graph_edges(
 
 def make_model_patchable(
     model: t.nn.Module,
+    factorized: bool,
     src_nodes: Set[SrcNode],
     nodes: Set[Node],
     device: t.device,
@@ -155,14 +156,21 @@ def make_model_patchable(
             src_idxs_slice = slice(min(src_idxs), max(src_idxs) + 1)
             assert src_idxs_slice.stop - src_idxs_slice.start == len(src_idxs)
 
-        mask, prev_src_count = None, None
+        mask, in_srcs = None, None
         if is_dest := any([type(node) == DestNode for node in module_nodes]):
             module_dest_count = len([n for n in module_nodes if type(n) == DestNode])
-            prev_src_count = len([n for n in src_nodes if n.layer < a_node.layer])
+            if factorized:
+                n_in_src = len([n for n in src_nodes if n.layer < a_node.layer])
+                n_ignore_src = 0
+            else:
+                n_in_src = len([n for n in src_nodes if n.layer + 1 == a_node.layer])
+                n_ignore_src = len([n for n in src_nodes if n.layer + 1 < a_node.layer])
+            in_srcs = slice(n_ignore_src, n_ignore_src + n_in_src)
             seq_shape = [seq_len] if seq_len is not None else []
             head_shape = [module_dest_count] if head_dim is not None else []
-            mask_shape = seq_shape + head_shape + [prev_src_count]
+            mask_shape = seq_shape + head_shape + [n_in_src]
             mask = t.zeros(mask_shape, device=device, dtype=dtype, requires_grad=False)
+
         wrapper = PatchWrapperImpl(
             module_name=module_name,
             module=module,
@@ -172,7 +180,7 @@ def make_model_patchable(
             src_idxs=src_idxs_slice,
             is_dest=is_dest,
             patch_mask=mask,
-            prev_src_count=prev_src_count,
+            in_srcs=in_srcs,
         )
         set_module_by_name(model, module_name, wrapper)
         wrappers.add(wrapper)

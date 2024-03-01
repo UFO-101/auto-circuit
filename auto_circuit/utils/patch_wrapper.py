@@ -18,7 +18,7 @@ class PatchWrapperImpl(PatchWrapper):
         src_idxs: Optional[slice] = None,
         is_dest: bool = False,
         patch_mask: Optional[t.Tensor] = None,
-        prev_src_count: Optional[int] = None,
+        in_srcs: Optional[slice] = None,
     ):
         super().__init__()
         self.module_name: str = module_name
@@ -26,6 +26,7 @@ class PatchWrapperImpl(PatchWrapper):
         self.head_dim: Optional[int] = head_dim
         self.seq_dim: Optional[int] = seq_dim
         self.curr_src_outs: Optional[t.Tensor] = None
+        self.in_srcs: Optional[slice] = in_srcs
 
         self.is_src = is_src
         if self.is_src:
@@ -36,7 +37,6 @@ class PatchWrapperImpl(PatchWrapper):
         if self.is_dest:
             assert patch_mask is not None
             self.patch_mask: t.nn.Parameter = t.nn.Parameter(patch_mask)
-            self.prev_src_count: Optional[int] = prev_src_count
             self.patch_src_outs: Optional[t.Tensor] = None
             self.mask_fn: MaskFn = None
             self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
@@ -45,14 +45,13 @@ class PatchWrapperImpl(PatchWrapper):
         assert head_dim is None or seq_dim is None or head_dim > seq_dim
         dims = range(1, max(head_dim if head_dim else 2, seq_dim if seq_dim else 2))
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
-        self.src_slice = slice(prev_src_count) if prev_src_count else None
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         arg_0: t.Tensor = args[0].clone()
 
         if self.patch_mode and self.is_dest:
             assert self.patch_src_outs is not None and self.curr_src_outs is not None
-            d = self.patch_src_outs[self.src_slice] - self.curr_src_outs[self.src_slice]
+            d = self.patch_src_outs[self.in_srcs] - self.curr_src_outs[self.in_srcs]
             batch_str = ""
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately

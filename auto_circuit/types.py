@@ -122,8 +122,11 @@ class SrcNode(Node):
     src_idx: int = 0  # Index of the node across all src nodes in all layers
 
 
+@dataclass(frozen=True)
 class DestNode(Node):
     """A node that is the destination of an edge."""
+
+    min_src_idx: int = 0  # min src_idx of all incoming SrcNodes (0 in factorized model)
 
 
 PruneScores = Dict[str, t.Tensor]  # module_name -> edge scores
@@ -143,7 +146,7 @@ class Edge:
     def patch_idx(self) -> Tuple[int, ...]:
         seq_idx = [] if self.seq_idx is None else [self.seq_idx]
         head_idx = [] if self.dest.head_idx is None else [self.dest.head_idx]
-        return tuple(seq_idx + head_idx + [self.src.src_idx])
+        return tuple(seq_idx + head_idx + [self.src.src_idx - self.dest.min_src_idx])
 
     def patch_mask(self, model: Any) -> t.nn.Parameter:
         return self.dest.module(model).patch_mask
