@@ -55,33 +55,59 @@ class Conn:
 
 
 def ioi_true_edges(
-    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    Note: Assumes the prompt is 15 tokens long, as in ioi_single_template_prompts.json.
+    The edge-level circuit from the IOI paper.
     """
     assert model.cfg.model_name == "gpt2"
     assert model.is_factorized
 
+    final_tok_idx = word_idxs.get("end", 0)
+    io_tok_idx = word_idxs.get("IO", 0)
+    s1_tok_idx = word_idxs.get("S1", 0)
+    s2_tok_idx = word_idxs.get("S2", 0)
+    s1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
+
+    if token_positions:
+        assert final_tok_idx > 0, "word_idxs can't be empty if token_positions is True"
+
     special_connections: List[Conn] = [
-        Conn("INPUT", "previous token", [("q", 5), ("k", 4), ("v", 4)]),
-        Conn("INPUT", "duplicate token", [("q", 10), ("k", 4), ("v", 4)]),
-        Conn("INPUT", "s2 inhibition", [("q", 14)]),
-        Conn("INPUT", "negative", [("k", 2), ("v", 2)]),
-        Conn("INPUT", "name mover", [("k", 2), ("v", 2)]),
-        Conn("INPUT", "backup name mover", [("k", 2), ("v", 2)]),
-        Conn("previous token", "induction", [("k", 5), ("v", 5)]),
-        Conn("induction", "s2 inhibition", [("k", 10), ("v", 10)]),
-        Conn("duplicate token", "s2 inhibition", [("k", 10), ("v", 10)]),
-        Conn("s2 inhibition", "negative", [("q", 14)]),
-        Conn("s2 inhibition", "name mover", [("q", 14)]),
-        Conn("s2 inhibition", "backup name mover", [("q", 14)]),
-        Conn("negative", "OUTPUT", [(None, 14)]),
-        Conn("name mover", "OUTPUT", [(None, 14)]),
-        Conn("backup name mover", "OUTPUT", [(None, 14)]),
+        Conn(
+            "INPUT",
+            "previous token",
+            [("q", s1_plus_1_tok_idx), ("k", s1_tok_idx), ("v", s1_tok_idx)],
+        ),
+        Conn(
+            "INPUT",
+            "duplicate token",
+            [("q", s2_tok_idx), ("k", s1_tok_idx), ("v", s1_tok_idx)],
+        ),
+        Conn("INPUT", "s2 inhibition", [("q", final_tok_idx)]),
+        Conn("INPUT", "negative", [("k", io_tok_idx), ("v", io_tok_idx)]),
+        Conn("INPUT", "name mover", [("k", io_tok_idx), ("v", io_tok_idx)]),
+        Conn("INPUT", "backup name mover", [("k", io_tok_idx), ("v", io_tok_idx)]),
+        Conn(
+            "previous token",
+            "induction",
+            [("k", s1_plus_1_tok_idx), ("v", s1_plus_1_tok_idx)],
+        ),
+        Conn("induction", "s2 inhibition", [("k", s2_tok_idx), ("v", s2_tok_idx)]),
+        Conn(
+            "duplicate token", "s2 inhibition", [("k", s2_tok_idx), ("v", s2_tok_idx)]
+        ),
+        Conn("s2 inhibition", "negative", [("q", final_tok_idx)]),
+        Conn("s2 inhibition", "name mover", [("q", final_tok_idx)]),
+        Conn("s2 inhibition", "backup name mover", [("q", final_tok_idx)]),
+        Conn("negative", "OUTPUT", [(None, final_tok_idx)]),
+        Conn("name mover", "OUTPUT", [(None, final_tok_idx)]),
+        Conn("backup name mover", "OUTPUT", [(None, final_tok_idx)]),
     ]
+
     edges_present: Dict[str, List[int]] = defaultdict(list)
-    # edges_present: Dict[str, List[int]] = {}
     for conn in special_connections:
         edge_src_names, edge_dests = [], []
         if conn.inp == "INPUT":
@@ -91,7 +117,6 @@ def ioi_true_edges(
                 edge_src_names.append(f"A{layer}.{head}")
         if conn.out == "OUTPUT":
             assert len(conn.qkv) == 1
-            final_tok_idx = conn.qkv[0][1]
             edge_dests.append(("Resid End", final_tok_idx))
         else:
             for (layer, head) in IOI_CIRCUIT[conn.out]:
@@ -136,22 +161,23 @@ def ioi_true_edges(
 
 
 def ioi_head_based_official_edges(
-    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    Note: Assumes the prompt is 15 tokens long (if token_positions is True), as in
-    ioi_single_template_prompts.json.
     Works for both factorized and unfactorized models.
     """
-    # Tok idxs named for their words in the example sentence:
-    # BOS When Mary and John went to the store, John gave a drink to
-    # 0   1    2    3   4    5    6  7   8    9 10   11   1213    14
-    final_tok_idx = 14
-    john_2nd_tok_idx = 10
-    john_1_plus_1_tok_idx = 4
-
     assert model.cfg.model_name == "gpt2"
     assert (model.seq_len is not None) == token_positions
+
+    final_tok_idx = word_idxs.get("end", 0)
+    S2_tok_idx = word_idxs.get("S2", 0)
+    S1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
+
+    if token_positions:
+        assert final_tok_idx > 0, "word_idxs can't be empty if token_positions is True"
 
     CIRCUIT = {
         "name mover": [(9, 9), (10, 0), (9, 6)],
@@ -177,9 +203,9 @@ def ioi_head_based_official_edges(
         "backup name mover": final_tok_idx,
         "negative name mover": final_tok_idx,
         "s2 inhibition": final_tok_idx,
-        "induction": john_2nd_tok_idx,
-        "duplicate token": john_2nd_tok_idx,
-        "previous token": john_1_plus_1_tok_idx,
+        "induction": S2_tok_idx,
+        "duplicate token": S2_tok_idx,
+        "previous token": S1_plus_1_tok_idx,
     }
     heads_to_keep: Set[Tuple[str, Optional[int]]] = set()
     for head_type, head_idxs in CIRCUIT.items():

@@ -134,10 +134,9 @@ train_dataloader, test_dataloader = load_datasets_from_json(
     device=t.device(model.cfg.device),
     prepend_bos=True,
     batch_size=10,
-    train_test_split=[0.9, 0.1],
-    length_limit=1000,
+    train_test_size=(900, 100),
     return_seq_length=False,
-    random_subet=True,
+    shuffle=True,
     pad=True,
 )
 encoder_model = train_model(

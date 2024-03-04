@@ -2,14 +2,18 @@
 # https://github.com/callummcdougall/ARENA_2.0/blob/main/chapter1_transformers/exercises/part3_indirect_object_identification/ioi_dataset.py # noqa: E501
 #%%
 
-from typing import Union, List, Optional
-import warnings
-import torch as t
-import numpy as np
-from transformers import AutoTokenizer
-import random
 import copy
+import json
+import random
 import re
+import warnings
+from typing import List, Optional, Union
+
+import numpy as np
+import torch as t
+from transformers import AutoTokenizer
+
+from auto_circuit.utils.misc import repo_path_to_abs_path
 
 NAMES = [
     "Aaron",
@@ -136,7 +140,7 @@ BAC_TEMPLATES = [
 ]
 
 BABA_TEMPLATES = [
-    "When [B] and [A] went to the [PLACE], [B] gave a [OBJECT] to [A]",
+    # "When [B] and [A] went to the [PLACE], [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] went to the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] had a lot of fun at the [PLACE]. [B] gave a [OBJECT] to [A]",
     "Then, [B] and [A] were working at the [PLACE]. [B] decided to give a [OBJECT] to [A]",
@@ -291,9 +295,13 @@ def gen_prompt_uniform(
     return ioi_prompts
 
 
-
-def flip_words_in_prompt(prompt: str, word1: str, word2: str, instances: Optional[Union[int, List[int]]] = None):
-    '''
+def flip_words_in_prompt(
+    prompt: str,
+    word1: str,
+    word2: str,
+    instances: Optional[Union[int, List[int]]] = None,
+):
+    """
     Flips instances of word `word1` with `word2` in the string `string`.
 
     By default it flips all instances, but the optional `instances` argument specifies which
@@ -305,7 +313,7 @@ def flip_words_in_prompt(prompt: str, word1: str, word2: str, instances: Optiona
         ("ABA", "A", "B") -> "BAB"
         ("ABA", "A", "B", 1) -> "AAA"
         ("ABA", "A", "B", [0, 1]) -> "BAA
-    '''
+    """
     split_prompt = re.split("({}|{})".format(word1, word2), prompt)
     indices_of_names = [i for i, s in enumerate(split_prompt) if s in (word1, word2)]
     indices_to_flip = [indices_of_names[i] for i in instances]
@@ -313,11 +321,16 @@ def flip_words_in_prompt(prompt: str, word1: str, word2: str, instances: Optiona
         split_prompt[i] = word1 if split_prompt[i] == word2 else word1
     prompt = "".join(split_prompt)
     return prompt
-    
 
 
-def gen_flipped_prompts(prompts: List[dict], templates_by_prompt: List[str], flip: str, names: List[str], seed: int) -> List[dict]:
-    '''
+def gen_flipped_prompts(
+    prompts: List[dict],
+    templates_by_prompt: List[str],
+    flip: str,
+    names: List[str],
+    seed: int,
+) -> List[dict]:
+    """
     Flip prompts in a way described by the flip argument. Returns new prompts.
 
     prompts: List[dict]
@@ -336,21 +349,22 @@ def gen_flipped_prompts(prompts: List[dict], templates_by_prompt: List[str], fli
         provides reproducibility
 
     Note that we don't bother flipping the last token in the prompt (IO2), since
-    we don't use it for anything (intuitively, we use this function to create 
+    we don't use it for anything (intuitively, we use this function to create
     datasets to provide us with corrupted signals, but we still use the IO2 from
-    the original uncorrupted IOI database as our "correct answer", so we don't 
+    the original uncorrupted IOI database as our "correct answer", so we don't
     care about what the correct answer (IO2) for the corrupted set is).
-    '''
+    """
     random.seed(seed)
     np.random.seed(seed)
+    t.manual_seed(seed)
     abba_flip, baba_flip = flip.split(",")
     flip_dict = {
         "ABB": [flip.strip() for flip in abba_flip.split("->")],
-        "BAB": [flip.strip() for flip in baba_flip.split("->")]
+        "BAB": [flip.strip() for flip in baba_flip.split("->")],
     }
 
     new_prompts = []
-    
+
     for idx, (prompt, template) in enumerate(zip(prompts, templates_by_prompt)):
 
         flip_orig, flip_new = flip_dict[template[:-1]]
@@ -359,32 +373,32 @@ def gen_flipped_prompts(prompts: List[dict], templates_by_prompt: List[str], fli
 
         # Get indices and original values of first three names int the prompt
         prompt_split = prompt["text"].split(" ")
-        orig_names_and_posns = [(i, s) for i, s in enumerate(prompt_split) if s in names][:3]
+        orig_names_and_posns = [
+            (i, s) for i, s in enumerate(prompt_split) if s in names
+        ][:3]
         orig_names = list(zip(*orig_names_and_posns))[1]
 
         # Get a dictionary of the correspondence between orig names and letters in flip_orig
         # (and get a subdict for those names which are kept in flip_new)
-        orig_names_key = {
-            letter: s
-            for s, letter in zip(orig_names, flip_orig)
-        }
-        kept_names_key = {
-            k: v
-            for k, v in orig_names_key.items() if k in flip_new
-        }
+        orig_names_key = {letter: s for s, letter in zip(orig_names, flip_orig)}
+        kept_names_key = {k: v for k, v in orig_names_key.items() if k in flip_new}
         # This line will throw an error if flip_orig is wrong (e.g. if it says "SOS" but the
         # S1 and S2 tokens don't actually match
         assert len(orig_names_key) == len(set(flip_orig))
-        
+
         # Get all random names we'll need, in the form of a dictionary
         rand_names = {
-            letter: np.random.choice(list(set(names) - set(orig_names)))
-            for letter in set(flip_new) - set(flip_orig)
+            # (Joseph M) Added sorted because sets makes this non-deterministic
+            letter: np.random.choice(list(sorted(set(names) - set(orig_names), key=names.index)))
+            for letter in list(sorted(set(flip_new) - set(flip_orig), key=flip_new.index))
         }
-        
+
         # Get a "full dictionary" which maps letters in flip_new to the new values they will have
         name_replacement_dict = {**kept_names_key, **rand_names}
-        assert len(name_replacement_dict) == len(set(flip_new)), (name_replacement_dict, flip_new)
+        assert len(name_replacement_dict) == len(set(flip_new)), (
+            name_replacement_dict,
+            flip_new,
+        )
 
         # Populate the new names, with either random names or with the corresponding orig names
         for (i, s), letter in zip(orig_names_and_posns, flip_new):
@@ -394,11 +408,15 @@ def gen_flipped_prompts(prompts: List[dict], templates_by_prompt: List[str], fli
         prompt["text"] = " ".join(prompt_split)
 
         # Change the identity of the S and IO tokens.
-        # S token is just same as S2, but IO is a bit messier because it might not be 
-        # well-defined (it's defined as the unique non-duplicated name of the first 
+        # S token is just same as S2, but IO is a bit messier because it might not be
+        # well-defined (it's defined as the unique non-duplicated name of the first
         # two). If it's ill-defined, WLOG set it to be the second name.
         prompt["S"] = name_replacement_dict[flip_new[-1]]
-        possible_IOs = [name_replacement_dict[letter] for letter in flip_new[:2] if list(flip_new).count(letter) == 1]
+        possible_IOs = [
+            name_replacement_dict[letter]
+            for letter in flip_new[:2]
+            if list(flip_new).count(letter) == 1
+        ]
         # Case where IO is well-defined
         if len(possible_IOs) == 1:
             prompt["IO"] = possible_IOs[0]
@@ -411,7 +429,6 @@ def gen_flipped_prompts(prompts: List[dict], templates_by_prompt: List[str], fli
     return new_prompts
 
 
-
 def get_name_idxs(prompts, tokenizer, idx_types=["IO", "S1", "S2"], prepend_bos=False):
     name_idx_dict = dict((idx_type, []) for idx_type in idx_types)
     for prompt in prompts:
@@ -422,17 +439,14 @@ def get_name_idxs(prompts, tokenizer, idx_types=["IO", "S1", "S2"], prepend_bos=
             toks.index(tokenizer.tokenize(" " + prompt["IO"])[0])
         )
         # Get the first instance of S token
-        name_idx_dict["S1"].append(
-            toks.index(tokenizer.tokenize(" " + prompt["S"])[0])
-        )
+        name_idx_dict["S1"].append(toks.index(tokenizer.tokenize(" " + prompt["S"])[0]))
         # Get the last instance of S token
         name_idx_dict["S2"].append(
             len(toks) - toks[::-1].index(tokenizer.tokenize(" " + prompt["S"])[0]) - 1
         )
 
     return [
-        int(prepend_bos) + t.tensor(name_idx_dict[idx_type])
-        for idx_type in idx_types
+        int(prepend_bos) + t.tensor(name_idx_dict[idx_type]) for idx_type in idx_types
     ]
 
 
@@ -496,9 +510,6 @@ def get_end_idxs(toks, tokenizer, name_tok_len=1, prepend_bos=False):
     return end_idxs
 
 
-
-
-
 def get_idx_dict(ioi_prompts, tokenizer, prepend_bos=False, toks=None):
     (IO_idxs, S1_idxs, S2_idxs,) = get_name_idxs(
         ioi_prompts,
@@ -530,10 +541,6 @@ def get_idx_dict(ioi_prompts, tokenizer, prepend_bos=False, toks=None):
     }
 
 
-
-
-
-
 class IOIDataset:
     def __init__(
         self,
@@ -546,18 +553,20 @@ class IOIDataset:
         symmetric=False,
         prefixes=None,
         nb_templates=None,
+        template_idx=None,
         prepend_bos=False,
         manual_word_idx=None,
-        has_been_flipped:bool=False,
+        has_been_flipped: bool = False,
         seed=0,
-        device="cuda"
+        device="cuda",
     ):
         self.seed = seed
         random.seed(self.seed)
         np.random.seed(self.seed)
+        t.manual_seed(self.seed)
         if not (
             N == 1
-            or prepend_bos == False
+            or prepend_bos is False
             or tokenizer.bos_token_id == tokenizer.eos_token_id
         ):
             warnings.warn(
@@ -574,9 +583,15 @@ class IOIDataset:
             nb_templates = len(BABA_TEMPLATES)
 
         if prompt_type == "ABBA":
-            self.templates = ABBA_TEMPLATES[:nb_templates].copy()
+            if template_idx is not None:
+                self.templates = [ABBA_TEMPLATES[template_idx]]
+            else:
+                self.templates = ABBA_TEMPLATES[:nb_templates].copy()
         elif prompt_type == "BABA":
-            self.templates = BABA_TEMPLATES[:nb_templates].copy()
+            if template_idx is not None:
+                self.templates = [BABA_TEMPLATES[template_idx]]
+            else:
+                self.templates = BABA_TEMPLATES[:nb_templates].copy()
         elif prompt_type == "mixed":
             self.templates = (
                 BABA_TEMPLATES[: nb_templates // 2].copy()
@@ -674,9 +689,7 @@ class IOIDataset:
         self.s_tokenIDs = [
             self.tokenizer.encode(" " + prompt["S"])[0] for prompt in self.ioi_prompts
         ]
-        self.s_token_strs = [
-            " " + prompt["S"] for prompt in self.ioi_prompts
-        ]
+        self.s_token_strs = [" " + prompt["S"] for prompt in self.ioi_prompts]
 
         self.tokenized_prompts = []
 
@@ -687,17 +700,21 @@ class IOIDataset:
 
         self.device = device
         self.to(device)
-    
+
     def gen_flipped_prompts(self, flip):
         # Check if it's already been flipped (shouldn't string 2 flips together)
         if self.has_been_flipped:
-            warnings.warn("This dataset has already been flipped. Generally, you should try and apply flips in one step, because this can lead to errors.")
+            warnings.warn(
+                "This dataset has already been flipped. Generally, you should try and apply flips in one step, because this can lead to errors."
+            )
 
         # Redefine seed (so it's different depending on what the flip is, e.g. we don't want (IO, RAND) then (S, RAND) to give us the same rand names)
         seed = self.seed + sum(map(ord, list("".join(flip))))
 
         # Get flipped prompts
-        flipped_prompts = gen_flipped_prompts(self.ioi_prompts, self.templates_by_prompt, flip, NAMES, seed)
+        flipped_prompts = gen_flipped_prompts(
+            self.ioi_prompts, self.templates_by_prompt, flip, NAMES, seed
+        )
 
         flipped_ioi_dataset = IOIDataset(
             prompt_type=self.prompt_type,
@@ -709,7 +726,7 @@ class IOIDataset:
             manual_word_idx=self.word_idx,
             has_been_flipped=True,
             seed=seed,
-            device=self.device
+            device=self.device,
         )
         return flipped_ioi_dataset
 
@@ -719,8 +736,10 @@ class IOIDataset:
             N=self.N,
             tokenizer=self.tokenizer,
             prompts=self.ioi_prompts.copy(),
-            prefixes=self.prefixes.copy() if self.prefixes is not None else self.prefixes,
-            device=self.device
+            prefixes=self.prefixes.copy()
+            if self.prefixes is not None
+            else self.prefixes,
+            device=self.device,
         )
         return copy_ioi_dataset
 
@@ -733,7 +752,7 @@ class IOIDataset:
             prompts=sliced_prompts,
             prefixes=self.prefixes,
             prepend_bos=self.prepend_bos,
-            device=self.device
+            device=self.device,
         )
         return sliced_dataset
 
@@ -753,48 +772,58 @@ class IOIDataset:
         self.toks = self.toks.to(device)
         return self
 
-#%%
-import json
+
 N = 1000
-ioi_dataset = IOIDataset(
-    prompt_type="mixed",
-    # prompt_type="ABBA",
-    N=N,
-    tokenizer=None,
-    prepend_bos=False,
-    seed=1,
-    device="cpu",
-)
-print([prompt["text"] for prompt in ioi_dataset.ioi_prompts])
+for order in ["ABBA", "BABA"]:
+# for order in ["ABBA"]:
+    for template_idx in range(15):
+    # for template_idx in range(1):
+        ioi_dataset = IOIDataset(
+            prompt_type=order,
+            N=N,
+            tokenizer=None,
+            prepend_bos=False,
+            template_idx=template_idx,
+            seed=0,
+            device="cpu",
+        )
+        print([prompt["text"] for prompt in ioi_dataset.ioi_prompts])
 
-# For justification of this particular prompt format see:
-# https://colab.research.google.com/drive/1M4F9SU_vHUUCQkhmtWnmY2eomOJu5B5s#scrollTo=Srst_LcHl6mS
+        # For justification of this particular prompt format see:
+        # https://colab.research.google.com/drive/1M4F9SU_vHUUCQkhmtWnmY2eomOJu5B5s#scrollTo=Srst_LcHl6mS
 
-abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ, BAB->XYZ")
-print(ioi_dataset.s_tokenIDs)
-# abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ")
-# print([prompt["text"] for prompt in abc_dataset.ioi_prompts])
+        abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ, BAB->XYZ")
+        print(ioi_dataset.s_tokenIDs)
+        # abc_dataset = ioi_dataset.gen_flipped_prompts("ABB->XYZ")
+        # print([prompt["text"] for prompt in abc_dataset.ioi_prompts])
 
-prompt_dicts = []
-for i, (clean_prompt, corrupt_prompt) in enumerate(zip(ioi_dataset.ioi_prompts, abc_dataset.ioi_prompts)):
-    prompt_dict = {
-        "clean": " ".join(clean_prompt["text"].split()[:-1]),
-        "corrupt": " ".join(corrupt_prompt["text"].split()[:-1]),
-        # We don't need the space but these are more common tokens (lower indices)
-        "answers": [" " + clean_prompt["text"].split()[-1]],
-        "wrong_answers": [ioi_dataset.s_token_strs[i]]
-    }
-    prompt_dicts.append(prompt_dict)
+        prompt_dicts = []
+        for i, (clean_prompt, corrupt_prompt) in enumerate(
+            zip(ioi_dataset.ioi_prompts, abc_dataset.ioi_prompts)
+        ):
+            prompt_dict = {
+                "clean": " ".join(clean_prompt["text"].split()[:-1]),
+                "corrupt": " ".join(corrupt_prompt["text"].split()[:-1]),
+                # We don't need the space but these are more common tokens (lower indices)
+                "answers": [" " + clean_prompt["text"].split()[-1]],
+                "wrong_answers": [ioi_dataset.s_token_strs[i]],
+            }
+            prompt_dicts.append(prompt_dict)
 
-for i in range(3):
-    print()
-    print("Clean:", prompt_dicts[i]["clean"])
-    print("Corrupt:", prompt_dicts[i]["corrupt"])
-    print("Answers:", prompt_dicts[i]["answers"])
-    print("Wrong answers:", prompt_dicts[i]["wrong_answers"])
-data_json = {"prompts": prompt_dicts}
+        # Add 1 because we will prepend a bos token
+        word_idxs = dict([(word, idx[0].item() + (0 if word == "starts" else 0)) for word, idx in ioi_dataset.word_idx.items()])
+        print("word_idxs:", word_idxs)
 
-with open("ioi_prompts.json", "w") as f:
-    json.dump(data_json, f)
+        for i in range(3):
+            print()
+            print("Clean:", prompt_dicts[i]["clean"])
+            print("Corrupt:", prompt_dicts[i]["corrupt"])
+            print("Answers:", prompt_dicts[i]["answers"])
+            print("Wrong answers:", prompt_dicts[i]["wrong_answers"])
+        data_json = {"word_idxs": word_idxs, "prompts": prompt_dicts}
+
+        path = repo_path_to_abs_path(f"datasets/ioi/ioi_{order}_template_{template_idx}_prompts.json")
+        with open(path, "w") as f:
+            json.dump(data_json, f)
 
 # %%

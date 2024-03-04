@@ -162,10 +162,9 @@ train_dataloader, test_dataloader = load_datasets_from_json(
     device=t.device(model.cfg.device),
     prepend_bos=True,
     batch_size=6,
-    train_test_split=[0.8, 0.2],
-    length_limit=1000,
+    train_test_size=(800, 200),
     return_seq_length=True,
-    random_subet=True,
+    shuffle=True,
     pad=True,
 )
 projector_model = train_model(

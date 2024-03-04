@@ -69,6 +69,8 @@ def get_transformer(
     model.cfg.use_attn_in = True
     model.cfg.use_split_qkv_input = True
     model.cfg.use_hook_mlp_in = True
+    for param in model.parameters():
+        param.requires_grad = False
     return model
 
 
@@ -96,8 +98,7 @@ def micro_dataloader(
         device=DEVICE,
         prepend_bos=True,
         batch_size=batch_size,
-        train_test_split=[dataloader_len, dataloader_len],
-        length_limit=dataloader_len * 2,
+        train_test_size=(dataloader_len, dataloader_len),
     )
     return test_loader
 

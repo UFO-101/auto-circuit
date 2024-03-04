@@ -47,4 +47,4 @@ repos:
       always_run: true
       verbose: true  # Show pytest output
       args: [ -s ]  # Make pytest output stdout
-exclude: ^(datasets/ioi_generator.py|datasets/docstring_generator.py|poetry\.lock|\.prune_scores_cache/)
+exclude: ^(datasets/ioi/ioi_generator\.py|datasets/docstring_generator\.py|poetry\.lock|\.prune_scores_cache/)

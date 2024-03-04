@@ -168,8 +168,7 @@ class Task:
                 device=self.device,
                 prepend_bos=has_tokenizer,
                 batch_size=self.batch_size,
-                train_test_split=[bs_1 * count_1, bs_2 * count_2],
-                length_limit=bs_1 * count_1 + bs_2 * count_2,
+                train_test_size=(bs_1 * count_1, bs_2 * count_2),
                 return_seq_length=self.token_circuit,
                 tail_divergence=True if has_tokenizer else False,
                 pad=True,
@@ -201,7 +200,12 @@ class Task:
 
         if self._true_edge_func is not None:
             if self.token_circuit:
-                self._true_edges = self._true_edge_func(self._model, True, diverge_idx)
+                self._true_edges = self._true_edge_func(
+                    self._model,
+                    token_positions=True,
+                    word_idxs=self._train_loader.word_idxs,
+                    seq_start_idx=diverge_idx,
+                )
             else:
                 self._true_edges = self._true_edge_func(self._model)
         else:
@@ -239,7 +243,7 @@ IOI_TOKEN_CIRCUIT_TASK: Task = Task(
     key="Indirect Object Identification Token Circuit",
     name="Indirect Object Identification",
     _model_def="gpt2-small",
-    _dataset_name="ioi_single_template_prompts",
+    _dataset_name="ioi/ioi_vanilla_template_prompts",
     batch_size=(300, 100),
     batch_count=(1, 1),
     _true_edge_func=ioi_head_based_official_edges,

@@ -8,7 +8,10 @@ from auto_circuit.utils.patchable_model import PatchableModel
 
 
 def sports_players_true_edges(
-    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
     !!! Note: !!!

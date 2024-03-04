@@ -129,8 +129,7 @@ def test_prune_latents_with_dataset(
         device=t.device("cpu"),
         prepend_bos=True,
         batch_size=1,
-        train_test_split=[1, 1],
-        length_limit=2,
+        train_test_size=(1, 1),
         return_seq_length=True,
     )
     encoder_model._prune_latents_with_dataset(

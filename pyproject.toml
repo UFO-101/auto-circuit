@@ -38,7 +38,7 @@ build-backend = "poetry.core.masonry.api"
 select = ["F", "E", "W", "I001"]
 
 [tool.pyright]
-ignore = ["datasets/ioi_generator.py", "datasets/greaterthan_generator.py", "datasets/docstring_generator.py"]
+ignore = ["datasets/ioi/ioi_generator.py", "datasets/greaterthan_generator.py", "datasets/docstring_generator.py"]
 reportMissingParameterType = true
 reportUnknownParameterType = true
 

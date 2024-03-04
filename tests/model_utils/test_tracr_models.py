@@ -30,11 +30,10 @@ def test_tracr_model_outputs(tracr_task_key: TRACR_TASK_KEY = "reverse"):
         device=t.device(device),
         prepend_bos=False,
         batch_size=1,
-        train_test_split=[0.5, 0.5],
-        length_limit=128,
+        train_test_size=(64, 64),
         return_seq_length=True,
         tail_divergence=False,
-        random_subet=False,
+        shuffle=False,
         pad=False,
     )
     for batch in test_loader:

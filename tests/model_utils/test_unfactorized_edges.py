@@ -150,11 +150,10 @@ def test_ioi_node_based_circuit_factorized_vs_unfactorized(
 ):
     train_loader, test_loader = load_datasets_from_json(
         model=gpt2,
-        path=repo_path_to_abs_path("datasets/ioi_single_template_prompts.json"),
+        path=repo_path_to_abs_path("datasets/ioi/ioi_vanilla_template_prompts.json"),
         device=DEVICE,
         batch_size=1,
-        train_test_split=[1, 1],
-        length_limit=2,
+        train_test_size=(1, 1),
         return_seq_length=True,
         tail_divergence=True,
     )
@@ -178,7 +177,10 @@ def test_ioi_node_based_circuit_factorized_vs_unfactorized(
         fctrzd_gpt2, train_loader, AblationType.RESAMPLE, clean_corrupt="corrupt"
     )
     edges_in_circuit = ioi_head_based_official_edges(
-        fctrzd_gpt2, token_positions=True, seq_start_idx=diverge_idx
+        fctrzd_gpt2,
+        word_idxs=train_loader.word_idxs,
+        token_positions=True,
+        seq_start_idx=diverge_idx,
     )
     set_all_masks(fctrzd_gpt2, 1.0)
     for edge in fctrzd_gpt2.edges:
@@ -201,7 +203,10 @@ def test_ioi_node_based_circuit_factorized_vs_unfactorized(
         unfctrzd_gpt2, train_loader, AblationType.RESAMPLE, clean_corrupt="corrupt"
     )
     edges_in_circuit = ioi_head_based_official_edges(
-        unfctrzd_gpt2, token_positions=True, seq_start_idx=diverge_idx
+        unfctrzd_gpt2,
+        word_idxs=train_loader.word_idxs,
+        token_positions=True,
+        seq_start_idx=diverge_idx,
     )
     set_all_masks(unfctrzd_gpt2, 1.0)
     for edge in unfctrzd_gpt2.edges:

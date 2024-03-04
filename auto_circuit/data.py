@@ -1,7 +1,7 @@
 import json
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch as t
 import torch.utils.data
@@ -9,6 +9,7 @@ from attr import dataclass
 from torch.utils.data import (
     DataLoader,
     Dataset,
+    Subset,
 )
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
@@ -85,6 +86,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         diverge_idx: int,
         seq_labels: Optional[List[str]] = None,
         kv_cache: Optional[HookedTransformerKeyValueCache] = None,
+        word_idxs: Dict[str, int] = {},
         **kwargs: Any,
     ):
         """
@@ -97,6 +99,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         self.seq_labels = seq_labels
         assert kv_cache is None or diverge_idx > 0
         self.kv_cache = kv_cache
+        self.word_idxs = word_idxs
 
 
 def load_datasets_from_json(
@@ -105,11 +108,10 @@ def load_datasets_from_json(
     device: t.device,
     prepend_bos: bool = True,
     batch_size: int | Tuple[int, int] = 32,  # (train, test) if tuple
-    train_test_split: Sequence[int | float] = [0.9, 0.1],
-    length_limit: int = 100,
+    train_test_size: Tuple[int, int] = (128, 128),
     return_seq_length: bool = False,
     tail_divergence: bool = False,  # Remove all tokens before divergence
-    random_subet: bool = True,
+    shuffle: bool = True,
     random_seed: int = 42,
     pad: bool = True,
 ) -> Tuple[PromptDataLoader, PromptDataLoader]:
@@ -122,17 +124,21 @@ def load_datasets_from_json(
     """
     with open(path, "r") as f:
         data = json.load(f)
+
+    # Shuffle data and split into train and test
     random.seed(random_seed)
     t.random.manual_seed(random_seed)
-    random.shuffle(data["prompts"]) if random_subet else None
-    clean_prompts = [d["clean"] for d in data["prompts"]][:length_limit]
-    corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:length_limit]
-    answer_strs = [d["answers"] for d in data["prompts"]][:length_limit]
-    wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:length_limit]
+    random.shuffle(data["prompts"]) if shuffle else None
+    n_train_and_test = sum(train_test_size)
+    clean_prompts = [d["clean"] for d in data["prompts"]][:n_train_and_test]
+    corrupt_prompts = [d["corrupt"] for d in data["prompts"]][:n_train_and_test]
+    answer_strs = [d["answers"] for d in data["prompts"]][:n_train_and_test]
+    wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:n_train_and_test]
     seq_labels = data.get("seq_labels", None)
+    word_idxs = data.get("word_idxs", {})
+
     kvs = []
     diverge_idx: int = 0
-
     if model is None:
         clean_prompts = [t.tensor(p).to(device) for p in clean_prompts]
         corrupt_prompts = [t.tensor(p).to(device) for p in corrupt_prompts]
@@ -195,13 +201,15 @@ def load_datasets_from_json(
             corrupt_prompts = corrupt_prompts[:, diverge_idx:]
 
     dataset = PromptDataset(clean_prompts, corrupt_prompts, answers, wrong_answers)
-    train_set, test_set = torch.utils.data.random_split(dataset, train_test_split)
+    train_set = Subset(dataset, list(range(train_test_size[0])))
+    test_set = Subset(dataset, list(range(train_test_size[0], n_train_and_test)))
     train_loader = PromptDataLoader(
         train_set,
         seq_len=seq_len,
         diverge_idx=diverge_idx,
         seq_labels=seq_labels,
         kv_cache=kvs[0] if len(kvs) > 0 else None,
+        word_idxs=word_idxs,
         batch_size=batch_size[0] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
     )
@@ -211,6 +219,7 @@ def load_datasets_from_json(
         diverge_idx=diverge_idx,
         seq_labels=seq_labels,
         kv_cache=kvs[-1] if len(kvs) > 0 else None,
+        word_idxs=word_idxs,
         batch_size=batch_size[1] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
     )

@@ -1,7 +1,7 @@
 # Based on:
 # https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/greaterthan/utils.py  # noqa: E501
 
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from auto_circuit.types import Edge
 from auto_circuit.utils.patchable_model import PatchableModel
@@ -38,8 +38,14 @@ def idx_to_nodes(layer_idx: int, head_idx: Optional[int], src_nodes: bool) -> Li
             return [(f"A{layer_idx}.{head_idx}.{letter}") for letter in "QKV"]
 
 
-def greaterthan_true_edges(model: PatchableModel) -> Set[Edge]:
+def greaterthan_true_edges(
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
+) -> Set[Edge]:
     assert model.cfg.model_name == "gpt2"
+    assert token_positions is False, "Greaterthan does not specify token positions"
 
     edges_present: List[str] = []
 

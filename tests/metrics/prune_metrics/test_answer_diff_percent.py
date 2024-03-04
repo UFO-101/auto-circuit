@@ -33,14 +33,8 @@ def test_ioi_ground_truth_logit_diff():
                 for algo_key, measurements in algo_measurements.items():
                     assert algo_key == algo.key
                     for edge_count, logit_diff_percent in measurements:
-                        print(
-                            "edge_count",
-                            edge_count,
-                            "logit_diff_percent",
-                            logit_diff_percent,
-                        )
-                        # assert edge_count == 771
-                        # assert 75 < logit_diff_percent < 95
+                        assert edge_count == 41328
+                        assert 75 < logit_diff_percent < 95
 
 
 # test_ioi_ground_truth_logit_diff()

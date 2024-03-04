@@ -8,7 +8,10 @@ from auto_circuit.utils.patchable_model import PatchableModel
 
 
 def docstring_true_edges(
-    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
     the manual graph, from Stefan
@@ -56,7 +59,10 @@ def docstring_true_edges(
 
 
 def docstring_node_based_official_edges(
-    model: PatchableModel, token_positions: bool = False, seq_start_idx: int = 0
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
     The heads not ablated in the final check in the Docstring blog post:
