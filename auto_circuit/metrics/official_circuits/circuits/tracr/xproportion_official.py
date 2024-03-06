@@ -16,6 +16,7 @@ def tracr_xproportion_official_edges(
     tracr/tracr_xproportion_len_5_prompts.json
     """
     assert model.cfg.model_name == "tracr-xproportion"
+    assert model.separate_qkv
 
     tok_seq_pos = [1, 2, 3, 4, 5]
     edges_present: Dict[str, List[int]] = {}

@@ -74,6 +74,7 @@ def patchable_model(
         out_slice=out_slice,
         is_factorized=factorized,
         is_transformer=is_transformer,
+        separate_qkv=separate_qkv,
         kv_caches=kv_caches,
         wrapped_model=model,
     )

@@ -7,8 +7,9 @@ import transformer_lens as tl
 from typing_extensions import Literal
 
 from auto_circuit.experiment_utils import (
-    ioi_node_circuit_single_template_logit_diff_percent,
+    ioi_circuit_single_template_logit_diff_percent,
 )
+from auto_circuit.types import AblationType
 
 """
 This dictionary shows the expected logit different percentage when mean ablating the
@@ -112,13 +113,15 @@ def test_ioi_faithfulness_exact_repro(
 
     template_idx: int = random.choice(range(15))
     expected_logit_diff_percent = IOI_TRUE_RESULTS[prepend_bos][template][template_idx]
-    actual_logit_diff_percent = ioi_node_circuit_single_template_logit_diff_percent(
+    actual_logit_diff_percent = ioi_circuit_single_template_logit_diff_percent(
         gpt2,
         test_batch_size=50,
         prepend_bos=prepend_bos,
         template=template,
         template_idx=template_idx,
         factorized=factorized,
+        true_circuit="Nodes",
+        ablation_type=AblationType.TOKENWISE_MEAN_CORRUPT,
     )
     # compare the expected and actual logit different percentages
     if debug:

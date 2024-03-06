@@ -64,7 +64,8 @@ def ioi_true_edges(
     The edge-level circuit from the IOI paper.
     """
     assert model.cfg.model_name == "gpt2"
-    assert model.is_factorized
+    assert model.is_factorized, "IOI edge based circuit requires factorized model"
+    assert model.separate_qkv
 
     final_tok_idx = word_idxs.get("end", 0)
     io_tok_idx = word_idxs.get("IO", 0)
@@ -158,6 +159,20 @@ def ioi_true_edges(
             else:
                 true_edges.add(edge)
     return true_edges
+
+
+def ioi_true_edges_mlp_0_only(
+    model: PatchableModel,
+    token_positions: bool = False,
+    word_idxs: Dict[str, int] = {},
+    seq_start_idx: int = 0,
+) -> Set[Edge]:
+    ioi_edges = ioi_true_edges(model, token_positions, word_idxs, seq_start_idx)
+    minimal_ioi_edges = set()
+    for edge in ioi_edges:
+        if "MLP 0" in edge.name or "MLP" not in edge.name:
+            minimal_ioi_edges.add(edge)
+    return minimal_ioi_edges
 
 
 def ioi_head_based_official_edges(

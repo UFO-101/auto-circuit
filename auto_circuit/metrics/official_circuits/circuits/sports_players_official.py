@@ -23,6 +23,8 @@ def sports_players_true_edges(
     answers > 0.5 probability. (See datasets/sports-players/sports_players_generator.py)
     """
     assert model.cfg.model_name == "pythia-2.8b-deduped"
+    assert model.separate_qkv is False, "Sports players doesn't support separate QKV"
+
     first_name_tok_idx = 13
     final_name_tok_idx = 15
     non_final_name_toks_idxs = list(range(first_name_tok_idx, final_name_tok_idx))

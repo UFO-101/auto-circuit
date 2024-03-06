@@ -31,7 +31,7 @@ def run_circuits(
     ablation_type: AblationType = AblationType.RESAMPLE,
     reverse_clean_corrupt: bool = False,
     render_graph: bool = False,
-    render_all_edges: bool = True,
+    render_all_edges: bool = False,
     render_file_path: Optional[str] = None,
 ) -> CircuitOutputs:
     """Run the model with the given pruned edges.
@@ -91,7 +91,7 @@ def run_circuits(
                     model=model,
                     input=batch_input,
                     show_all_edges=render_all_edges,
-                    show_all_seq_pos=True,
+                    show_all_seq_pos=False,
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,
                 )

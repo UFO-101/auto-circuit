@@ -46,6 +46,7 @@ def greaterthan_true_edges(
 ) -> Set[Edge]:
     assert model.cfg.model_name == "gpt2"
     assert token_positions is False, "Greaterthan does not specify token positions"
+    assert model.separate_qkv
 
     edges_present: List[str] = []
 

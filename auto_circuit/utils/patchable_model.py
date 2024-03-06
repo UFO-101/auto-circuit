@@ -23,6 +23,7 @@ class PatchableModel(t.nn.Module):
     out_slice: Tuple[slice | int, ...]
     is_factorized: bool
     is_transformer: bool
+    separate_qkv: Optional[bool]
     kv_caches: Optional[Dict[int, HookedTransformerKeyValueCache]]
     wrapped_model: t.nn.Module
 
@@ -41,6 +42,7 @@ class PatchableModel(t.nn.Module):
         out_slice: Tuple[slice | int, ...],
         is_factorized: bool,
         is_transformer: bool,
+        separate_qkv: Optional[bool],
         kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...],
         wrapped_model: t.nn.Module,
     ) -> None:
@@ -62,6 +64,9 @@ class PatchableModel(t.nn.Module):
         self.out_slice = out_slice
         self.is_factorized = is_factorized
         self.is_transformer = is_transformer
+        if is_transformer:
+            assert separate_qkv is not None
+        self.separate_qkv = separate_qkv
         if all([kv_cache is None for kv_cache in kv_caches]) or len(kv_caches) == 0:
             self.kv_caches = None
         else:

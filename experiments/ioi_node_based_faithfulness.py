@@ -4,28 +4,15 @@ from typing import Dict
 
 import plotly.graph_objects as go
 import torch as t
-import transformer_lens as tl
 
 from auto_circuit.experiment_utils import (
-    ioi_node_circuit_single_template_logit_diff_percent,
+    ioi_circuit_single_template_logit_diff_percent,
+    load_tl_model,
 )
 from auto_circuit.utils.custom_tqdm import tqdm
 
 device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
-gpt2 = tl.HookedTransformer.from_pretrained(
-    "gpt2",
-    device=str(device),
-    fold_ln=True,
-    center_writing_weights=True,
-    center_unembed=True,
-)
-gpt2.cfg.use_attn_result = True
-gpt2.cfg.use_attn_in = True
-gpt2.cfg.use_split_qkv_input = True
-gpt2.cfg.use_hook_mlp_in = True
-gpt2.eval()
-for param in gpt2.parameters():
-    param.requires_grad = False
+gpt2 = load_tl_model("gpt2", device)
 
 ABBA_TEMPLATE, BABA_TEMPLATE, ALL_TEMPLATE = "ABBA", "BABA", "Average"
 batch_size_percents: Dict[int, Dict[str, float]] = defaultdict(dict)
@@ -39,12 +26,14 @@ for test_batch_size in (size_pbar := tqdm(batch_sizes)):
         n_templates = 15
         for template_idx in (template_idx_pbar := tqdm(range(n_templates))):
             template_idx_pbar.set_description(f"Template Index: {template_idx}")
-            logit_diff_percent = ioi_node_circuit_single_template_logit_diff_percent(
+            logit_diff_percent = ioi_circuit_single_template_logit_diff_percent(
                 gpt2=gpt2,
                 test_batch_size=test_batch_size,
                 prepend_bos=False,
                 template=template,
                 template_idx=template_idx,
+                factorized=False,
+                true_circuit="Nodes",
             )
             template_logit_diff_perc.append(logit_diff_percent)
         template_avg_percent = sum(template_logit_diff_perc) / n_templates
@@ -58,9 +47,8 @@ for test_batch_size in (size_pbar := tqdm(batch_sizes)):
 # each batch size.
 
 fig = go.Figure()
-for template in (template_pbar := tqdm([ABBA_TEMPLATE, BABA_TEMPLATE, ALL_TEMPLATE])):
-    template_pbar.set_description(f"Template: {template}")
-    x = list(batch_size_percents.keys())
+for template in [ABBA_TEMPLATE, BABA_TEMPLATE, ALL_TEMPLATE]:
+    x = batch_sizes
     y = [batch_size_percents[batch_size][template] for batch_size in x]
     fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", name=template))
 fig.update_xaxes(type="log")

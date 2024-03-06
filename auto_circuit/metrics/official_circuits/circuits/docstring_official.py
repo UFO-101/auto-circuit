@@ -19,6 +19,7 @@ def docstring_true_edges(
     The sequence positions assume prompts of length 40, as in docstring_prompts.json
     """
     assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"
+    assert model.separate_qkv
 
     edges_present: Dict[str, List[int]] = {}
     edges_present["A0.5->A1.4.V"] = [13]

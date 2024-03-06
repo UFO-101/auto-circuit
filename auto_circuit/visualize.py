@@ -151,7 +151,7 @@ def draw_seq_graph(
 
     # Calculate the vertical interval for each sub-diagram
     if prune_scores is None:
-        edge_scores = dict([(m, mask.data) for m, mask in model.patch_masks.items()])
+        edge_scores = model.current_patch_masks_as_prune_scores()
     else:
         edge_scores = prune_scores
     total_ps = max(sum([v.abs().sum().item() for v in edge_scores.values()]), 1e-2)

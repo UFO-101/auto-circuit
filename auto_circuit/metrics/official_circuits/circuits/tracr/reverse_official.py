@@ -16,6 +16,7 @@ def tracr_reverse_true_edges(
     tracr/tracr_reverse_len_5_prompts.json
     """
     assert model.cfg.model_name == "tracr-reverse"
+    assert model.separate_qkv
 
     # TODO: The middle token is the same after reversing
     tok_seq_pos = [1, 2, 3, 4, 5]
