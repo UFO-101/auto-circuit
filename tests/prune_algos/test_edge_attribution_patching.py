@@ -23,9 +23,19 @@ def test_eap(
         _model_def=mini_tl_transformer,
         _dataset_name=dataset_name,
     )
-    eap_ps = edge_attribution_patching_prune_scores(task=task, answer_diff=True)
+    eap_ps = edge_attribution_patching_prune_scores(
+        model=task.model,
+        dataloader=task.train_loader,
+        official_edges=task.true_edges,
+        answer_diff=True,
+    )
     simple_grad_ps = mask_gradient_prune_scores(
-        task=task, grad_function="logit", answer_function="avg_diff", mask_val=0.0
+        model=task.model,
+        dataloader=task.train_loader,
+        official_edges=task.true_edges,
+        grad_function="logit",
+        answer_function="avg_diff",
+        mask_val=0.0,
     )
     for mod_name, patch_mask in eap_ps.items():
         assert t.allclose(patch_mask, simple_grad_ps[mod_name], atol=1e-5)

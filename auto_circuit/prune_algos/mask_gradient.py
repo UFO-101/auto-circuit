@@ -1,11 +1,10 @@
-from typing import Dict, Literal, Optional
+from typing import Dict, Literal, Optional, Set
 
 import torch as t
 from torch.nn.functional import log_softmax
 
 from auto_circuit.data import PromptDataLoader
-from auto_circuit.tasks import Task
-from auto_circuit.types import AblationType, BatchKey, PruneScores
+from auto_circuit.types import AblationType, BatchKey, Edge, PruneScores
 from auto_circuit.utils.ablation_activations import batch_src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
@@ -13,11 +12,14 @@ from auto_circuit.utils.graph_utils import (
     set_all_masks,
     train_mask_mode,
 )
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def mask_gradient_prune_scores(
-    task: Task,
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    official_edges: Optional[Set[Edge]],
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
     answer_function: Literal["avg_diff", "avg_val", "mse"],
     mask_val: Optional[float] = None,
@@ -25,13 +27,12 @@ def mask_gradient_prune_scores(
 ) -> PruneScores:
     """Prune scores by attribution patching."""
     assert (mask_val is not None) ^ (integrated_grad_samples is not None)  # ^ means XOR
-    model = task.model
+    model = model
     out_slice = model.out_slice
-    train_loader: PromptDataLoader = task.train_loader
 
     src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
         model,
-        train_loader,
+        dataloader,
         ablation_type=AblationType.RESAMPLE,
         clean_corrupt="corrupt",
     )
@@ -46,7 +47,7 @@ def mask_gradient_prune_scores(
                 assert mask_val is not None and integrated_grad_samples is None
                 set_all_masks(model, val=mask_val)
 
-            for batch in train_loader:
+            for batch in dataloader:
                 patch_src_outs = src_outs[batch.key].clone().detach()
                 with patch_mode(model, patch_src_outs):
                     logits = model(batch.clean)[out_slice]

@@ -4,6 +4,7 @@ import torch as t
 
 from auto_circuit.data import PromptPairBatch
 from auto_circuit.utils.tensor_ops import (
+    batch_answer_diff_percents,
     batch_avg_answer_diff,
     batch_avg_answer_val,
     correct_answer_greater_than_incorrect_proportion,
@@ -143,7 +144,27 @@ def test_correct_greater_than_incorrect_proportion():
     assert corr_greater_prop(incorrect_logits, batch).item() == 0.0
 
 
+def test_batch_answer_diff_percent():
+    pred_vals: t.Tensor = t.tensor([[0.3, 0.7], [0.6, 0.4]])
+    target_vals: t.Tensor = t.tensor([[0.2, 0.8], [0.5, 0.3]])
+    batch: PromptPairBatch = PromptPairBatch(
+        key=1,
+        batch_diverge_idx=0,
+        clean=t.tensor(0),
+        corrupt=t.tensor(0),
+        answers=t.tensor([[0], [0]]),
+        wrong_answers=t.tensor([[1], [1]]),
+    )
+    logit_diff_percents = batch_answer_diff_percents(pred_vals, target_vals, batch)
+
+    true_pred_logit_diffs = pred_vals[:, 0] - pred_vals[:, 1]
+    true_target_logit_diffs = target_vals[:, 0] - target_vals[:, 1]
+    true_logit_diff_percents = (true_pred_logit_diffs / true_target_logit_diffs) * 100
+    assert t.allclose(logit_diff_percents, true_logit_diff_percents)
+
+
 # test_batch_avg_answer_val()
 # test_batch_avg_answer_diff()
 # test_correct_answer_proportion()
 # test_correct_vs_incorrect_answer_proportion()
+# test_batch_answer_diff_percent()

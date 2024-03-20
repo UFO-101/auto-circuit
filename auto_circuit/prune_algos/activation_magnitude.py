@@ -1,17 +1,23 @@
+from typing import Optional, Set
+
 import torch as t
 
-from auto_circuit.tasks import Task
-from auto_circuit.types import AblationType, PruneScores
+from auto_circuit.data import PromptDataLoader
+from auto_circuit.types import AblationType, Edge, PruneScores
 from auto_circuit.utils.ablation_activations import src_ablations
+from auto_circuit.utils.patchable_model import PatchableModel
 
 
-def activation_magnitude_prune_scores(task: Task) -> PruneScores:
+def activation_magnitude_prune_scores(
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    official_edges: Optional[Set[Edge]],
+) -> PruneScores:
     """Prune scores are the mean activation magnitude of each edge."""
-    model = task.model
     prune_scores = model.new_prune_scores()
-    n_batches = len(task.train_loader)
+    n_batches = len(dataloader)
     with t.inference_mode():
-        for batch in task.train_loader:
+        for batch in dataloader:
             src_outs = src_ablations(model, batch.clean, AblationType.RESAMPLE)
             src_out_means = src_outs.mean(dim=list(range(1, src_outs.ndim)))
             # prune_scores shape = seq_shape + head_shape + [prev_src_count]

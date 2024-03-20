@@ -3,7 +3,7 @@ from plotly.subplots import make_subplots
 
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.tasks import TASK_DICT
-from auto_circuit.types import TaskMeasurements
+from auto_circuit.types import COLOR_PALETTE, TaskMeasurements
 
 
 def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
@@ -12,7 +12,7 @@ def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
     fig.update_traces(line=dict(shape="hv"), mode="lines")
     task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
     for task_idx, (task_key, algo_measurements) in enumerate(task_measurements.items()):
-        for algo_key, measurements in algo_measurements.items():
+        for algo_idx, (algo_key, measurements) in enumerate(algo_measurements.items()):
             algo = PRUNE_ALGO_DICT[algo_key]
             fig.add_scatter(
                 row=1,
@@ -26,6 +26,7 @@ def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
                 # marker=dict(color="black", size=10, symbol="x-thin"),
                 marker_line_width=2,
                 name=algo.short_name,
+                marker_color=COLOR_PALETTE[algo_idx],
             )
     fig.update_xaxes(
         matches=None,

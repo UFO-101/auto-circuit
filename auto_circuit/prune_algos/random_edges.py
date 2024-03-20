@@ -1,12 +1,19 @@
+from typing import Optional, Set
+
 import torch as t
 
-from auto_circuit.tasks import Task
-from auto_circuit.types import PruneScores
+from auto_circuit.data import PromptDataLoader
+from auto_circuit.types import Edge, PruneScores
+from auto_circuit.utils.patchable_model import PatchableModel
 
 
-def random_prune_scores(task: Task) -> PruneScores:
+def random_prune_scores(
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    official_edges: Optional[Set[Edge]],
+) -> PruneScores:
     """Prune scores are the mean activation magnitude of each edge."""
     prune_scores: PruneScores = {}
-    for mod_name, patch_mask in task.model.patch_masks.items():
+    for mod_name, patch_mask in model.patch_masks.items():
         prune_scores[mod_name] = t.rand_like(patch_mask.data)
     return prune_scores

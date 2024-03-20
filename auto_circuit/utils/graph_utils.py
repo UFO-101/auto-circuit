@@ -46,6 +46,7 @@ def patchable_model(
     Warning: Unfactorized models have edges that shouldn't be patched. Tree patching in
     prune.py won't work because it patch all edges not in the circuit.
     """
+    assert not isinstance(model, PatchableModel), "Model is already patchable"
     nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
         model, factorized, separate_qkv, seq_len
     )

@@ -46,7 +46,9 @@ def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPrune
             PRUNE_ALGO_DICT[constrained_algo.key] = constrained_algo
             if constrained_algo.key not in algo_prune_scores:
                 print(f"Running {constrained_algo.name}")
-                constrained_ps[constrained_algo.key] = constrained_algo.func(task)
+                constrained_ps[constrained_algo.key] = constrained_algo.func(
+                    task.model, task.train_loader, task.true_edges
+                )
             else:
                 print(f"Already ran {constrained_algo.name}")
         constrained_task_prune_scores[task_key] = constrained_ps

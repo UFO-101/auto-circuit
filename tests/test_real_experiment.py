@@ -28,7 +28,7 @@ def test_kl_vs_edges():
         clean_out = task.model(test_batch.clean)[:, -1]
         corrupt_out = task.model(test_batch.corrupt)[:, -1]
 
-    prune_scores = random_prune_scores(task)
+    prune_scores = random_prune_scores(task.model, task.train_loader, task.true_edges)
     test_edge_counts = edge_counts_util(task.model.edges, [0.0, 5, 1.0])
     pruned_outs = run_circuits(
         model=task.model,

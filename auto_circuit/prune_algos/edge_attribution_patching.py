@@ -1,16 +1,21 @@
+from typing import Optional, Set
+
 import torch as t
 import transformer_lens as tl
 
-from auto_circuit.tasks import Task
-from auto_circuit.types import PruneScores
+from auto_circuit.data import PromptDataLoader
+from auto_circuit.types import Edge, PruneScores
 from auto_circuit.utils.graph_utils import (
     set_all_masks,
 )
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
 
 
 def edge_attribution_patching_prune_scores(
-    task: Task,
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    official_edges: Optional[Set[Edge]],
     answer_diff: bool = True,
 ) -> PruneScores:
     """
@@ -30,7 +35,7 @@ def edge_attribution_patching_prune_scores(
     paper, rather than corrupt_act - clean_act, as in paper's implementation. It
     doesn't matter either way as we only consider the magnitude of the scores.
     """
-    model = task.model
+    model = model
     assert model.is_transformer
     out_slice = model.out_slice
 
@@ -41,7 +46,7 @@ def edge_attribution_patching_prune_scores(
     model.zero_grad()
     prune_scores = model.new_prune_scores()
 
-    for batch in task.train_loader:
+    for batch in dataloader:
         clean_grad_cache = {}
 
         def backward_cache_hook(act: t.Tensor, hook: tl.hook_points.HookPoint):

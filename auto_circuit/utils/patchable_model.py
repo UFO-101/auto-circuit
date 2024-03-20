@@ -78,7 +78,7 @@ class PatchableModel(t.nn.Module):
         self.wrapped_model = wrapped_model
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        if self.kv_caches is None:
+        if self.kv_caches is None or "past_kv_cache" in kwargs:
             return self.wrapped_model(*args, **kwargs)
         else:
             batch_size = args[0].shape[0]

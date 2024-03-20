@@ -32,7 +32,7 @@ def test_kl_div_equal():
     kl_metric: PruneMetric = CLEAN_KL_DIV_METRIC
     assert task.true_edge_count is not None
     n_circuit_edges: int = task.true_edge_count
-    circuit_ps: PruneScores = rand_algo.func(task)
+    circuit_ps: PruneScores = rand_algo.func(task.model, task.train_loader, None)
     algo_ps: AlgoPruneScores = {rand_algo.key: circuit_ps}
     task_ps: TaskPruneScores = {task.key: algo_ps}
 

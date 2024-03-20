@@ -65,6 +65,8 @@ def net_viz(
     included_layer_nodes: Dict[int, List[str]] = defaultdict(list)
     for e in seq_edges:
         if prune_scores is None:
+            no_edge_score_error = "Visualization requires patch mode or PruneScores."
+            assert e.dest.module(model).curr_src_outs is not None, no_edge_score_error
             edge_score = e.patch_mask(model).data[e.patch_idx].item()
             if edge_score == 1.0:  # Show the patched edge activation
                 lbl = e.dest.module(model).patch_src_outs[e.src.src_idx]
@@ -200,17 +202,16 @@ def draw_seq_graph(
 
     layout = go.Layout(
         height=max(250 * len(sankeys), 400),
-        width=max(110 * n_layers, 400),
+        width=max(110 * n_layers, 600),
         plot_bgcolor="blue",
     )
     fig = go.Figure(data=sankeys, layout=layout)
     for fig_idx, seq_idx in enumerate(intervals.keys()) if seq_labels else []:
         assert seq_labels is not None
         seq_label = "All tokens" if seq_idx is None else seq_labels[seq_idx]
-        assert model.seq_len is not None
         y_range: Tuple[float, float] = fig.data[fig_idx].domain["y"]  # type: ignore
         fig.add_annotation(
-            x=-0.03,
+            x=-0.17,
             y=(y_range[0] + y_range[1]) / 2,
             text=f"<b>{seq_label}</b>",
             showarrow=False,

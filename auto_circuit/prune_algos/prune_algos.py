@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune_algos.ACDC import acdc_prune_scores
 from auto_circuit.prune_algos.activation_magnitude import (
     activation_magnitude_prune_scores,
@@ -15,15 +16,22 @@ from auto_circuit.prune_algos.mask_gradient import mask_gradient_prune_scores
 from auto_circuit.prune_algos.random_edges import random_prune_scores
 from auto_circuit.prune_algos.subnetwork_probing import subnetwork_probing_prune_scores
 from auto_circuit.tasks import Task
-from auto_circuit.types import AlgoKey, AlgoPruneScores, PruneScores, TaskPruneScores
+from auto_circuit.types import (
+    AlgoKey,
+    AlgoPruneScores,
+    Edge,
+    PruneScores,
+    TaskPruneScores,
+)
 from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.patchable_model import PatchableModel
 
 
 @dataclass(frozen=True)
 class PruneAlgo:
     key: AlgoKey
     name: str
-    func: Callable[[Task], PruneScores]
+    func: Callable[[PatchableModel, PromptDataLoader, Optional[Set[Edge]]], PruneScores]
     _short_name: Optional[str] = None
 
     def __eq__(self, __value: object) -> bool:
@@ -43,7 +51,7 @@ def run_prune_algos(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPrun
         prune_scores_dict: AlgoPruneScores = {}
         for prune_algo in (prune_score_pbar := tqdm(prune_algos)):
             prune_score_pbar.set_description_str(f"Prune scores: {prune_algo.name}")
-            ps = dict(list(prune_algo.func(task).items()))
+            ps = prune_algo.func(task.model, task.train_loader, task.true_edges)
             prune_scores_dict[prune_algo.key] = ps
         task_prune_scores[task.key] = prune_scores_dict
     return task_prune_scores
@@ -230,7 +238,7 @@ CIRCUIT_TREE_PROBING_PRUNE_ALGO = PruneAlgo(
     func=partial(
         circuit_probing_prune_scores,
         learning_rate=0.1,
-        epochs=2000,
+        epochs=200,
         regularize_lambda=0.1,
         mask_fn="hard_concrete",
         show_train_graph=False,

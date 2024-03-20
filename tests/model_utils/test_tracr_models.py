@@ -125,7 +125,7 @@ def test_tracr_task_official_circuit(tracr_task_key: TRACR_TASK_KEY = "xproporti
             task_model,
             task.test_loader,
             [official_circuit_edge_count],  # type: ignore
-            ground_truth_prune_scores(task),
+            ground_truth_prune_scores(task_model, task.test_loader, task.true_edges),
             PatchType.TREE_PATCH,
         )
     circuit_out = circuit_outs[official_circuit_edge_count][batch.key]

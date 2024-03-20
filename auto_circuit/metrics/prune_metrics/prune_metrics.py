@@ -124,7 +124,9 @@ LOGPROB_DIFF_METRIC = PruneMetric(
 LOGIT_DIFF_PERCENT_METRIC = PruneMetric(
     key="Logit Diff Percent",
     name="Logit Difference Percent",
-    metric_func=partial(measure_answer_diff_percent, prob_func="logits"),
+    metric_func=partial(
+        measure_answer_diff_percent, prob_func="logits", diff_of_means=True
+    ),
     log_x=True,
     log_y=False,
     lower_better=False,

@@ -34,22 +34,42 @@ def batch_avg_answer_val(
         return t.stack([vocab_avg_val(v, a) for v, a in zip(vals, answers)]).mean()
 
 
-def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+def batch_answer_diffs(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
     answers = batch.answers
     wrong_answers = batch.wrong_answers
     if isinstance(answers, t.Tensor) and isinstance(wrong_answers, t.Tensor):
         # We don't use vocab_avg_val here because we need to calculate the average
         # difference between the correct and wrong answers not the difference between
         # the average correct and average incorrect answers
+        # We do take the mean over each set of correct and incorrect answers (often
+        # there is only one of each, eg. in the IOI task).
         ans_avgs = t.gather(vals, dim=-1, index=answers).mean(dim=-1)
         wrong_avgs = t.gather(vals, dim=-1, index=wrong_answers).mean(dim=-1)
-        return (ans_avgs - wrong_avgs).mean()
+        return ans_avgs - wrong_avgs
     else:
         # If each prompt has a different number of answers we have a list of tensors
         assert isinstance(answers, list) and isinstance(wrong_answers, list)
         ans_avgs = [vocab_avg_val(v, a) for v, a in zip(vals, answers)]
         wrong_avgs = [vocab_avg_val(v, w) for v, w in zip(vals, wrong_answers)]
-        return (t.stack(ans_avgs) - t.stack(wrong_avgs)).mean()
+        return t.stack(ans_avgs) - t.stack(wrong_avgs)
+
+
+def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+    return batch_answer_diffs(vals, batch).mean()
+
+
+def batch_answer_diff_percents(
+    pred_vals: t.Tensor, target_vals: t.Tensor, batch: PromptPairBatch
+) -> t.Tensor:
+    """
+    Find the percentage difference between the predicted logit differences and the
+    target logit differences.
+    If mean_diff is True, returns the percentage difference between the mean predicted
+    wrong approach, but this is what the IOI paper does to measure faithfulness.
+    """
+    target_answer_diff = batch_answer_diffs(target_vals, batch)
+    pred_answer_diff = batch_answer_diffs(pred_vals, batch)
+    return (pred_answer_diff / target_answer_diff) * 100
 
 
 def correct_answer_proportion(logits: t.Tensor, batch: PromptPairBatch) -> t.Tensor:

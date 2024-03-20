@@ -25,16 +25,17 @@ MaskFn = Optional[Literal["hard_concrete", "sigmoid"]]
 
 # Define a colorblind-friendly palette
 COLOR_PALETTE = [
-    "#377eb8",  # blue
-    "#ff7f00",  # orange
-    "#4daf4a",  # green
-    "#f781bf",  # pink
-    "#e41a1c",  # red
-    "#984ea3",  # purple
-    "#a65628",  # brown
-    "#999999",  # grey
-    "#dede00",  # yellow
+    "rgb(55, 126, 184)",  # blue
+    "rgb(255, 127, 0)",  # orange
+    "rgb(77, 175, 74)",  # green
+    "rgb(247, 129, 191)",  # pink
+    "rgb(228, 26, 28)",  # red
+    "rgb(152, 78, 163)",  # purple
+    "rgb(166, 86, 40)",  # brown
+    "rgb(153, 153, 153)",  # grey
+    "rgb(222, 222, 0)",  # yellow
 ]
+TRANSPARENT_COLOR_PALETTE = [f"rgba{color[3:-1]}, 0.1)" for color in COLOR_PALETTE]
 
 # Create or modify a template
 template = pio.templates["plotly"]
@@ -70,13 +71,18 @@ class AblationType(Enum):
     TOKENWISE_MEAN_CLEAN = 3
     TOKENWISE_MEAN_CORRUPT = 4
     TOKENWISE_MEAN_CLEAN_AND_CORRUPT = 5
+    BATCH_TOKENWISE_MEAN = 6
 
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()
 
     @property
     def mean_over_dataset(self) -> bool:
-        return self not in {AblationType.RESAMPLE, AblationType.ZERO}
+        return self in {
+            AblationType.TOKENWISE_MEAN_CLEAN,
+            AblationType.TOKENWISE_MEAN_CORRUPT,
+            AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT,
+        }
 
     @property
     def clean_dataset(self) -> bool:

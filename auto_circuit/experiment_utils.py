@@ -1,5 +1,6 @@
 from copy import deepcopy
-from typing import Literal
+from enum import Enum
+from typing import Literal, Optional, Tuple
 
 import torch as t
 import transformer_lens as tl
@@ -12,14 +13,14 @@ from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
 )
 from auto_circuit.metrics.prune_metrics.answer_diff_percent import answer_diff_percent
 from auto_circuit.prune import run_circuits
+from auto_circuit.prune_algos.circuit_probing import circuit_probing_prune_scores
 from auto_circuit.types import (
     AblationType,
     CircuitOutputs,
-    Measurements,
     PatchType,
     PruneScores,
 )
-from auto_circuit.utils.graph_utils import edge_counts_util, patchable_model
+from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
 
 
@@ -41,33 +42,60 @@ def load_tl_model(name: str, device: t.device) -> tl.HookedTransformer:
     return tl_model
 
 
+class IOI_CIRCUIT_TYPE(Enum):
+    NODES = 1
+    EDGES = 2
+    EDGES_MLP_0_ONLY = 3
+
+    def __str__(self) -> str:
+        return self.name.split(".")[-1].title()
+
+
 def ioi_circuit_single_template_logit_diff_percent(
     gpt2: tl.HookedTransformer,
-    test_batch_size: int,
+    dataset_size: int,
     prepend_bos: bool,
     template: Literal["ABBA", "BABA"],
     template_idx: int,
     factorized: bool = False,
-    true_circuit: Literal["Nodes", "Edges", "Edges (MLP 0 only)"] = "Edges",
+    circuit: IOI_CIRCUIT_TYPE = IOI_CIRCUIT_TYPE.NODES,
     ablation_type: AblationType = AblationType.TOKENWISE_MEAN_CORRUPT,
-) -> float:
+    tok_pos: bool = True,
+    patch_type: PatchType = PatchType.TREE_PATCH,
+    learned: bool = False,
+    diff_of_mean_logit_diff: bool = False,
+    batch_size: Optional[int] = None,
+) -> Tuple[int, float, float, t.Tensor, PruneScores]:
+    """
+    Run a single template through the IOI circuit and return the logit diff percent.
+
+    Returns:
+        Tuple[int, float, float, PruneScores]: The number of edges in the circuit, the
+            mean logit diff percent, the standard deviation of the logit diff percent,
+            and the prune scores of the circuit.
+    """
+    assert gpt2.cfg.model_name == "gpt2"
     assert gpt2.cfg.device is not None
-    if "Edges" in true_circuit:
+    if type(circuit) == str and "Edges" in circuit:
         assert factorized
+    if batch_size is None:
+        batch_size = dataset_size
 
     path = repo_path_to_abs_path(
         f"datasets/ioi/ioi_{template}_template_{template_idx}_prompts.json"
     )
     patchable_gpt2 = deepcopy(gpt2)
-    _, test_loader = load_datasets_from_json(
+    train_loader, test_loader = load_datasets_from_json(
         model=patchable_gpt2,
         path=path,
         device=t.device(gpt2.cfg.device),
         prepend_bos=prepend_bos,
-        batch_size=test_batch_size,
-        train_test_size=(0, test_batch_size),
+        batch_size=batch_size,
+        train_test_size=(8 * dataset_size, dataset_size)
+        if learned
+        else (0, dataset_size),
         shuffle=False,
-        return_seq_length=True,
+        return_seq_length=tok_pos,
         tail_divergence=False,
     )
 
@@ -75,43 +103,86 @@ def ioi_circuit_single_template_logit_diff_percent(
         model=patchable_gpt2,
         factorized=factorized,
         slice_output="last_seq",
-        seq_len=test_loader.seq_len,
+        seq_len=test_loader.seq_len if tok_pos else None,
         separate_qkv=True,
         device=t.device(gpt2.cfg.device),
     )
 
     assert test_loader.word_idxs is not None
-    if true_circuit == "Edges":
+    if circuit == IOI_CIRCUIT_TYPE.EDGES:
         official_circ = ioi_true_edges
-    elif true_circuit == "Edges (MLP 0 only)":
+    elif circuit == IOI_CIRCUIT_TYPE.EDGES_MLP_0_ONLY:
         official_circ = ioi_true_edges_mlp_0_only
     else:
-        assert true_circuit == "Nodes"
+        assert circuit == IOI_CIRCUIT_TYPE.NODES
         official_circ = ioi_head_based_official_edges
 
-    ioi_node_edges = official_circ(
+    ioi_official_edges = official_circ(
         patchable_gpt2,
         word_idxs=test_loader.word_idxs,
-        token_positions=True,
-        seq_start_idx=test_loader.diverge_idx - int(prepend_bos),
+        token_positions=tok_pos,
+        seq_start_idx=test_loader.diverge_idx,
     )
-    circuit_ps: PruneScores = patchable_gpt2.circuit_prune_scores(ioi_node_edges)
+    test_edge_counts = len(ioi_official_edges)
+
+    if learned:
+        circuit_ps: PruneScores = circuit_probing_prune_scores(
+            model=patchable_gpt2,
+            dataloader=train_loader,
+            official_edges=ioi_official_edges,
+            epochs=1000,
+            learning_rate=0.1,
+            regularize_lambda=0.1,
+            mask_fn="hard_concrete",
+            show_train_graph=True,
+            tree_optimisation=True,
+            circuit_sizes=["true_size"],
+            faithfulness_target="logit_diff_percent",
+            validation_dataloader=test_loader,
+        )
+    else:
+        circuit_ps = patchable_gpt2.circuit_prune_scores(ioi_official_edges)
 
     circ_outs: CircuitOutputs = run_circuits(
         model=patchable_gpt2,
         dataloader=test_loader,
-        test_edge_counts=edge_counts_util(
-            patchable_gpt2.edges, prune_scores=circuit_ps
-        ),
+        test_edge_counts=[test_edge_counts],
         prune_scores=circuit_ps,
-        patch_type=PatchType.TREE_PATCH,
+        patch_type=patch_type,
         ablation_type=ablation_type,
         render_graph=False,
         render_all_edges=False,
     )
-    logit_diff_percents: Measurements = answer_diff_percent(
-        patchable_gpt2, test_loader, circ_outs
+    (
+        logit_diff_percent_mean,
+        logit_diff_percent_std,
+        logit_diff_percents,
+    ) = answer_diff_percent(
+        patchable_gpt2,
+        test_loader,
+        circ_outs,
+        prob_func="logits",
+        diff_of_means=diff_of_mean_logit_diff,
     )
-    assert len(logit_diff_percents) == 1
+
+    assert len(logit_diff_percent_mean) == 1 and len(logit_diff_percent_std) == 1
+    assert type(logit_diff_percent_mean[0][0]) == int
+    assert type(logit_diff_percent_mean[0][1]) == float
+    assert type(logit_diff_percent_std[0][0]) == int
+    assert type(logit_diff_percent_std[0][1]) == float
+    assert type(logit_diff_percents[0][0]) == int
+    assert type(logit_diff_percents[0][1]) == t.Tensor
+    assert (
+        logit_diff_percent_mean[0][0]
+        == logit_diff_percent_std[0][0]
+        == logit_diff_percents[0][0]
+    )
+
     del patchable_gpt2
-    return logit_diff_percents[0][1]
+    return (
+        logit_diff_percent_mean[0][0],
+        logit_diff_percent_mean[0][1],
+        logit_diff_percent_std[0][1],
+        logit_diff_percents[0][1],
+        circuit_ps,
+    )

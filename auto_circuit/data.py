@@ -104,7 +104,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
 
 def load_datasets_from_json(
     model: Optional[t.nn.Module],
-    path: Path,
+    path: Path | List[Path],
     device: t.device,
     prepend_bos: bool = True,
     batch_size: int | Tuple[int, int] = 32,  # (train, test) if tuple
@@ -122,8 +122,20 @@ def load_datasets_from_json(
         tail_divergence: bool, If all prompts share a common prefix, remove it and pass
             a kv_cache for the prefix to the DataLoader.
     """
-    with open(path, "r") as f:
+    assert not (prepend_bos and (model is None)), "Need model tokenizer to prepend bos"
+
+    # Load a dataset. If path is a list, only the first dataset is fully loaded.
+    first_path = path if isinstance(path, Path) else path[0]
+    assert isinstance(first_path, Path)
+    with open(first_path, "r") as f:
         data = json.load(f)
+    # For other paths, only 'prompts' are added to dataset. (eg. seq_labels is ignored)
+    if isinstance(path, list):
+        assert all([isinstance(p, Path) for p in path])
+        for p in path[1:]:
+            with open(p, "r") as f:
+                d = json.load(f)
+                data["prompts"].extend(d["prompts"])
 
     # Shuffle data and split into train and test
     random.seed(random_seed)
@@ -136,6 +148,11 @@ def load_datasets_from_json(
     wrong_answer_strs = [d["wrong_answers"] for d in data["prompts"]][:n_train_and_test]
     seq_labels = data.get("seq_labels", None)
     word_idxs = data.get("word_idxs", {})
+
+    if prepend_bos:
+        # Adjust word_idxs and seq_labels if prepending bos
+        seq_labels = ["<|BOS|>"] + seq_labels if seq_labels is not None else None
+        word_idxs = {k: v + int(prepend_bos) for k, v in word_idxs.items()}
 
     kvs = []
     diverge_idx: int = 0

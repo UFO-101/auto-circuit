@@ -1,5 +1,6 @@
 import torch as t
 
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.tasks import Task
 from auto_circuit.types import CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
@@ -15,12 +16,21 @@ def measure_correct_ans_percent(
     out_of_correct_and_incorrect_answers: bool = False,
 ) -> Measurements:
     """Measure the proportion of outputs where the correct answer is the maximum."""
-    measurements = []
+    return correct_answer_percent(
+        task.test_loader, pruned_outs, out_of_correct_and_incorrect_answers
+    )
 
+
+def correct_answer_percent(
+    dataloader: PromptDataLoader,
+    pruned_outs: CircuitOutputs,
+    out_of_correct_and_incorrect_answers: bool = False,
+) -> Measurements:
+    measurements = []
     for edge_count, pruned_out in (pruned_out_pbar := tqdm(pruned_outs.items())):
         pruned_out_pbar.set_description_str(f"Correct Percent for {edge_count} edges")
         correct_proportions = []
-        for batch in task.test_loader:
+        for batch in dataloader:
             assert isinstance(batch.answers, t.Tensor)
             logits = pruned_out[batch.key]
             if out_of_correct_and_incorrect_answers:

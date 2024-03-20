@@ -1,13 +1,13 @@
 from copy import deepcopy
 from itertools import product
 from random import random
-from typing import Callable, List, Literal, Optional
+from typing import Callable, List, Literal, Optional, Set
 
 import torch as t
 from ordered_set import OrderedSet
 from torch.nn.functional import log_softmax, mse_loss
 
-from auto_circuit.tasks import Task
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import (
     CircuitOutputs,
     Edge,
@@ -21,11 +21,14 @@ from auto_circuit.utils.graph_utils import (
     patch_mode,
     set_all_masks,
 )
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import multibatch_kl_div
 
 
 def acdc_prune_scores(
-    task: Task,
+    model: PatchableModel,
+    dataloader: PromptDataLoader,
+    official_edges: Optional[Set[Edge]],
     tao_exps: List[int] = list(range(-5, -1)),
     tao_bases: List[int] = [1, 3, 5, 7, 9],
     faithfulness_target: Literal["kl_div", "mse"] = "kl_div",
@@ -44,7 +47,7 @@ def acdc_prune_scores(
     same score are pruned together.
 
     Note: only the first batch of train_data is used."""
-    model = task.model
+    model = model
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
     edges: OrderedSet[Edge] = OrderedSet(
@@ -57,7 +60,7 @@ def acdc_prune_scores(
     ):
         pbar_tao.set_description_str("ACDC \u03C4={:.7f}".format(tao), refresh=True)
 
-        train_batch = next(iter(task.train_loader))
+        train_batch = next(iter(dataloader))
         clean_batch, corrupt_batch = train_batch.clean, train_batch.corrupt
 
         patch_outs_tensor = src_ablations(model, corrupt_batch)
@@ -115,7 +118,7 @@ def acdc_prune_scores(
                     n_edge = edge_counts_util(set(edges), None, p, zero_edges=False)[0]
                     test_out = run_pruned_ref(
                         model=test_model,
-                        dataloader=task.train_loader,
+                        dataloader=dataloader,
                         test_edge_counts=[n_edge],
                         prune_scores=p,
                         patch_type=PatchType.TREE_PATCH,

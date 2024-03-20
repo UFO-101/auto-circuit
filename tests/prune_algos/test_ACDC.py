@@ -34,7 +34,9 @@ def test_acdc(
         _dataset_name=dataset_name,
     )
     acdc_prune_scores(
-        task=task,
+        model=task.model,
+        dataloader=task.train_loader,
+        official_edges=task.true_edges,
         tao_exps=[-3],
         tao_bases=[1],
         test_mode=True,  # The actual test logic is embedded in the function

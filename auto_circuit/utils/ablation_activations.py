@@ -24,6 +24,9 @@ def src_out_hook(
         out = out
     elif ablation_type == AblationType.ZERO:
         out = t.zeros_like(out)
+    elif ablation_type == AblationType.BATCH_TOKENWISE_MEAN:
+        repeats = [out.size(0)] + [1] * (out.ndim - 1)
+        out = out.mean(dim=0, keepdim=True).repeat(repeats)
     else:
         raise NotImplementedError(ablation_type)
 
@@ -112,15 +115,18 @@ def batch_src_ablations(
     """
     Returns src_ablations for each batch in a dataloader.
     """
-    assert clean_corrupt in ["clean", "corrupt"]
+    batch_specific_ablation = [AblationType.RESAMPLE, AblationType.BATCH_TOKENWISE_MEAN]
+    assert (clean_corrupt is not None) == (ablation_type in batch_specific_ablation)
+
     patch_outs: Dict[BatchKey, t.Tensor] = {}
     if ablation_type.mean_over_dataset:
-        assert clean_corrupt is None
         mean_patch = src_ablations(model, dataloader, ablation_type)
         patch_outs = {batch.key: mean_patch for batch in dataloader}
     else:
-        assert clean_corrupt is not None
         for batch in dataloader:
-            input_batch = batch.clean if clean_corrupt == "clean" else batch.corrupt
+            if ablation_type == AblationType.ZERO:
+                input_batch = batch.clean
+            else:
+                input_batch = batch.clean if clean_corrupt == "clean" else batch.corrupt
             patch_outs[batch.key] = src_ablations(model, input_batch, ablation_type)
     return patch_outs

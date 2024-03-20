@@ -1,6 +1,5 @@
 {
   "seq_labels": [
-    "<|BOS|>",
     "\n",
     "def",
     " model",
@@ -42,6 +41,16 @@
     " :",
     "param_3"
   ],
+  "word_idxs": {
+    "A_def": 10,
+    "B_def": 12,
+    ",_B": 13,
+    "C_def": 14,
+    "A_doc": 26,
+    "param_2": 32,
+    "B_doc": 33,
+    "param_3": 39
+  },
   "prompts": [
     {
       "clean": "\ndef old(self, first, files, page, names, size, read):\n    \"\"\"sector gap population\n\n    :param page: message tree\n    :param names: detail mine\n    :param",

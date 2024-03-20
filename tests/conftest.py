@@ -96,7 +96,7 @@ def micro_dataloader(
         None,
         repo_path_to_abs_path(f"datasets/{file_name}.json"),
         device=DEVICE,
-        prepend_bos=True,
+        prepend_bos=False,
         batch_size=batch_size,
         train_test_size=(dataloader_len, dataloader_len),
     )

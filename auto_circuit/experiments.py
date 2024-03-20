@@ -28,7 +28,9 @@ from auto_circuit.metrics.prune_metrics.prune_metrics import (
 )
 from auto_circuit.metrics.prune_scores_similarity import prune_score_similarities_plotly
 from auto_circuit.prune_algos.prune_algos import (
+    CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
+    LOGIT_DIFF_GRAD_PRUNE_ALGO,
     PRUNE_ALGO_DICT,
     RANDOM_PRUNE_ALGO,
     PruneAlgo,
@@ -36,7 +38,6 @@ from auto_circuit.prune_algos.prune_algos import (
 )
 from auto_circuit.tasks import (
     DOCSTRING_TOKEN_CIRCUIT_TASK,
-    IOI_TOKEN_CIRCUIT_TASK,
     SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
     TASK_DICT,
     Task,
@@ -64,8 +65,8 @@ cache_folder_name = ".prune_scores_cache"
 if compute_prune_scores:
     TASKS: List[Task] = [
         # Token Circuits
-        SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
-        IOI_TOKEN_CIRCUIT_TASK,
+        # SPORTS_PLAYERS_TOKEN_CIRCUIT_TASK,
+        # IOI_TOKEN_CIRCUIT_TASK,
         DOCSTRING_TOKEN_CIRCUIT_TASK,
         # Component Circuits
         # SPORTS_PLAYERS_COMPONENT_CIRCUIT_TASK,
@@ -87,12 +88,12 @@ if compute_prune_scores:
         # INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO,
         # LOGPROB_GRAD_PRUNE_ALGO,
         # LOGPROB_DIFF_GRAD_PRUNE_ALGO,
-        # LOGIT_DIFF_GRAD_PRUNE_ALGO,  # Fast implementation of Edge Attribution Patchng
+        LOGIT_DIFF_GRAD_PRUNE_ALGO,  # Fast implementation of Edge Attribution Patchng
         # LOGIT_MSE_GRAD_PRUNE_ALGO,
         # SUBNETWORK_EDGE_PROBING_PRUNE_ALGO,
         # CIRCUIT_PROBING_PRUNE_ALGO,
         # SUBNETWORK_TREE_PROBING_PRUNE_ALGO,
-        # CIRCUIT_TREE_PROBING_PRUNE_ALGO,
+        CIRCUIT_TREE_PROBING_PRUNE_ALGO,
         # MSE_CIRCUIT_TREE_PROBING_PRUNE_ALGO,
     ]
     task_prune_scores = run_prune_algos(TASKS, PRUNE_ALGOS)
@@ -214,7 +215,7 @@ if False:
 # ----------------------------- Prune Metric Measurements ------------------------------
 
 compute_prune_metric_measurements = True
-save_prune_metric_measurements = True
+save_prune_metric_measurements = False
 load_prune_metric_measurements = False
 
 cache_folder_name = ".measurement_cache"

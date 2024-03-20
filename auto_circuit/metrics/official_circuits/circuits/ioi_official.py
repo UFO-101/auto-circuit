@@ -74,7 +74,7 @@ def ioi_true_edges(
     s1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
 
     if token_positions:
-        assert final_tok_idx > 0, "word_idxs can't be empty if token_positions is True"
+        assert final_tok_idx > 0, "Must provide word_idxs if token_positions is True"
 
     special_connections: List[Conn] = [
         Conn(
@@ -182,6 +182,8 @@ def ioi_head_based_official_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
+    The IOI heads (with token positions). The paper actually tests faithfulness by
+    mean-ablating every head not included (means calculated over ABC dataset).
     Works for both factorized and unfactorized models.
     """
     assert model.cfg.model_name == "gpt2"
@@ -192,7 +194,7 @@ def ioi_head_based_official_edges(
     S1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
 
     if token_positions:
-        assert final_tok_idx > 0, "word_idxs can't be empty if token_positions is True"
+        assert final_tok_idx > 0, "Must provide word_idxs if token_positions is True"
 
     CIRCUIT = {
         "name mover": [(9, 9), (10, 0), (9, 6)],
@@ -236,11 +238,10 @@ def ioi_head_based_official_edges(
     not_official_edges: Set[Edge] = set()
     for edge in model.edges:
         src_is_head = edge.src.head_idx is not None
-        if edge.seq_idx is not None:
-            assert token_positions
+        if token_positions:
+            assert edge.seq_idx is not None
             src_head_key = (edge.src.name, edge.seq_idx + seq_start_idx)
         else:
-            assert not token_positions
             src_head_key = (edge.src.name, None)
 
         if src_is_head and src_head_key not in heads_to_keep:

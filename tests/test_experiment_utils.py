@@ -7,6 +7,7 @@ import transformer_lens as tl
 from typing_extensions import Literal
 
 from auto_circuit.experiment_utils import (
+    IOI_CIRCUIT_TYPE,
     ioi_circuit_single_template_logit_diff_percent,
 )
 from auto_circuit.types import AblationType
@@ -113,15 +114,22 @@ def test_ioi_faithfulness_exact_repro(
 
     template_idx: int = random.choice(range(15))
     expected_logit_diff_percent = IOI_TRUE_RESULTS[prepend_bos][template][template_idx]
-    actual_logit_diff_percent = ioi_circuit_single_template_logit_diff_percent(
+    (
+        _,
+        actual_logit_diff_percent,
+        _,
+        _,
+        _,
+    ) = ioi_circuit_single_template_logit_diff_percent(
         gpt2,
-        test_batch_size=50,
+        dataset_size=50,
         prepend_bos=prepend_bos,
         template=template,
         template_idx=template_idx,
         factorized=factorized,
-        true_circuit="Nodes",
+        circuit=IOI_CIRCUIT_TYPE.NODES,
         ablation_type=AblationType.TOKENWISE_MEAN_CORRUPT,
+        diff_of_mean_logit_diff=True,
     )
     # compare the expected and actual logit different percentages
     if debug:
@@ -141,5 +149,5 @@ def test_ioi_faithfulness_exact_repro(
 
 
 # model = gpt2()
-# for i in tqdm(range(20)):
-#     test_ioi_faithfulness_exact_repro(model, random_seed=i, debug=False)
+# for i in range(5):
+#     test_ioi_faithfulness_exact_repro(model, random_seed=i, debug=True)
