@@ -4,7 +4,6 @@ import torch as t
 from torch.nn.functional import log_softmax
 
 from auto_circuit.data import PromptDataLoader
-from auto_circuit.tasks import Task
 from auto_circuit.types import BatchKey, CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.patchable_model import PatchableModel
@@ -12,19 +11,6 @@ from auto_circuit.utils.tensor_ops import multibatch_kl_div
 
 
 def measure_kl_div(
-    task: Task,
-    circuit_outs: CircuitOutputs,
-    compare_to_clean: bool = True,
-) -> Measurements:
-    return kl_div_measurements(
-        task.model,
-        task.test_loader,
-        circuit_outs,
-        compare_to_clean,
-    )
-
-
-def kl_div_measurements(
     model: PatchableModel,
     dataloader: PromptDataLoader,
     circuit_outs: CircuitOutputs,

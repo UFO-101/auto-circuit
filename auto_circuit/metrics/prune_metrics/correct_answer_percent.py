@@ -1,9 +1,9 @@
 import torch as t
 
 from auto_circuit.data import PromptDataLoader
-from auto_circuit.tasks import Task
 from auto_circuit.types import CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import (
     correct_answer_greater_than_incorrect_proportion,
     correct_answer_proportion,
@@ -11,17 +11,7 @@ from auto_circuit.utils.tensor_ops import (
 
 
 def measure_correct_ans_percent(
-    task: Task,
-    pruned_outs: CircuitOutputs,
-    out_of_correct_and_incorrect_answers: bool = False,
-) -> Measurements:
-    """Measure the proportion of outputs where the correct answer is the maximum."""
-    return correct_answer_percent(
-        task.test_loader, pruned_outs, out_of_correct_and_incorrect_answers
-    )
-
-
-def correct_answer_percent(
+    model: PatchableModel,
     dataloader: PromptDataLoader,
     pruned_outs: CircuitOutputs,
     out_of_correct_and_incorrect_answers: bool = False,

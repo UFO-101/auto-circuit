@@ -15,7 +15,7 @@ from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
 )
 from auto_circuit.metrics.prune_metrics.answer_diff_percent import answer_diff_percent
 from auto_circuit.metrics.prune_metrics.kl_div import (
-    kl_div_measurements,
+    measure_kl_div,
 )
 from auto_circuit.prune import run_circuits
 from auto_circuit.prune_algos.circuit_probing import circuit_probing_prune_scores
@@ -160,7 +160,7 @@ for ps, name in [
     print(name, "prune scores")
     for n_edge, logit_diff_percent in logit_diff_percent_means:
         print(f"n_edge: {n_edge}, logit_diff_percent: {logit_diff_percent}")
-    kl_divs: Measurements = kl_div_measurements(gpt2, test_loader, circ_outs)
+    kl_divs: Measurements = measure_kl_div(gpt2, test_loader, circ_outs)
     for n_edge, kl_div in kl_divs:
         print(f"n_edge: {n_edge}, kl_div: {kl_div}")
     print()

@@ -51,7 +51,8 @@ def test_answer_prob(
         pruned_outs[batch.key] = model(batch.clean)[model.out_slice]
 
     answer_prob = measure_answer_val(
-        task,
+        task.model,
+        task.test_loader,
         pruned_outs={0: pruned_outs},
         prob_func="logits",
     )
@@ -86,7 +87,8 @@ def test_greaterthan_answer_prob(
         pruned_outs[batch.key] = model(batch.clean)[model.out_slice]
 
     answer_prob = measure_answer_val(
-        task,
+        task.model,
+        task.test_loader,
         pruned_outs={0: pruned_outs},
         prob_func="logits",
     )

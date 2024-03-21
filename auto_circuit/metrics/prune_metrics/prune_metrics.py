@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Callable, Dict, List, Optional
 
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.metrics.prune_metrics.answer_diff import measure_answer_diff
 from auto_circuit.metrics.prune_metrics.answer_diff_percent import (
     measure_answer_diff_percent,
@@ -11,8 +12,8 @@ from auto_circuit.metrics.prune_metrics.correct_answer_percent import (
     measure_correct_ans_percent,
 )
 from auto_circuit.metrics.prune_metrics.kl_div import measure_kl_div
-from auto_circuit.tasks import Task
 from auto_circuit.types import CircuitOutputs, Measurements, PruneMetricKey
+from auto_circuit.utils.patchable_model import PatchableModel
 
 """
 PruneMetrics take the outputs of a pruned model and return some measurement of the
@@ -24,7 +25,9 @@ model's performance.
 class PruneMetric:
     key: PruneMetricKey
     name: str
-    metric_func: Callable[[Task, CircuitOutputs], Measurements]
+    metric_func: Callable[
+        [PatchableModel, PromptDataLoader, CircuitOutputs], Measurements
+    ]
     log_x: bool = False
     log_y: bool = False
     lower_better: bool = False

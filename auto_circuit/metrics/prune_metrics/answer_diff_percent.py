@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Literal, Tuple
 import torch as t
 
 from auto_circuit.data import BatchKey, PromptDataLoader
-from auto_circuit.tasks import Task
 from auto_circuit.types import CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.patchable_model import PatchableModel
@@ -18,7 +17,8 @@ def identity(*args: Any, **kwargs: Any) -> Any:
 
 
 def measure_answer_diff_percent(
-    task: Task,
+    model: PatchableModel,
+    test_loader: PromptDataLoader,
     circuit_outs: CircuitOutputs,
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
     diff_of_means: bool = True,
@@ -28,7 +28,7 @@ def measure_answer_diff_percent(
     value] between the default model and the circuits.
     """
     return answer_diff_percent(
-        task.model, task.test_loader, circuit_outs, prob_func, diff_of_means
+        model, test_loader, circuit_outs, prob_func, diff_of_means
     )[0]
 
 

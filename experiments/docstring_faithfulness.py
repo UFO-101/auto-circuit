@@ -16,7 +16,7 @@ from auto_circuit.metrics.official_circuits.circuits.docstring_official import (
     docstring_true_edges,
 )
 from auto_circuit.metrics.prune_metrics.correct_answer_percent import (
-    correct_answer_percent,
+    measure_correct_ans_percent,
 )
 from auto_circuit.prune import run_circuits
 from auto_circuit.types import (
@@ -106,7 +106,8 @@ for ablation_type in tqdm(ablation_types):
                 patch_type=PatchType.TREE_PATCH,
                 ablation_type=ablation_type,
             )
-            measurements: Measurements = correct_answer_percent(
+            measurements: Measurements = measure_correct_ans_percent(
+                model=patch_model,
                 dataloader=test_loader,
                 pruned_outs=circuit_outs,
                 out_of_correct_and_incorrect_answers=False,

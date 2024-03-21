@@ -67,7 +67,9 @@ def measure_prune_metrics(
                 )
                 for metric in (metric_pbar := tqdm(metrics)):
                     metric_pbar.set_description_str(f"Measuring {metric.name}")
-                    measurement = metric.metric_func(task, circuit_outs)
+                    measurement = metric.metric_func(
+                        task.model, task.test_loader, circuit_outs
+                    )
                     measurements[ablation_type][metric.key][task.key][
                         algo.key
                     ] = measurement

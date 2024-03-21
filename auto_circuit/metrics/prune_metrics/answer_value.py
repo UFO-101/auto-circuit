@@ -2,9 +2,10 @@ from typing import Any, Literal
 
 import torch as t
 
-from auto_circuit.tasks import Task
+from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import CircuitOutputs, Measurements
 from auto_circuit.utils.custom_tqdm import tqdm
+from auto_circuit.utils.patchable_model import PatchableModel
 from auto_circuit.utils.tensor_ops import batch_avg_answer_val
 
 
@@ -13,7 +14,8 @@ def identity(*args: Any, **kwargs: Any) -> Any:
 
 
 def measure_answer_val(
-    task: Task,
+    model: PatchableModel,
+    test_loader: PromptDataLoader,
     pruned_outs: CircuitOutputs,
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
     wrong_answer: bool = False,
@@ -30,7 +32,7 @@ def measure_answer_val(
     for edge_count, pruned_out in (pruned_out_pbar := tqdm(pruned_outs.items())):
         pruned_out_pbar.set_description_str(f"Answer Value for {edge_count} edges")
         avg_ans_probs = []
-        for batch in task.test_loader:
+        for batch in test_loader:
             batch_probs = apply_prob_func(pruned_out[batch.key], dim=-1)
             avg_ans_probs.append(batch_avg_answer_val(batch_probs, batch, wrong_answer))
         # PromptDataLoaders have all batches the same size, so we mean the batch means
