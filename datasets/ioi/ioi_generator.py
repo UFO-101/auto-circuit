@@ -388,7 +388,6 @@ def gen_flipped_prompts(
 
         # Get all random names we'll need, in the form of a dictionary
         rand_names = {
-            # (Joseph M) Added sorted because sets makes this non-deterministic
             letter: np.random.choice(list(sorted(set(names) - set(orig_names), key=names.index)))
             for letter in list(sorted(set(flip_new) - set(flip_orig), key=flip_new.index))
         }
