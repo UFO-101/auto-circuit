@@ -14,7 +14,6 @@ def docstring_true_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The manual graph, from Stefan
     !!! Note: !!!
     The sequence positions assume prompts of length 40, as in docstring_prompts.json
     """
