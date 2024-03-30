@@ -1,5 +1,3 @@
-# Based on https://github.com/AlignmentResearch/flamingo/blob/main/examples/devbox/Dockerfile
-# and https://nanmu.me/en/posts/2023/quick-dockerfile-for-python-poetry-projects/
 FROM pytorch/pytorch as base
 
 ARG UID=10000
