@@ -1,6 +1,6 @@
 #%%
 """This code learns an edge-based circuit for the IOI task with no distinction between
-different tokens. This is for use in Bilal's OpenWebText experiments."""
+different tokens."""
 from pathlib import Path
 from typing import List
 
