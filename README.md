@@ -2,7 +2,7 @@
 A library for testing automatic circuit discovery algorithms.
 
 ## Read the draft paper
-[Token-Level Automatic Circuit Discovery in Language Models](Token-Level%20Automatic%20Circuit%20Discovery%20in%20Language%20Models.pdf)
+[Transformer Circuit Metrics are not Robust](Transformer%20Circuit%20Metrics%20are%20not%20Robust.pdf)
 
 ## Getting Started
 - Install [poetry](https://python-poetry.org/docs/#installation)
