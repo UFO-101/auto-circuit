@@ -15,9 +15,7 @@ from auto_circuit.types import AblationType
 """
 This dictionary shows the expected logit different percentage when mean ablating the
 compliment of the IOI heads ** with 50 samples **. The keys correspond to
-[prepend_bos, prompt_format, prompt_idx].
-These results can be reproduced using my fork of the Redwood Research open-source IOI
-implementation: https://github.com/UFO-101/IOI, at the top of experiments.py
+[prepend_bos, prompt_format, prompt_idx]
 
 !!! Note: Different sample counts give different results. !!!
 """
