@@ -27,6 +27,9 @@ def src_out_hook(
     elif ablation_type == AblationType.BATCH_TOKENWISE_MEAN:
         repeats = [out.size(0)] + [1] * (out.ndim - 1)
         out = out.mean(dim=0, keepdim=True).repeat(repeats)
+    elif ablation_type == AblationType.BATCH_ALL_TOK_MEAN:
+        repeats = [out.size(0), out.size(1)] + [1] * (out.ndim - 2)
+        out = out.mean(dim=(0, 1), keepdim=True).repeat(repeats)
     else:
         raise NotImplementedError(ablation_type)
 
@@ -115,7 +118,11 @@ def batch_src_ablations(
     """
     Returns src_ablations for each batch in a dataloader.
     """
-    batch_specific_ablation = [AblationType.RESAMPLE, AblationType.BATCH_TOKENWISE_MEAN]
+    batch_specific_ablation = [
+        AblationType.RESAMPLE,
+        AblationType.BATCH_TOKENWISE_MEAN,
+        AblationType.BATCH_ALL_TOK_MEAN,
+    ]
     assert (clean_corrupt is not None) == (ablation_type in batch_specific_ablation)
 
     patch_outs: Dict[BatchKey, t.Tensor] = {}

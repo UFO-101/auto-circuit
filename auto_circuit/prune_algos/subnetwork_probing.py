@@ -37,6 +37,10 @@ regularize_const = temp * math.log(-left / right)
 
 SP = "Subnetwork Probing"
 
+SP_FAITHFULNESS_TARGET = Literal[
+    "kl_div", "mse", "answer", "wrong_answer", "correct_percent", "logit_diff_percent"
+]
+
 
 def subnetwork_probing_prune_scores(
     model: PatchableModel,
@@ -53,14 +57,7 @@ def subnetwork_probing_prune_scores(
     tree_optimisation: bool = False,
     avoid_edges: Optional[Set[Edge]] = None,
     avoid_lambda: float = 1.0,
-    faithfulness_target: Literal[
-        "kl_div",
-        "mse",
-        "answer",
-        "wrong_answer",
-        "correct_percent",
-        "logit_diff_percent",
-    ] = "kl_div",
+    faithfulness_target: SP_FAITHFULNESS_TARGET = "kl_div",
     validation_dataloader: Optional[PromptDataLoader] = None,
 ) -> PruneScores:
     """Optimize the patch masks using gradient descent."""
@@ -128,9 +125,7 @@ def subnetwork_probing_prune_scores(
                         logit_diffs = batch_answer_diff_percents(
                             train_logits, clean_logits[batch.key], batch
                         )
-                        logit_diff_term = t.abs(80 - logit_diffs).mean()
-                        # logit_diff_std = t.std(logit_diffs)
-                        # faithful_term = logit_diff_std + logit_diff_term
+                        logit_diff_term = t.abs(100 - logit_diffs).mean()
                         faithful_term = logit_diff_term
                     else:
                         assert faithfulness_target in ["answer", "wrong_answer"]
@@ -182,7 +177,7 @@ def subnetwork_probing_prune_scores(
                             val_batch,
                         )
                         val_stds.append(t.std(val_faithful_term).item())
-                        val_faiths.append(t.abs(100 - val_faithful_term).mean().item())
+                        val_faiths.append(val_faithful_term.mean().item())
 
         xtreme_f = max if tree_optimisation else min
         xtreme_torch_f = t.max if tree_optimisation else t.min

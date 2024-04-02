@@ -110,7 +110,7 @@ def acdc_prune_scores(
                     print("ACDC model, with out=", out) if render else None
                     if render:
                         assert draw_seq_graph_ref is not None
-                        draw_seq_graph_ref(model, clean_batch, None, True, True)
+                        draw_seq_graph_ref(model, None, True, True)
 
                     print("Test mode: running pruned model") if render else None
                     p = dict([(m, (s == t.inf) * 1.0) for m, s in prune_scores.items()])

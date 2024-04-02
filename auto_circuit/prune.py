@@ -89,7 +89,6 @@ def run_circuits(
             if render_graph:
                 draw_seq_graph(
                     model=model,
-                    input=batch_input,
                     show_all_edges=render_all_edges,
                     show_all_seq_pos=False,
                     seq_labels=dataloader.seq_labels,

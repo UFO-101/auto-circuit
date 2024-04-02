@@ -181,7 +181,7 @@ def simple_graph_nodes(
         layer = next(layers)
         dest_nodes.add(
             DestNode(
-                name="Resid Final" if last_block else f"Resid Post {block_idx}",
+                name="Resid End" if last_block else f"Resid Post {block_idx}",
                 module_name=f"blocks.{block_idx}.hook_resid_post",
                 layer=layer,
                 min_src_idx=min_src_idx,

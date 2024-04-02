@@ -1,0 +1,2748 @@
+{
+  "word_idxs": {
+    "first_name_tok": 0,
+    "final_name_tok": 2,
+    "end": 2
+  },
+  "prompts": [
+    {
+      "clean": " Marshall Faulk",
+      "corrupt": " Roy Halladay",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Bill Parcells",
+      "corrupt": " David Ortiz",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Pat Tillman",
+      "corrupt": " Luis Scola",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brent Celek",
+      "corrupt": " Ian Desmond",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Marshal Yanda",
+      "corrupt": " Nick Punto",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kyle Orton",
+      "corrupt": " Nick Punto",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Mel Blount",
+      "corrupt": " Greg Oden",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Matt Fort\u00e9",
+      "corrupt": " Reggie Miller",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kevin Faulk",
+      "corrupt": " Patrick Corbin",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brian Hoyer",
+      "corrupt": " Jaren Jackson",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Michael Oher",
+      "corrupt": " Penny Hardaway",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Bart Starr",
+      "corrupt": " Ike Davis",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Reggie White",
+      "corrupt": " Mike Olt",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Charlie Whitehurst",
+      "corrupt": " Charles Barkley",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Garrett Celek",
+      "corrupt": " Nick Punto",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Lamar Hunt",
+      "corrupt": " LeBron James",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Ahmad Bradshaw",
+      "corrupt": " Rafael Furcal",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brian Hartline",
+      "corrupt": " Cameron Maybin",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Clay Matthews III",
+      "corrupt": " Jaren Jackson",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jerod Mayo",
+      "corrupt": " Branch Rickey",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Nick Saban",
+      "corrupt": " Jaren Jackson",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Greg Schiano",
+      "corrupt": " Mariano Rivera",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Dave Duerson",
+      "corrupt": " Courtney Lee",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Joe Haden",
+      "corrupt": " Rafael Furcal",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brandon Boykin",
+      "corrupt": " Ian Desmond",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Joe Namath",
+      "corrupt": " Patrick Corbin",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Ryan Lindley",
+      "corrupt": " Ralph Houk",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tom Osborne",
+      "corrupt": " Mariano Rivera",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kyle Boller",
+      "corrupt": " Ned Yost",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Joe Philbin",
+      "corrupt": " Arne Duncan",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Hines Ward",
+      "corrupt": " Joe Mauer",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Anthony Fasano",
+      "corrupt": " Mike Olt",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Lou Groza",
+      "corrupt": " Joe Dumars",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Sean Payton",
+      "corrupt": " Tarvis Williams",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Michael Irvin",
+      "corrupt": " Derrick Williams",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Delanie Walker",
+      "corrupt": " John Danks",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Trent Dilfer",
+      "corrupt": " Bob Cousy",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Connor Barwin",
+      "corrupt": " Manute Bol",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Nick Mangold",
+      "corrupt": " Tommy Milone",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chad Henne",
+      "corrupt": " Larry Doby",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Colt McCoy",
+      "corrupt": " Tom Seaver",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Landry Jones",
+      "corrupt": " Stan Musial",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Matt Schaub",
+      "corrupt": " Elton Brand",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jon Gruden",
+      "corrupt": " Dexter Fowler",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jake Locker",
+      "corrupt": " Mike Piazza",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Collin Klein",
+      "corrupt": " Elton Brand",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Clinton Portis",
+      "corrupt": " Derrick Rose",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Bobby Bowden",
+      "corrupt": " Dwight Howard",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Archie Manning",
+      "corrupt": " Mike Aviles",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Art Rooney",
+      "corrupt": " LeBron James",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Johnny Unitas",
+      "corrupt": " Paul Molitor",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brian Cushing",
+      "corrupt": " Jayson Williams",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Deion Branch",
+      "corrupt": " Doug Fister",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Sid Luckman",
+      "corrupt": " Robinson Can\u00f3",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tony Sparano",
+      "corrupt": " Jrue Holiday",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Hue Jackson",
+      "corrupt": " Gio Gonzalez",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jeremy Maclin",
+      "corrupt": " Jake Peavy",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Cliff Avril",
+      "corrupt": " Tom Seaver",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Terry Bradshaw",
+      "corrupt": " Cecil Fielder",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Michael Vick",
+      "corrupt": " Chris Mullin",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Vince Lombardi",
+      "corrupt": " Patrick Corbin",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chris Ivory",
+      "corrupt": " Jimmy Rollins",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Julius Peppers",
+      "corrupt": " Fernando Cabrera",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Byron Leftwich",
+      "corrupt": " Mickey Mantle",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brian Brohm",
+      "corrupt": " Dexter Fowler",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Scott Pioli",
+      "corrupt": " Ernie Banks",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Michael Strahan",
+      "corrupt": " Mark McGwire",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brandon Browner",
+      "corrupt": " Courtney Lee",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Eric Weddle",
+      "corrupt": " Trevor Ariza",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Ryan Fitzpatrick",
+      "corrupt": " Chase Budinger",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Donovan McNabb",
+      "corrupt": " Kyle Singler",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Danny Amendola",
+      "corrupt": " Malik Allen",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " George Halas",
+      "corrupt": " Rafael Furcal",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kirk Cousins",
+      "corrupt": " Joey Votto",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Ryan Clady",
+      "corrupt": " Isiah Thomas",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Matt Prater",
+      "corrupt": " Kyle Seager",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Riley Reiff",
+      "corrupt": " Derrick Williams",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Eric Mangini",
+      "corrupt": " Ike Davis",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Reggie Wayne",
+      "corrupt": " Brian Cashman",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tiki Barber",
+      "corrupt": " Rafael Soriano",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Scott Fujita",
+      "corrupt": " Mike Piazza",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Joe Staley",
+      "corrupt": " Marcus Camby",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Brett Keisel",
+      "corrupt": " Kenneth Faried",
+      "answers": [
+        " football"
+      ],
+      "wrong_answers": [
+        " basketball",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kenneth Faried",
+      "corrupt": " Todd Heap",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jaren Jackson",
+      "corrupt": " Wade Boggs",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Raymond Felton",
+      "corrupt": " Johnny Pesky",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Monta Ellis",
+      "corrupt": " Brandon Boykin",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kwame Brown",
+      "corrupt": " Marshal Yanda",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Charles Barkley",
+      "corrupt": " Roger Clemens",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Terrence Ross",
+      "corrupt": " Cameron Maybin",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Dennis Rodman",
+      "corrupt": " Garrett Celek",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Dwight Howard",
+      "corrupt": " Dan Straily",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Delonte West",
+      "corrupt": " Joe Namath",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chris Bosh",
+      "corrupt": " Ryan Clady",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chris Kaman",
+      "corrupt": " Larry Doby",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kyrie Irving",
+      "corrupt": " Bernard Berrian",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " LeBron James",
+      "corrupt": " Connor Barwin",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kobe Bryant",
+      "corrupt": " David Ortiz",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Elton Brand",
+      "corrupt": " Riley Reiff",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jerry Stackhouse",
+      "corrupt": " Dusty Baker",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chris Webber",
+      "corrupt": " Ryan Clady",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Carmelo Anthony",
+      "corrupt": " Cliff Avril",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Patty Mills",
+      "corrupt": " Scott Fujita",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Mario Chalmers",
+      "corrupt": " Joe Mauer",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Courtney Lee",
+      "corrupt": " Alex Cora",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kevin Garnett",
+      "corrupt": " John Danks",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jayson Williams",
+      "corrupt": " Asante Samuel",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " JJ Redick",
+      "corrupt": " Charlie Batch",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Klay Thompson",
+      "corrupt": " George Iloka",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tamera Young",
+      "corrupt": " Barry Zito",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Malik Allen",
+      "corrupt": " Mel Blount",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Manute Bol",
+      "corrupt": " Chad Greenway",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Terrence Jones",
+      "corrupt": " Jimmy Rollins",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Luis Scola",
+      "corrupt": " Charles Woodson",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Bob Cousy",
+      "corrupt": " Emmitt Thomas",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Greg Oden",
+      "corrupt": " Scott Feldman",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Mike Bibby",
+      "corrupt": " Jos\u00e9 Cabrera",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chris Mullin",
+      "corrupt": " Honus Wagner",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Trevor Ariza",
+      "corrupt": " Bryan Bulaga",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jrue Holiday",
+      "corrupt": " Zack Wheeler",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Patrick Ewing",
+      "corrupt": " Matt Fort\u00e9",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " John Stockton",
+      "corrupt": " Delanie Walker",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Moses Malone",
+      "corrupt": " Eric Wedge",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Marcus Camby",
+      "corrupt": " Tim Raines",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " James Harden",
+      "corrupt": " Charles Tillman",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kyle Korver",
+      "corrupt": " Willie Mays",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Candace Parker",
+      "corrupt": " Curtis Granderson",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Joe Dumars",
+      "corrupt": " Scott Kazmir",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Julius Erving",
+      "corrupt": " Terrell Davis",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Reggie Miller",
+      "corrupt": " Hue Jackson",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Marc Gasol",
+      "corrupt": " Curtis Granderson",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Shawan Robinson",
+      "corrupt": " Torry Holt",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Serge Ibaka",
+      "corrupt": " Jerod Mayo",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Penny Hardaway",
+      "corrupt": " Cordy Glenn",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Derrick Rose",
+      "corrupt": " Tommy Milone",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " George Mikan",
+      "corrupt": " David Ortiz",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Russell Westbrook",
+      "corrupt": " Ralph Houk",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kyle Singler",
+      "corrupt": " Cameron Maybin",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Rasheed Wallace",
+      "corrupt": " Ahmad Bradshaw",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Karl Malone",
+      "corrupt": " Phil Simms",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Chase Budinger",
+      "corrupt": " Landry Jones",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Deron Washington",
+      "corrupt": " Tom Osborne",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kevin Durant",
+      "corrupt": " Joe Staley",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Deron Williams",
+      "corrupt": " Joe Namath",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Gary Payton",
+      "corrupt": " Joe Mauer",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Domonic Jones",
+      "corrupt": " Curtis Granderson",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kenyon Martin",
+      "corrupt": " Ian Desmond",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Danny Granger",
+      "corrupt": " David DeJesus",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Andrew Bogut",
+      "corrupt": " Fernando Cabrera",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Spencer Hawes",
+      "corrupt": " George Halas",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Arne Duncan",
+      "corrupt": " Charlie Whitehurst",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Nicolas Batum",
+      "corrupt": " Anthony Fasano",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Derrick Williams",
+      "corrupt": " Corey Hart",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Rudy Gay",
+      "corrupt": " Charlie Blackmon",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Isiah Thomas",
+      "corrupt": " Joe Namath",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jordan Farmar",
+      "corrupt": " Johnny Unitas",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Perry Jones III",
+      "corrupt": " Dan Marino",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " James Worthy",
+      "corrupt": " Julius Peppers",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tim Hardaway",
+      "corrupt": " Hines Ward",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kendrick Perkins",
+      "corrupt": " Stan Musial",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Rick Carlisle",
+      "corrupt": " Matt Wieters",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Kemba Walker",
+      "corrupt": " Brandon Browner",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jason Kapono",
+      "corrupt": " Chase Headley",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Tarvis Williams",
+      "corrupt": " Julian Edelman",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Robert Horry",
+      "corrupt": " Sid Luckman",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Jason Kidd",
+      "corrupt": " Tim Raines",
+      "answers": [
+        " basketball"
+      ],
+      "wrong_answers": [
+        " football",
+        " baseball"
+      ]
+    },
+    {
+      "clean": " Dan Duquette",
+      "corrupt": " Lamar Hunt",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Evan Longoria",
+      "corrupt": " Byron Leftwich",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Tim Raines",
+      "corrupt": " Riley Reiff",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Carlos Correa",
+      "corrupt": " Pat Tillman",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Steve Garvey",
+      "corrupt": " Matt Prater",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Troy Glaus",
+      "corrupt": " Doug Marrone",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Torii Hunter",
+      "corrupt": " Josh McCown",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Larry Doby",
+      "corrupt": " Jake Locker",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Wade Boggs",
+      "corrupt": " Jaren Jackson",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Omar Infante",
+      "corrupt": " Marshal Yanda",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Al Kaline",
+      "corrupt": " James Harden",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mike Aviles",
+      "corrupt": " Rick Carlisle",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Charlie Blackmon",
+      "corrupt": " Ryan Fitzpatrick",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Jos\u00e9 Cabrera",
+      "corrupt": " Chuck Noll",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mark McGwire",
+      "corrupt": " Joe Philbin",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mookie Wilson",
+      "corrupt": " Jason Kapono",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Chris Tillman",
+      "corrupt": " Joe Flacco",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Babe Ruth",
+      "corrupt": " Jason Witten",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Juan Uribe",
+      "corrupt": " Monta Ellis",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Curtis Granderson",
+      "corrupt": " Candace Parker",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Joe Torre",
+      "corrupt": " Ryan Fitzpatrick",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Barry Zito",
+      "corrupt": " Ryan Lindley",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Roy Oswalt",
+      "corrupt": " Domonic Jones",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Bobby Bonds",
+      "corrupt": " Kenneth Faried",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Don Newcombe",
+      "corrupt": " Perry Jones III",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Rafael Furcal",
+      "corrupt": " Danny Granger",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mickey Mantle",
+      "corrupt": " Brian Cushing",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " David DeJesus",
+      "corrupt": " Bobby Bowden",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Kyle Seager",
+      "corrupt": " Kyle Singler",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Paul Molitor",
+      "corrupt": " Jrue Holiday",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Domonic Brown",
+      "corrupt": " Brian Billick",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Fernando Tat\u00eds",
+      "corrupt": " Julian Edelman",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Patrick Corbin",
+      "corrupt": " Kyrie Irving",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Ron Guidry",
+      "corrupt": " Greg Schiano",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Fernando Cabrera",
+      "corrupt": " Tamera Young",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mark Trumbo",
+      "corrupt": " Joe Staley",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Ian Desmond",
+      "corrupt": " Mike Bibby",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Scott Rolen",
+      "corrupt": " Joe Dumars",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Cameron Maybin",
+      "corrupt": " Derrick Rose",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mike Leake",
+      "corrupt": " LeBron James",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Ralph Houk",
+      "corrupt": " Kyrie Irving",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mike Piazza",
+      "corrupt": " Rick Carlisle",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mike Olt",
+      "corrupt": " Spencer Hawes",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Andrew Cashner",
+      "corrupt": " Tamera Young",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Rickey Henderson",
+      "corrupt": " George Mikan",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Nick Punto",
+      "corrupt": " Brian Cushing",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Brian Dozier",
+      "corrupt": " James Worthy",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Tommy Milone",
+      "corrupt": " Marshal Yanda",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Nate McLouth",
+      "corrupt": " Kobe Bryant",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Doug Fister",
+      "corrupt": " Marshall Faulk",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Stan Musial",
+      "corrupt": " Nicolas Batum",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Jimmy Rollins",
+      "corrupt": " James Worthy",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Lucas Duda",
+      "corrupt": " Brian Brohm",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Brett Lawrie",
+      "corrupt": " Delanie Walker",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Zack Wheeler",
+      "corrupt": " Chris Bosh",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Brian Cashman",
+      "corrupt": " David Diehl",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Alex Cora",
+      "corrupt": " Jaren Jackson",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Roger Clemens",
+      "corrupt": " Joe Dumars",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Manny Ramirez",
+      "corrupt": " Terry Bradshaw",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Mariano Rivera",
+      "corrupt": " Asante Samuel",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Derek Jeter",
+      "corrupt": " Chris Kaman",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Cecil Fielder",
+      "corrupt": " Dez Bryant",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Jamie Moyer",
+      "corrupt": " Joe Dumars",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Yan Gomes",
+      "corrupt": " Dwight Howard",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Johnny Pesky",
+      "corrupt": " Chad Greenway",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Eric Hosmer",
+      "corrupt": " Jordan Farmar",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Joey Votto",
+      "corrupt": " Elton Brand",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Joe Mauer",
+      "corrupt": " Trevor Ariza",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Roberto Clemente",
+      "corrupt": " Derrick Rose",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Ernie Banks",
+      "corrupt": " Kendrick Perkins",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Andrew Romine",
+      "corrupt": " Eric Weddle",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Carl Hubbell",
+      "corrupt": " Chris Bosh",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Bruce Bochy",
+      "corrupt": " Delonte West",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Josh Beckett",
+      "corrupt": " Doug Marrone",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " John Danks",
+      "corrupt": " Brett Keisel",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Corey Hart",
+      "corrupt": " Garrett Celek",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Ned Yost",
+      "corrupt": " James Worthy",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Barry Bonds",
+      "corrupt": " Charles Barkley",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " James Loney",
+      "corrupt": " John Elway",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Dexter Fowler",
+      "corrupt": " Brett Keisel",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Al Reyes",
+      "corrupt": " Karl Malone",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " Roger Maris",
+      "corrupt": " Marcus Camby",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    },
+    {
+      "clean": " David Ortiz",
+      "corrupt": " Bart Starr",
+      "answers": [
+        " baseball"
+      ],
+      "wrong_answers": [
+        " football",
+        " basketball"
+      ]
+    }
+  ]
+}

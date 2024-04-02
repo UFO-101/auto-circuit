@@ -35,7 +35,6 @@ COLOR_PALETTE = [
     "rgb(153, 153, 153)",  # grey
     "rgb(222, 222, 0)",  # yellow
 ]
-TRANSPARENT_COLOR_PALETTE = [f"rgba{color[3:-1]}, 0.1)" for color in COLOR_PALETTE]
 
 # Create or modify a template
 template = pio.templates["plotly"]
@@ -72,6 +71,7 @@ class AblationType(Enum):
     TOKENWISE_MEAN_CORRUPT = 4
     TOKENWISE_MEAN_CLEAN_AND_CORRUPT = 5
     BATCH_TOKENWISE_MEAN = 6
+    BATCH_ALL_TOK_MEAN = 7
 
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()

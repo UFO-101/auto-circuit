@@ -62,6 +62,7 @@ def edge_patching_plot(
     fig.update_layout(
         # title=f"{main_title}: {metric_name} vs. Patched Edges",
         yaxis_title=f"{metric_name} ({ablation_type})",
+        # yaxis_title=f"{metric_name}",
         template="plotly",
         # width=335 * len(set([d["Task"] for d in data])) + 280,
         width=max(365 * len(set([d["Task"] for d in data])) - 10, 500),

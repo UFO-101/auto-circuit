@@ -24,6 +24,7 @@ SELECT ?itemLabel WHERE {
 #%%
 import json
 import random
+from typing import Dict, List
 
 import torch as t
 import transformer_lens as tl
@@ -31,6 +32,7 @@ import transformer_lens as tl
 from auto_circuit.utils.misc import repo_path_to_abs_path
 
 
+#%%
 def read_players(filename: str):
     filepath = repo_path_to_abs_path(f"datasets/sports-players/{filename}")
     with open(filepath, "r") as file:
@@ -38,39 +40,40 @@ def read_players(filename: str):
     return [player.strip() for player in players]
 
 
-american_football_players = read_players("american-football-players.txt")
-basketball_players = read_players("basketball-players.txt")
-baseball_players = read_players("baseball-players.txt")
-
+sport_players: Dict[str, List[str]] = {
+    "football": read_players("american-football-players.txt"),
+    "basketball": read_players("basketball-players.txt"),
+    "baseball": read_players("baseball-players.txt"),
+}
 template = "Fact: Tiger Woods plays the sport of golf\nFact: {} plays the sport of"
 
-football_prompts = [template.format(player) for player in american_football_players]
-basketball_prompts = [template.format(player) for player in basketball_players]
-baseball_prompts = [template.format(player) for player in baseball_players]
+sport_prompts: Dict[str, List[str]] = {
+    "football": [template.format(player) for player in sport_players["football"]],
+    "basketball": [template.format(player) for player in sport_players["basketball"]],
+    "baseball": [template.format(player) for player in sport_players["baseball"]],
+}
 
 MODEL_NAME = "pythia-2.8b-deduped"
 
 device = "cuda" if t.cuda.is_available() else "cpu"
 model = tl.HookedTransformer.from_pretrained(MODEL_NAME, device=device)
+
 #%%
+name_length = 3
+correct_prompt_len = 16 + name_length
 
-football_valid_idxs, basketball_valid_idxs, baseball_valid_idxs = [], [], []
 
-for prompts, answer, valid_idxs in [
-    (football_prompts, " football", football_valid_idxs),
-    (basketball_prompts, " basketball", basketball_valid_idxs),
-    (baseball_prompts, " baseball", baseball_valid_idxs),
-]:
-    ans_tok = model.to_tokens(answer, padding_side="left", prepend_bos=False)[0][0]
-    prompt_tokens = model.to_tokens(prompts, prepend_bos=True, padding_side="left")
+def valid_idxs(sport: str, prompts: List[str]) -> List[int]:
+    ans_str = " " + sport
+    ans_tok = model.to_tokens(ans_str, padding_side="left", prepend_bos=False)[0][0]
+    prompt_tokens = model.to_tokens(prompts, prepend_bos=False, padding_side="left")
     print("prompt_tokens.shape", prompt_tokens.shape)
 
-    correct_prompt_len = 20
     padding_token = model.tokenizer.pad_token_id  # type: ignore
     correct_prompt_len_idxs = t.where(
         # <pad> == <bos> so we need to subtract 1 from the correct prompt len
         (prompt_tokens != padding_token).sum(dim=1)
-        == correct_prompt_len - 1
+        == correct_prompt_len
     )[0]
     prompt_tokens = prompt_tokens[correct_prompt_len_idxs, -correct_prompt_len:]
     print("prompt_tokens.shape", prompt_tokens.shape)
@@ -84,47 +87,66 @@ for prompts, answer, valid_idxs in [
         correct_answer_idxs
     ]
     print("final_idxs.shape", final_idxs.shape)
-    valid_idxs.extend(final_idxs.tolist())
+    final_idxs = final_idxs.tolist()
+    random.shuffle(final_idxs)
+    return final_idxs
 
-min_valid_idxs = min(
-    len(football_valid_idxs), len(basketball_valid_idxs), len(baseball_valid_idxs)
-)
 
+sport_valid_idxs = dict([(k, valid_idxs(k, v)) for k, v in sport_prompts.items()])
+
+min_num_players: int = min([len(sport_valid_idxs[k]) for k in sport_prompts.keys()])
+
+player_dicts = []
 prompt_dicts = []
-
-sport_objects = [
-    [" football", football_valid_idxs, football_prompts],
-    [" basketball", basketball_valid_idxs, basketball_prompts],
-    [" baseball", baseball_valid_idxs, baseball_prompts],
-]
-for sport_idx in range(len(sport_objects)):
-    # Shuffle the valid_idxs
-    for valid_idxs in [football_valid_idxs, basketball_valid_idxs, baseball_valid_idxs]:
-        random.shuffle(valid_idxs)
-    correct_answer = sport_objects[sport_idx][0]
-    incorrect_answers = [
-        sport_objects[idx][0] for idx in range(len(sport_objects)) if idx != sport_idx
-    ]
-    clean_valid_idxs = sport_objects[sport_idx][1]
-    clean_prompts = sport_objects[sport_idx][2]
-    for i in range(min_valid_idxs):
+for sport, idxs in sport_valid_idxs.items():
+    incorrect_players = [s for s in sport_players.keys() if s != sport]
+    incorrect_answers = [s for s in sport_prompts.keys() if s != sport]
+    clean_players = sport_players[sport]
+    clean_prompts = sport_prompts[sport]
+    for i in range(min_num_players):
         # Randomly choose a different sport
-        rand_sport_idx = random.choice(
-            [idx for idx in range(len(sport_objects)) if idx != sport_idx]
-        )
-        corrupt_prompts = sport_objects[rand_sport_idx][2]
-        corrupt_valid_idxs = sport_objects[rand_sport_idx][1]
-        prompt_dict = {
-            "clean": clean_prompts[clean_valid_idxs[i]],
-            "corrupt": corrupt_prompts[corrupt_valid_idxs[i]],
-            "answers": [correct_answer],
-            "wrong_answers": incorrect_answers,
+        rand_incorrect_sport = random.choice(incorrect_answers)
+        corrupt_players = sport_players[rand_incorrect_sport]
+        corrupt_prompts = sport_prompts[rand_incorrect_sport]
+        corrupt_valid_idx = random.choice(sport_valid_idxs[rand_incorrect_sport])
+        player_dict = {
+            "clean": " " + clean_players[idxs[i]],
+            "corrupt": " " + corrupt_players[corrupt_valid_idx],
+            "answers": [" " + sport],
+            "wrong_answers": [" " + s for s in incorrect_players],
         }
+        prompt_dict = {
+            "clean": clean_prompts[idxs[i]],
+            "corrupt": corrupt_prompts[corrupt_valid_idx],
+            "answers": [" " + sport],
+            "wrong_answers": [" " + s for s in incorrect_answers],
+        }
+        player_dicts.append(player_dict)
         prompt_dicts.append(prompt_dict)
 
-data_json = {"prompts": prompt_dicts}
+player_data_json = {
+    "word_idxs": {
+        "first_name_tok": 0,
+        "final_name_tok": name_length - 1,
+        "end": name_length - 1,
+    },
+    "prompts": player_dicts,
+}
+prompt_data_json = {
+    "word_idxs": {
+        "first_name_tok": 12,
+        "final_name_tok": 12 + name_length - 1,
+        "end": correct_prompt_len - 1,
+    },
+    "prompts": prompt_dicts,
+}
 
 #%%
-with open(f"sports_players_{MODEL_NAME}_prompts.json", "w") as f:
-    json.dump(data_json, f)
+repo_path = f"datasets/sports-players/sports_players_{MODEL_NAME}_names.json"
+with open(repo_path_to_abs_path(repo_path), "w") as f:
+    json.dump(player_data_json, f)
+
+repo_path = f"datasets/sports-players/new_sports_players_{MODEL_NAME}_prompts.json"
+with open(repo_path_to_abs_path(repo_path), "w") as f:
+    json.dump(prompt_data_json, f)
 #%%

@@ -63,6 +63,7 @@ def mask_gradient_prune_scores(
                         token_vals = numerator / denominator.detach()
                     else:
                         raise ValueError(f"Unknown grad_function: {grad_function}")
+
                     if answer_function == "avg_diff":
                         loss = -batch_avg_answer_diff(token_vals, batch)
                     elif answer_function == "avg_val":

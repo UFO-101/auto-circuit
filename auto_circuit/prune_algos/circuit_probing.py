@@ -4,6 +4,7 @@ import torch as t
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.prune_algos.subnetwork_probing import (
+    SP_FAITHFULNESS_TARGET,
     init_mask_val,
     subnetwork_probing_prune_scores,
 )
@@ -28,14 +29,7 @@ def circuit_probing_prune_scores(
     tree_optimisation: bool = False,
     avoid_edges: Optional[Set[Edge]] = None,
     avoid_lambda: float = 1.0,
-    faithfulness_target: Literal[
-        "kl_div",
-        "mse",
-        "answer",
-        "wrong_answer",
-        "correct_percent",
-        "logit_diff_percent",
-    ] = "kl_div",
+    faithfulness_target: SP_FAITHFULNESS_TARGET = "kl_div",
     validation_dataloader: Optional[PromptDataLoader] = None,
 ) -> PruneScores:
 

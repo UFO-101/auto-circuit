@@ -77,7 +77,7 @@ for template in (template_pbar := tqdm(templates)):
                 ) = ioi_circuit_single_template_logit_diff_percent(
                     gpt2=gpt2,
                     dataset_size=100,
-                    prepend_bos=False,
+                    prepend_bos=True,
                     template=template,
                     template_idx=template_idx,
                     factorized=circ_type
@@ -85,6 +85,7 @@ for template in (template_pbar := tqdm(templates)):
                     circuit=circ_type,
                     ablation_type=AblationType.TOKENWISE_MEAN_CORRUPT,
                     learned=learned,
+                    learned_faithfulness_target="logit_diff_percent",
                 )
                 results[template][template_idx][(circ_type, learned, edge_count)] = (
                     logit_diff_percent_mean,

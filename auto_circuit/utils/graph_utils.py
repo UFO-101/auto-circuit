@@ -29,7 +29,7 @@ from auto_circuit.types import (
 from auto_circuit.utils.misc import module_by_name, set_module_by_name
 from auto_circuit.utils.patch_wrapper import PatchWrapperImpl
 from auto_circuit.utils.patchable_model import PatchableModel
-from auto_circuit.utils.tensor_ops import flat_prune_scores
+from auto_circuit.utils.tensor_ops import desc_prune_scores
 
 
 def patchable_model(
@@ -280,7 +280,7 @@ def edge_counts_util(
     if test_counts is None:
         test_counts = EdgeCounts.LOGARITHMIC if n_edges > 200 else EdgeCounts.ALL
         if prune_scores is not None:
-            flat_ps = flat_prune_scores(prune_scores)
+            flat_ps = desc_prune_scores(prune_scores)
             unique_ps, sorted_ps_count = flat_ps.unique(sorted=True, return_counts=True)
             if list(unique_ps.size())[0] < min(n_edges / 2, 100):
                 test_counts = EdgeCounts.GROUPS
@@ -298,7 +298,7 @@ def edge_counts_util(
     elif test_counts == EdgeCounts.GROUPS:
         assert prune_scores is not None
         if sorted_ps_count is None:
-            flat_ps = flat_prune_scores(prune_scores)
+            flat_ps = desc_prune_scores(prune_scores)
             _, sorted_ps_count = flat_ps.unique(sorted=True, return_counts=True)
         assert sorted_ps_count is not None
         counts_list = sorted_ps_count.flip(dims=(0,)).cumsum(dim=0).tolist()

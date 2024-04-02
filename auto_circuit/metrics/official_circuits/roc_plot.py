@@ -1,31 +1,58 @@
+from collections import defaultdict
+from typing import Dict
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from auto_circuit.prune_algos.prune_algos import PRUNE_ALGO_DICT
 from auto_circuit.tasks import TASK_DICT
-from auto_circuit.types import COLOR_PALETTE, TaskMeasurements
+from auto_circuit.types import (
+    COLOR_PALETTE,
+    Measurements,
+    TaskMeasurements,
+)
 
 
-def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
-    titles = [TASK_DICT[task_key].name for task_key in task_measurements.keys()]
-    fig = make_subplots(rows=1, cols=len(task_measurements), subplot_titles=titles)
+def task_roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
+    task_algo_name_measurements: Dict[str, Dict[str, Measurements]] = defaultdict(dict)
+    for task_key, algo_measurements in task_measurements.items():
+        task_name = TASK_DICT[task_key].name
+        for algo_key, measurements in algo_measurements.items():
+            algo_name = PRUNE_ALGO_DICT[algo_key].short_name
+            task_algo_name_measurements[task_name][algo_name] = measurements
+    return roc_plot(task_algo_name_measurements)
+
+
+def roc_plot(
+    taskname_measurements: Dict[str, Dict[str, Measurements]],
+    variable_width: bool = False,
+) -> go.Figure:
+    titles = list(taskname_measurements.keys())
+    fig = make_subplots(rows=1, cols=len(taskname_measurements), subplot_titles=titles)
     fig.update_traces(line=dict(shape="hv"), mode="lines")
-    task_measurements = dict(sorted(task_measurements.items(), key=lambda x: x[0]))
-    for task_idx, (task_key, algo_measurements) in enumerate(task_measurements.items()):
-        for algo_idx, (algo_key, measurements) in enumerate(algo_measurements.items()):
-            algo = PRUNE_ALGO_DICT[algo_key]
+    taskname_measurements = dict(
+        sorted(taskname_measurements.items(), key=lambda x: x[0])
+    )
+    for task_idx, (task_key, algo_measurements) in enumerate(
+        taskname_measurements.items()
+    ):
+        for algo_idx, (algo_name, measurements) in enumerate(algo_measurements.items()):
+            width_delta = 8
+            max_width = (width_delta / 2) + (len(algo_measurements) - 1) * width_delta
+            line_width = max_width - algo_idx * width_delta
             fig.add_scatter(
                 row=1,
                 col=task_idx + 1,
                 x=[x for x, _ in measurements],
                 y=[y for _, y in measurements],
                 mode="markers+text" if len(measurements) == 1 else "lines",
-                text=algo.short_name,
+                text=algo_name,
+                line=dict(width=line_width if variable_width else 2),
                 textposition="middle right",
                 showlegend=task_idx == 0,
                 # marker=dict(color="black", size=10, symbol="x-thin"),
                 marker_line_width=2,
-                name=algo.short_name,
+                name=algo_name,
                 marker_color=COLOR_PALETTE[algo_idx],
             )
     fig.update_xaxes(
@@ -42,15 +69,15 @@ def roc_plot(task_measurements: TaskMeasurements) -> go.Figure:
         yaxis_title="True Positive Rate",
         height=500,
         # width=335 * len(set([d["Task"] for d in data])) + 280,
-        width=365 * len(task_measurements) - 10,
+        width=365 * len(taskname_measurements) - 10,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.75,
+            y=-0.6,
             xanchor="left",
-            x=0.0,
+            # x=0.0,
             entrywidthmode="fraction",
-            entrywidth=0.3,
+            entrywidth=0.6,
         ),
     )
     return fig

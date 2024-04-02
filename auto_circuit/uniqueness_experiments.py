@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import torch as t
 
 from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
-from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
+from auto_circuit.metrics.official_circuits.roc_plot import task_roc_plot
 from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
     measure_prune_metrics,
     measurement_figs,
@@ -91,7 +91,6 @@ if True:
             print("task:", task.name, "algo:", algo.name)
             draw_seq_graph(
                 model=task.model,
-                input=next(iter(task.test_loader)).clean,
                 prune_scores=circ,
                 seq_labels=task.test_loader.seq_labels,
                 show_all_edges=False,
@@ -153,7 +152,7 @@ if load_roc_measurements:
     filename = "lala.pkl"
     roc_measurements = load_cache(roc_cache_folder_name, filename)
 if roc_measurements:
-    roc_fig = roc_plot(roc_measurements)
+    roc_fig = task_roc_plot(roc_measurements)
     figs.append(roc_fig)
 
 

@@ -20,6 +20,7 @@ from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
     measurement_figs,
 )
 from auto_circuit.metrics.prune_metrics.prune_metrics import (
+    ANSWER_PROB_METRIC,
     CLEAN_KL_DIV_METRIC,
     CORRECT_ANSWER_GREATER_THAN_INCORRECT_PERCENT_METRIC,
     CORRECT_ANSWER_PERCENT_METRIC,
@@ -56,9 +57,9 @@ figs = []
 
 # ------------------------------------ Prune Scores ------------------------------------
 
-compute_prune_scores = True
+compute_prune_scores = False
 save_prune_scores = False
-load_prune_scores = False
+load_prune_scores = True
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
@@ -148,7 +149,6 @@ if False:
             print("task:", task.name, "algo:", algo.name)
             draw_seq_graph(
                 model=task.model,
-                input=next(iter(task.test_loader)).clean,
                 prune_scores=circ,
                 seq_labels=task.test_loader.seq_labels,
                 show_all_edges=False,
@@ -156,7 +156,7 @@ if False:
 
 # ------------------------------ Prune Scores Similarity -------------------------------
 
-if False:
+if True:
     prune_scores_similartity_fig = prune_score_similarities_plotly(
         task_prune_scores, [], ground_truths=True
     )
@@ -228,7 +228,7 @@ if compute_prune_metric_measurements:
     PRUNE_METRICS: List[PruneMetric] = [
         CLEAN_KL_DIV_METRIC,
         # CORRUPT_KL_DIV_METRIC,
-        # ANSWER_PROB_METRIC,
+        ANSWER_PROB_METRIC,
         # ANSWER_LOGIT_METRIC,
         # WRONG_ANSWER_LOGIT_METRIC,
         # LOGIT_DIFF_METRIC,

@@ -1,9 +1,10 @@
 #%%
 from collections import defaultdict
+from pathlib import Path
 from typing import List
 
 from auto_circuit.metrics.official_circuits.measure_roc import measure_roc
-from auto_circuit.metrics.official_circuits.roc_plot import roc_plot
+from auto_circuit.metrics.official_circuits.roc_plot import task_roc_plot
 from auto_circuit.prune_algos.prune_algos import (
     ACDC_PRUNE_ALGO,
     GROUND_TRUTH_PRUNE_ALGO,
@@ -27,13 +28,13 @@ from auto_circuit.types import (
     TaskMeasurements,
     TaskPruneScores,
 )
-from auto_circuit.utils.misc import load_cache, save_cache
+from auto_circuit.utils.misc import load_cache, repo_path_to_abs_path, save_cache
 from auto_circuit.visualize import draw_seq_graph
 
 # ------------------------------------ Prune Scores ------------------------------------
-compute_prune_scores = False
+compute_prune_scores = True
 save_prune_scores = False
-load_prune_scores = True
+load_prune_scores = False
 
 task_prune_scores: TaskPruneScores = defaultdict(dict)
 cache_folder_name = ".prune_scores_cache"
@@ -81,7 +82,6 @@ if False:
             print("task:", task.name, "algo:", algo.name)
             draw_seq_graph(
                 model=task.model,
-                input=next(iter(task.test_loader)).clean,
                 prune_scores=prune_scores,
                 seq_labels=task.test_loader.seq_labels,
                 show_all_edges=False,
@@ -92,4 +92,10 @@ if False:
 # ---------------------------------------- ROC -----------------------------------------
 
 roc_measurements: TaskMeasurements = measure_roc(task_prune_scores)
-roc_fig = roc_plot(roc_measurements).show()
+roc_fig = task_roc_plot(roc_measurements)
+roc_fig.show()
+# Save figure as pdf in figures folder
+folder: Path = repo_path_to_abs_path("figures/figures-12")
+roc_fig.write_image(str(folder / "tracr-roc.pdf"))
+roc_fig.write_image(str(folder / "tracr-roc.svg"))
+roc_fig.write_image(str(folder / "tracr-roc.png"), scale=4)

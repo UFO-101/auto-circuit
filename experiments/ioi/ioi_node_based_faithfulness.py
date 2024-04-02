@@ -16,7 +16,7 @@ from auto_circuit.experiment_utils import (
     ioi_circuit_single_template_logit_diff_percent,
     load_tl_model,
 )
-from auto_circuit.types import COLOR_PALETTE, TRANSPARENT_COLOR_PALETTE, AblationType
+from auto_circuit.types import COLOR_PALETTE, AblationType
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.misc import repo_path_to_abs_path
 
@@ -31,6 +31,7 @@ batch_size_percents: Dict[
 ] = defaultdict(lambda: defaultdict(dict))
 # batch_sizes = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 batch_sizes = [2, 5, 10, 20, 50, 100, 200]
+# batch_sizes = [10, 50, 100, 200]
 mean_logit_diffs: List[bool] = [True, False]
 # mean_logit_diffs: List[bool] = [False]
 col_titles: List[str] = [
@@ -64,9 +65,9 @@ for mean_logit_diff in (mean_logit_diff_pbar := tqdm(mean_logit_diffs)):
                     prepend_bos=False,
                     template=template,
                     template_idx=template_idx,
-                    factorized=False,
-                    circuit=IOI_CIRCUIT_TYPE.NODES,
-                    ablation_type=AblationType.BATCH_TOKENWISE_MEAN,
+                    factorized=True,
+                    circuit=IOI_CIRCUIT_TYPE.EDGES,
+                    ablation_type=AblationType.BATCH_ALL_TOK_MEAN,
                     diff_of_mean_logit_diff=mean_logit_diff,
                     batch_size=test_batch_size,
                 )
@@ -96,17 +97,19 @@ for mean_logit_diff in (mean_logit_diff_pbar := tqdm(mean_logit_diffs)):
 # each batch size.
 
 col_titles: List[str] = [
-    "% Average Logit Diff",
-    "Average Logit Diff %",
-    "Individual ABBA Predictions",
-    "Individual BABA Predictions",
+    "[Average Logit Diff] %",
+    "Average [Logit Diff %]",
+    "ABBA Predictions",
+    "BABA Predictions",
 ]
 fig = subplots.make_subplots(
     rows=1,
     cols=len(mean_logit_diffs) + 2,
-    shared_yaxes=False,
-    shared_xaxes=False,
+    # shared_yaxes=False,
+    # shared_xaxes=False,
     column_titles=col_titles,
+    x_title="ABC Dataset Size",
+    y_title="Logit Difference Recovered",
 )
 for col, mean_logit_diff in enumerate(mean_logit_diffs, start=1):
     for i, template in enumerate([ABBA_TEMPLATE, BABA_TEMPLATE, ALL_TEMPLATE]):
@@ -140,62 +143,55 @@ for i, template in enumerate([ABBA_TEMPLATE, BABA_TEMPLATE]):
         points = points.cpu().tolist()
         x = [batch_size] * len(points)
         fig.add_trace(
-            go.Scatter(
+            go.Box(
                 x=x,
                 y=points,
-                mode="markers",
                 name=template,
                 showlegend=False,
-                marker=dict(color=TRANSPARENT_COLOR_PALETTE[i]),
+                marker=dict(
+                    color=COLOR_PALETTE[i],
+                    opacity=0.25,
+                ),
             ),
             row=1,
             col=len(mean_logit_diffs) + 1 + i,
         )
-    x = batch_sizes
-    y = [batch_size_percents[False][batch_size][template][0] for batch_size in x]
-    y_stds = [batch_size_percents[False][batch_size][template][1] for batch_size in x]
-    y_uppers = [y[i] + y_stds[i] for i in range(len(y))]
-    y_lowers = [y[i] - y_stds[i] for i in range(len(y))]
-    fig.add_trace(
-        go.Scatter(
-            x=x + x[::-1],
-            y=y_uppers + y_lowers[::-1],
-            fill="toself",
-            fillcolor=TRANSPARENT_COLOR_PALETTE[i],
-            line=dict(color="rgba(255,255,255,0)"),
-            showlegend=False,
-        ),
-        row=1,
-        col=len(mean_logit_diffs) + 1 + i,
-    )
 
-[
-    fig.update_xaxes(type="log", title_text="ABC Dataset Size", row=1, col=i + 1)
-    for i in range(4)
-]
-[fig.update_yaxes(range=[-500, 1000], row=1, col=col) for col in [3, 4]]
+[fig.update_xaxes(type="log", row=1, col=i + 1) for i in range(4)]
+[fig.update_yaxes(range=[-200, 500], row=1, col=col) for col in [3, 4]]
+# [fig.update_yaxes(range=[55, 135], row=1, col=col) for col in [1, 2]]
+fig.update_annotations(font_size=20)
 margin = 20
 fig.update_layout(
-    yaxis_title="Avg Logit Difference Percent",
-    width=1800,
-    height=500,
-    margin=dict(l=margin, r=margin, b=margin, t=margin * 2),
+    # yaxis_title="Logit Difference Percent",
+    width=1400,
+    height=400,
+    margin=dict(l=margin * 4, r=margin, b=margin * 3.5, t=margin * 2),
 )
-# Add only on first 2 columns
+
 fig.add_hline(
     y=87,
     line_dash="dot",
     annotation_text="Reported Faithfulness",
     annotation_position="bottom right",
     annotation_font_size=14,
+    row=1,  # type: ignore
+    col=1,  # type: ignore
 )
 fig.add_hline(
     y=100,
     annotation_text="Perfect Faithfulness",
     annotation_position="top right",
     annotation_font_size=14,
+    row=1,  # type: ignore
+    col=1,  # type: ignore
 )
+fig.add_hline(y=87, line_dash="dot")
+fig.add_hline(y=100)
+
 fig.show()
 folder: Path = repo_path_to_abs_path("figures/figures-12")
 # Save figure as pdf in figures folder
-fig.write_image(str(folder / "ioi_nodes_faithfulness-2.pdf"))
+fig.write_image(str(folder / "ioi_edge_all_tok_mean_abc_size_faithfulness.pdf"))
+
+# %%

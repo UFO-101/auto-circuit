@@ -14,6 +14,7 @@ from auto_circuit.metrics.official_circuits.circuits.ioi_official import (
 from auto_circuit.metrics.prune_metrics.answer_diff_percent import answer_diff_percent
 from auto_circuit.prune import run_circuits
 from auto_circuit.prune_algos.circuit_probing import circuit_probing_prune_scores
+from auto_circuit.prune_algos.subnetwork_probing import SP_FAITHFULNESS_TARGET
 from auto_circuit.types import (
     AblationType,
     CircuitOutputs,
@@ -63,6 +64,7 @@ def ioi_circuit_single_template_logit_diff_percent(
     tok_pos: bool = True,
     patch_type: PatchType = PatchType.TREE_PATCH,
     learned: bool = False,
+    learned_faithfulness_target: SP_FAITHFULNESS_TARGET = "logit_diff_percent",
     diff_of_mean_logit_diff: bool = False,
     batch_size: Optional[int] = None,
 ) -> Tuple[int, float, float, t.Tensor, PruneScores]:
@@ -130,14 +132,14 @@ def ioi_circuit_single_template_logit_diff_percent(
             model=patchable_gpt2,
             dataloader=train_loader,
             official_edges=ioi_official_edges,
-            epochs=1000,
+            epochs=200,
             learning_rate=0.1,
             regularize_lambda=0.1,
             mask_fn="hard_concrete",
             show_train_graph=True,
             tree_optimisation=True,
             circuit_sizes=["true_size"],
-            faithfulness_target="logit_diff_percent",
+            faithfulness_target=learned_faithfulness_target,
             validation_dataloader=test_loader,
         )
     else:

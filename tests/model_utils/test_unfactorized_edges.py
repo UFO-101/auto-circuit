@@ -54,7 +54,7 @@ def test_micro_model_unfactorized_edges(micro_model: t.nn.Module, debug: bool = 
     with patch_mode(fctrzd_model, fctrzd_patches):
         fctrzd_patched_out = fctrzd_model(input_batch)
         if debug:
-            draw_seq_graph(fctrzd_model, input_batch, show_all_edges=True)
+            draw_seq_graph(fctrzd_model, show_all_edges=True)
 
     unfctrzd_patches = src_ablations(unfctrzd_model, patch_batch, AblationType.RESAMPLE)
     set_all_masks(unfctrzd_model, 0.0)
@@ -66,7 +66,7 @@ def test_micro_model_unfactorized_edges(micro_model: t.nn.Module, debug: bool = 
     with patch_mode(unfctrzd_model, unfctrzd_patches):
         unfctrzd_patched_out = unfctrzd_model(input_batch)
         if debug:
-            draw_seq_graph(unfctrzd_model, input_batch, show_all_edges=True)
+            draw_seq_graph(unfctrzd_model, show_all_edges=True)
 
     assert not t.allclose(default_out, fctrzd_patched_out)
     assert t.allclose(fctrzd_patched_out, unfctrzd_patched_out)
@@ -120,7 +120,7 @@ def test_mini_transformer_unfactorized_edges(
     with patch_mode(fctrzd_model, fctrzd_patches):
         fctrzd_patched_out = fctrzd_model(input_batch)
         if debug:
-            draw_seq_graph(fctrzd_model, input_batch, show_all_edges=True)
+            draw_seq_graph(fctrzd_model, show_all_edges=True)
 
     unfctrzd_patches = src_ablations(unfctrzd_model, patch_batch, AblationType.RESAMPLE)
     set_all_masks(unfctrzd_model, 0.0)
@@ -132,7 +132,7 @@ def test_mini_transformer_unfactorized_edges(
     with patch_mode(unfctrzd_model, unfctrzd_patches):
         unfctrzd_patched_out = unfctrzd_model(input_batch)
         if debug:
-            draw_seq_graph(unfctrzd_model, input_batch, show_all_edges=True)
+            draw_seq_graph(unfctrzd_model, show_all_edges=True)
 
     assert not t.allclose(default_out, fctrzd_patched_out)
     assert t.allclose(fctrzd_patched_out, unfctrzd_patched_out, atol=1e-5)
@@ -219,7 +219,6 @@ def test_ioi_node_based_circuit_factorized_vs_unfactorized(
         if debug:
             draw_seq_graph(
                 unfctrzd_gpt2,
-                first_train_batch.clean,
                 show_all_edges=False,
                 seq_labels=train_loader.seq_labels,
             )

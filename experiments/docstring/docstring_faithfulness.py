@@ -1,6 +1,7 @@
 #%%
 from collections import defaultdict
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import plotly.graph_objects as go
@@ -91,7 +92,6 @@ for ablation_type in tqdm(ablation_types):
 
             # draw_seq_graph(
             #     model=patch_model,
-            #     input=next(iter(test_loader)).clean,
             #     prune_scores=prune_scores,
             #     seq_labels=test_loader.seq_labels
             # )
@@ -124,7 +124,7 @@ for ablation_type in tqdm(ablation_types):
             del patch_model
 #%%
 
-# Plot a bar chat of the results (we don't need subplots, just name the five bars)
+
 def bar_name(tok_pos_circuit: bool, edge_circuit: bool) -> str:
     name = ""
     name += "Edges " if edge_circuit else "Nodes "
@@ -133,7 +133,10 @@ def bar_name(tok_pos_circuit: bool, edge_circuit: bool) -> str:
 
 
 fig = subplots.make_subplots(
-    rows=1, cols=len(ablation_types), column_titles=[str(a) for a in ablation_types]
+    rows=1,
+    cols=len(ablation_types),
+    column_titles=[str(a) for a in ablation_types],
+    shared_yaxes=True,
 )
 for i, ablation_type in enumerate(ablation_types):
     fig.add_trace(
@@ -151,12 +154,36 @@ fig.add_hline(
     line_dash="dot",
     line_color="black",
     annotation_text="Full Model",
-    annotation_position="top right",
+    annotation_position="top left",
+    row=1,  # type: ignore
+    col=1,  # type: ignore
 )
+fig.add_hline(
+    y=58,
+    line_dash="dot",
+    line_color="black",
+    annotation_text="Reported Faithfulness",
+    annotation_position="bottom left",
+    row=1,  # type: ignore
+    col=1,  # type: ignore
+)
+fig.add_hline(
+    y=default_avg_correct,
+    line_dash="dot",
+    line_color="black",
+    row=1,  # type: ignore
+    col=2,  # type: ignore
+)
+fig.add_hline(y=58, line_dash="dot", line_color="black", row=1, col=2)  # type: ignore
 fig = fig.update_layout(
     yaxis_title="Correct Answer (%)",
     width=700,
     height=600,
 )
 fig.show()
+folder: Path = repo_path_to_abs_path("figures/figures-12")
+# Save figure as pdf in figures folder
+# fig.write_image(str(folder / "docstring-faithfulness.pdf"))
+# fig.write_image(str(folder / "docstring-faithfulness.svg"))
+# fig.write_image(str(folder / "docstring-faithfulness.png"), scale=4)
 # %%

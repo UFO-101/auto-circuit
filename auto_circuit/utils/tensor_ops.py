@@ -17,9 +17,13 @@ def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
     return s_bar.clamp(min=0.0, max=1.0)
 
 
-def vocab_avg_val(vals: t.Tensor, indices: t.Tensor) -> t.Tensor:
+def indices_vals(vals: t.Tensor, indices: t.Tensor) -> t.Tensor:
     assert vals.ndim == indices.ndim
-    return t.gather(vals, dim=-1, index=indices).mean()
+    return t.gather(vals, dim=-1, index=indices)
+
+
+def vocab_avg_val(vals: t.Tensor, indices: t.Tensor) -> t.Tensor:
+    return indices_vals(vals, indices).mean()
 
 
 def batch_avg_answer_val(
@@ -64,8 +68,6 @@ def batch_answer_diff_percents(
     """
     Find the percentage difference between the predicted logit differences and the
     target logit differences.
-    If mean_diff is True, returns the percentage difference between the mean predicted
-    wrong approach, but this is what the IOI paper does to measure faithfulness.
     """
     target_answer_diff = batch_answer_diffs(target_vals, batch)
     pred_answer_diff = batch_answer_diffs(pred_vals, batch)

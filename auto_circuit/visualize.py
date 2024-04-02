@@ -24,18 +24,19 @@ def node_name(n: str) -> str:
         return n[:-2] if n[-1] in ["Q", "K", "V"] else n
 
 
-def t_fmt(x: Any, idx: Any = None, replace_line_break: str = "\n") -> str:
+def t_fmt(x: Any, seq_dim: int, seq_idx: Optional[int], line_break: str = "\n") -> str:
     if type(x) != t.Tensor:
         return str(x)
+    seq_sl = (-1 if x.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
+    idx = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
     if (arr := x[idx].squeeze()).ndim == 1:
         return f"[{', '.join([f'{v:.2f}'.rstrip('0') for v in arr.tolist()[:2]])} ...]"
-    return str(x[idx]).lstrip("tensor(").rstrip(")").replace("\n", replace_line_break)
+    return str(x[idx]).lstrip("tensor(").rstrip(")").replace("\n", line_break)
 
 
 def net_viz(
     model: PatchableModel,
     seq_edges: Set[Edge],
-    input: t.Tensor,
     prune_scores: Optional[PruneScores],
     vert_interval: Tuple[float, float],
     seq_idx: Optional[int] = None,
@@ -48,9 +49,6 @@ def net_viz(
     scores and won't show activations.
     """
     nodes: OrderedSet[Node] = OrderedSet(model.nodes)
-    seq_dim: int = model.seq_dim
-    seq_sl = (-1 if input.size(-1) < 5 else slice(None)) if seq_idx is None else seq_idx
-    lbl_slice = tuple([0] + [slice(None)] * (seq_dim - 1) + [seq_sl])
 
     # Define the sankey nodes
     viz_nodes: Dict[str, Node] = dict([(node_name(n.name), n) for n in nodes])
@@ -84,7 +82,8 @@ def net_viz(
         targets.append(node_idxs[node_name(e.dest.name)])
         graph_nodes["label"][node_idxs[node_name(e.dest.name)]] = node_name(e.dest.name)
         values.append(0.8 if prune_scores is None else edge_score)
-        lbl = e.name + "<br>" + t_fmt(lbl, lbl_slice, "<br>") + f"<br>{edge_score:.2f}"
+        lbl = t_fmt(lbl, model.seq_dim, seq_idx, "<br>")
+        lbl = e.name + "<br>" + lbl + f"<br>{edge_score:.2f}"
         labels.append(lbl)
         if edge_score == 0:
             edge_color = "rgba(0,0,0,0.1)"
@@ -101,19 +100,20 @@ def net_viz(
         if i not in included_layer_nodes:
             included_layer_nodes[i] = [lyr_nodes[i][0]]
     ordered_lyr_nodes = [nodes for _, nodes in sorted(included_layer_nodes.items())]
+    ghost_edge_val = 1e-6
     for lyr_1_nodes, lyr_2_nodes in zip(ordered_lyr_nodes[:-1], ordered_lyr_nodes[1:]):
         first_lyr_1_node = lyr_1_nodes[0]
         first_lyr_2_node = lyr_2_nodes[0]
         for lyr_1_node in lyr_1_nodes:
             sources.append(node_idxs[node_name(lyr_1_node)])
             targets.append(node_idxs[node_name(first_lyr_2_node)])
-            values.append(1e-6)
+            values.append(ghost_edge_val)
             labels.append("")
             colors.append("rgba(0,255,0,0.0)")
         for lyr_2_node in lyr_2_nodes:
             sources.append(node_idxs[node_name(first_lyr_1_node)])
             targets.append(node_idxs[node_name(lyr_2_node)])
-            values.append(1e-6)
+            values.append(ghost_edge_val)
             labels.append("")
             colors.append("rgba(0,255,0,0.0)")
 
@@ -134,7 +134,6 @@ def net_viz(
 
 def draw_seq_graph(
     model: PatchableModel,
-    input: t.Tensor,
     prune_scores: Optional[PruneScores] = None,
     show_all_edges: bool = False,
     show_all_seq_pos: bool = False,
@@ -192,7 +191,6 @@ def draw_seq_graph(
         viz = net_viz(
             model=model,
             seq_edges=edge_set,
-            input=input,
             prune_scores=prune_scores,
             vert_interval=vert_interval,
             seq_idx=seq_idx,
