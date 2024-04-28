@@ -1,0 +1,46 @@
+name: release-main
+
+on:
+  release:
+    types:
+      - published
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-poetry-env
+
+      - name: Parse semver string
+        id: semver_parser
+        uses: booxmedialtd/ws-action-parse-semver@v1.4.7
+        with:
+          input_string: '${{ github.event.release.tag_name }}'
+          version_extractor_regex: 'v(.+)$'
+
+      - name: Build and publish
+        run: |
+          poetry version $RELEASE_VERSION
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish --build
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          RELEASE_VERSION: ${{ steps.semver_parser.outputs.fullversion }}
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-poetry-env
+
+      - name: Deploy documentation
+        run: poetry run mkdocs gh-deploy --force

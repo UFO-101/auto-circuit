@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "auto-circuit"
-version = "0.1.0"
+version = "0.1.0"  # This isn't used. Version set during Github action.
 description = ""
 authors = ["UFO-101 <josephmiller101@gmail.com>"]
 readme = "README.md"
@@ -12,12 +12,12 @@ torch = "^2.1.1"
 transformer-lens = "^1.13.0"
 einops = "^0.6.1"
 ordered-set = "^4.1.0"
-tqdm = {git = "https://github.com/UFO-101/tqdm.git"}
 plotly = "^5.18.0"
 kaleido = "0.2.1"  # Improved renderer for plotly
 blobfile = "2.0.2"
 word2word = "^1.0.0"
-tracr = {git = "https://github.com/google-deepmind/tracr.git"}
+vscode-tqdm = "4.66.2"  # My fork of tqdm that works in VSCode
+tracr-pypi = "1.0.0"  # My fork of tracr that is exactly the same (but on PyPI)
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.3"
