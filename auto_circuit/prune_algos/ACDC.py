@@ -33,20 +33,49 @@ def acdc_prune_scores(
     tao_bases: List[int] = [1, 3, 5, 7, 9],
     faithfulness_target: Literal["kl_div", "mse"] = "kl_div",
     test_mode: bool = False,
-    run_pruned_ref: Optional[Callable[..., CircuitOutputs]] = None,
+    run_circuits_ref: Optional[Callable[..., CircuitOutputs]] = None,
     show_graphs: bool = False,
     draw_seq_graph_ref: Optional[Callable[..., None]] = None,
 ) -> PruneScores:
-    """Run the ACDC algorithm from the paper 'Towards Automated Circuit Discovery for
-    Mechanistic Interpretability' (https://arxiv.org/abs/2304.14997).
+    """
+    Run the ACDC algorithm from the paper "Towards Automated Circuit Discovery for
+    Mechanistic Interpretability"
+    ([Conmy et al. (2023)](https://arxiv.org/abs/2304.14997)).
 
     The algorithm does not assign scores to each edge, instead it finds the edges to be
     pruned given a certain value of tao. So we run the algorithm for several values of
-    tao and give equal scores to all edges that are pruned for a given tao. Then we use
-    test_edge_counts to pass edge counts to run_circuits such that all edges with the
-    same score are pruned together.
+    tao (each combination of `tao_exps` and `tao_bases`) and give equal scores to all
+    edges that are pruned for a given tao. Then we use test_edge_counts to pass edge
+    counts to run_circuits such that all edges with the same score are pruned together.
 
-    Note: only the first batch of train_data is used."""
+    Args:
+        model: The model to find the circuit for.
+        dataloader: The dataloader to use for input and patches.
+        official_edges: Not used.
+        tao_exps: The exponents to use for the set of tao values.
+        tao_bases: The bases to use for the set of tao values.
+        faithfulness_target: The faithfulness metric to optimize the circuit for.
+        test_mode: Run the model in test mode. This mode computes the output of each
+            ablation again using the slower
+            [`run_circuits`][auto_circuit.prune.run_circuits] function and checks that
+            the result is the same.
+        run_circuits_ref: Reference to the function
+            [`run_circuits`][auto_circuit.prune.run_circuits] to use in test mode.
+            Required to avoid a circular import.
+        show_graphs: Whether to visualize the model activations during training using
+            [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph]. Very slow on all
+            but the smallest models.
+        draw_seq_graph_ref: Reference to the function
+            [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph] to use in test
+            mode. Required to avoid a circular import.
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+
+    Note:
+        Only the first batch of the `dataloader` is used.
+    """
     model = model
     test_model = deepcopy(model) if test_mode else None
     out_slice = model.out_slice
@@ -104,7 +133,7 @@ def acdc_prune_scores(
                         out = model(clean_batch)[out_slice]
 
                 if test_mode:
-                    assert test_model is not None and run_pruned_ref is not None
+                    assert test_model is not None and run_circuits_ref is not None
                     render = show_graphs and (random() < 0.02 or len(edges) < 20)
 
                     print("ACDC model, with out=", out) if render else None
@@ -116,7 +145,7 @@ def acdc_prune_scores(
                     p = dict([(m, (s == t.inf) * 1.0) for m, s in prune_scores.items()])
                     p[edge.dest.module_name][edge.patch_idx] = 0.0  # Not in circuit
                     n_edge = edge_counts_util(set(edges), None, p, zero_edges=False)[0]
-                    test_out = run_pruned_ref(
+                    test_out = run_circuits_ref(
                         model=test_model,
                         dataloader=dataloader,
                         test_edge_counts=[n_edge],

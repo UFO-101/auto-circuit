@@ -60,7 +60,47 @@ def subnetwork_probing_prune_scores(
     faithfulness_target: SP_FAITHFULNESS_TARGET = "kl_div",
     validation_dataloader: Optional[PromptDataLoader] = None,
 ) -> PruneScores:
-    """Optimize the patch masks using gradient descent."""
+    """
+    Optimize the edge mask values using gradient descent to maximize the faithfulness of
+    and minimize the number of edges in the circuit. This is based loosely on Subnetwork
+    Probing [(Cao et al., 2021)](https://arxiv.org/abs/2104.03514).
+
+    Args:
+        model: The model to find the circuit for.
+        dataloader: The dataloader to use for training input and ablation.
+        official_edges: Not used.
+        learning_rate: The learning rate for the optimizer.
+        epochs: The number of epochs to train for.
+        regularize_lambda: The weight of the regularization term, that tries to minimize
+            the number of edges in the circuit.
+        mask_fn: The function to use to transform the mask values before they are used
+            to interpolate edges between the clean and ablated activations. Note that
+            `"hard_concrete"` is generally recommended and is often critical for strong
+            performance. See [`MaskFn`][auto_circuit.types.MaskFn] for more details.
+        dropout_p: The dropout probability of the masks to use during training.
+        init_val: The initial value of the mask values. This can be sensitive when using
+            the `"hard_concrete"` mask function. The default value is the value used by
+            Cao et al.
+        show_train_graph: Whether to show a graph of the training loss.
+        circuit_size: The size of the circuit to aim for. When this is not `None`, the
+            regularization term equals `ReLU(n_mask - circuit_size)` (sign is corrected
+            for the value of `tree_optimisation`).
+        tree_optimisation: If `True`, the input to the model is the clean input, and the
+            mask values are optimized to ablate as many edges as possible. If `False`,
+            the corrupt input is used, and the mask values are optimized to Resample
+            Ablate (with the clean activations) as few edges as possible.
+        avoid_edges: A set of edges to avoid. An extra penalty is added to the loss for
+            each edge in this set that is included in the circuit.
+        avoid_lambda: The weight of the penalty for `avoid_edges`.
+        faithfulness_target: The faithfulness metric to optimize the circuit for.
+        validation_dataloader: If not `None` the faithfulness metric is also computed on
+            this dataloader and plotted in the training graph (if `show_train_graph` is
+            `True`).
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+    """
     assert len(dataloader) > 0, "Dataloader is empty"
 
     out_slice = model.out_slice

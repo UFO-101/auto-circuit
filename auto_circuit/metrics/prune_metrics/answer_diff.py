@@ -19,6 +19,21 @@ def measure_answer_diff(
     circuit_outs: CircuitOutputs,
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
 ) -> Measurements:
+    """
+    The average difference in the logits (or some function of them) between the correct
+    answers and the incorrect answers.
+
+    Args:
+        model: Not used.
+        test_loader: The dataloader on which the `circuit_outs` were calculated.
+        circuit_outs: The outputs of the ablated model for each circuit size.
+        prob_func: The function to apply to the logits before calculating the answer
+            difference.
+
+    Returns:
+        A list of tuples, where the first element is the number of edges pruned and the
+            second element is the average answer difference for that number of edges.
+    """
     measurements = []
     if prob_func == "softmax":
         apply_prob_func = t.nn.functional.softmax

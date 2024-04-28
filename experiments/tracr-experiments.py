@@ -19,7 +19,7 @@ from auto_circuit.metrics.official_circuits.circuits.tracr.xproportion_official 
     tracr_xproportion_official_edges,
 )
 from auto_circuit.metrics.official_circuits.measure_roc import measure_task_roc
-from auto_circuit.model_utils.tracr.tracr_models import TRACR_TASK_KEY, get_tracr_model
+from auto_circuit.model_utils.tracr_model_utils import TRACR_TASK_KEY, get_tracr_model
 from auto_circuit.prune_algos.ACDC import acdc_prune_scores
 from auto_circuit.prune_algos.mask_gradient import mask_gradient_prune_scores
 from auto_circuit.prune_algos.prune_algos import PruneAlgo

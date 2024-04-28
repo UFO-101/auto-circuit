@@ -26,6 +26,18 @@ def measurements_auc(
     y_min: Optional[float],
     eps: float = 1e-3,
 ) -> float:
+    """
+    Calculate the area under the curve of a set of points.
+
+    Args:
+        points: A list of (x, y) points.
+        log_x: Whether to log the x values. All values must be `>= 0`. `0` values are
+            mapped to `0`.
+        log_y: Whether to log the y values. (See `y_min`.)
+        y_min: Must be provided if `log_y` is `True` and must be greater than zero. If
+            `log_y` is `True`, the y values are all set to `max(y, y_min)`.
+        eps: A small value to ensure the returned area is greater than zero.
+    """
     points = sorted(points, key=lambda x: x[0])
     assert points[0][0] == 0
     y_baseline = points[0][1]
@@ -59,6 +71,11 @@ def algo_measurements_auc(
     log_y: bool,
     y_min: Optional[float] = None,
 ) -> Dict[AlgoKey, float]:
+    """
+    Wrapper that runs
+    [`measurements_auc`][auto_circuit.metrics.area_under_curve.measurements_auc] on each
+    algorithm's measurements.
+    """
     algo_measurements_auc = {}
     for algo, measurements in algo_measurements.items():
         if len(measurements) > 1:
@@ -74,6 +91,11 @@ def task_measurements_auc(
     log_y: bool,
     y_min: Optional[float] = None,
 ) -> Dict[TaskKey, Dict[AlgoKey, float]]:
+    """
+    Wrapper that runs
+    [`measurements_auc`][auto_circuit.metrics.area_under_curve.measurements_auc] for
+    each task and algorithm.
+    """
     return {
         task_key: algo_measurements_auc(algo_measurements, log_x, log_y, y_min)
         for task_key, algo_measurements in task_measurements.items()
@@ -86,6 +108,11 @@ def metric_measurements_auc(
     log_y: bool,
     y_min: Optional[float] = None,
 ) -> Dict[PruneMetricKey, Dict[TaskKey, Dict[AlgoKey, float]]]:
+    """
+    Wrapper that runs
+    [`measurements_auc`][auto_circuit.metrics.area_under_curve.measurements_auc] for
+    each metric, task, and algorithm.
+    """
     return {
         metric_key: task_measurements_auc(task_measurements, log_x, log_y, y_min)
         for metric_key, task_measurements in points.items()
@@ -99,7 +126,13 @@ def average_auc_plot(
     y_min: Optional[float],
     inverse: bool,
 ) -> go.Figure:
-    """A bar chart of the average AUC for each algorithm across all tasks."""
+    """
+    A bar chart of the average AUC for each algorithm across all tasks.
+    See [`measurements_auc`][auto_circuit.metrics.area_under_curve.measurements_auc].
+
+    Returns:
+        A Plotly figure.
+    """
     task_algo_aucs: Dict[TaskKey, Dict[AlgoKey, float]] = task_measurements_auc(
         task_measurements, log_x, log_y, y_min
     )

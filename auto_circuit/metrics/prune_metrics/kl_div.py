@@ -16,7 +16,20 @@ def measure_kl_div(
     circuit_outs: CircuitOutputs,
     compare_to_clean: bool = True,
 ) -> Measurements:
-    """Measure KL divergence between the default model and the pruned model."""
+    """
+    Average KL divergence between the full model and the circuits.
+
+    Args:
+        model: The model on which `circuit_outs` was calculated.
+        dataloader: The dataloader on which the `circuit_outs` was calculated.
+        circuit_outs: The outputs of the ablated model for each circuit size.
+        compare_to_clean: Whether to compare the circuit output to the full model on the
+            clean (`True`) or corrupt (`False`) prompt.
+
+    Returns:
+        A list of tuples, where the first element is the number of edges pruned and the
+            second element is the average KL divergence for that number of edges.
+    """
     circuit_kl_divs: Measurements = []
     default_logprobs: Dict[BatchKey, t.Tensor] = {}
     with t.inference_mode():

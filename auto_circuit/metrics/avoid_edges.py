@@ -9,6 +9,30 @@ from auto_circuit.utils.custom_tqdm import tqdm
 
 
 def run_constrained_prune_funcs(task_prune_scores: TaskPruneScores) -> TaskPruneScores:
+    """
+    For each task and each algorithm's [`PruneScores`][auto_circuit.types.PruneScores],
+    run
+    [`circuit_probing_prune_scores`][auto_circuit.prune_algos.circuit_probing.circuit_probing_prune_scores]
+    with the `avoid_edges` parameter set to the top `true_edge_count` edges of the
+    [`PruneScores`][auto_circuit.types.PruneScores] of the given task and algorithm.
+
+    This is intended to test if we can find a circuit very different from the original
+    solutions found by the given
+    [`PruneAlgo`s][auto_circuit.prune_algos.prune_algos.PruneAlgo], that still perform
+    well on the task.
+
+    Args:
+        task_prune_scores: Prune scores for each task and algorithm.
+
+    Returns:
+        A new set of prune scores for each task and algorithm, that attempts to be as
+            different as possible from the original solutions found by the given
+            algorithms while still performing well on the task.
+
+    Note:
+        This is an experimental function and the internal parameters used to find the
+        new edges may not be well tuned.
+    """
     constrained_task_prune_scores: TaskPruneScores = {}
     for task_key in (experiment_pbar := tqdm(task_prune_scores.keys())):
         task = TASK_DICT[task_key]

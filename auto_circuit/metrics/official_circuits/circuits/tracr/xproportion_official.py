@@ -11,9 +11,29 @@ def tracr_xproportion_official_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    !!! Note: !!!
-    The sequence positions assume prompts of length 6 (including BOS), as in
-    tracr/tracr_xproportion_len_5_prompts.json
+    The canonical circuit for tracr-reverse according to Miller et al. (Forthcoming).
+    As discussed in the paper, this circuit is the set of edges that must be preserved
+    when Resample Ablation is used.
+
+    Args:
+        model: A patchable TransformerLens tracr-reverse `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. This variable is not used in this circuit, instead we
+            assume a sequence of length 6 (including BOS).
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
+
+    Note:
+        The sequence positions assume prompts of length 6 (including BOS), as in
+        tracr/tracr_xproportion_len_5_prompts.json
     """
     assert model.cfg.model_name == "tracr-xproportion"
     assert model.separate_qkv
@@ -43,12 +63,32 @@ def tracr_xproportion_acdc_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The canonical circuit for tracr-reverse according to Conmy et al.
-    (https://arxiv.org/abs/2304.14997).
-    We question the correctness of this circuit in Miller et al. (forthcoming).
-    !!! Note: !!!
-    The sequence positions assume prompts of length 6 (including BOS), as in
-    tracr/tracr_xproportion_len_5_prompts.json
+    The canonical circuit for tracr-reverse according to
+    [Conmy et al. (2023)](https://arxiv.org/abs/2304.14997). Based on the
+    [ACDC repo](https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/tracr_task/utils.py).
+
+    As discussed in Miller et al. (forthcoming), this circuit is (intended to be) the
+    set of edges that must be preserved when Zero Ablation is used.
+
+    Args:
+        model: A patchable TransformerLens tracr-reverse `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. This variable is not used in this circuit, instead we
+            assume a sequence of length 6 (including BOS).
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
+
+    Note:
+        The sequence positions assume prompts of length 6 (including BOS), as in
+        tracr/tracr_reverse_len_5_prompts.json
     """
     assert model.cfg.model_name == "tracr-xproportion"
     assert model.separate_qkv

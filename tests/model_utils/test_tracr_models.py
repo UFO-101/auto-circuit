@@ -9,7 +9,7 @@ from auto_circuit.metrics.official_circuits.circuits.tracr.reverse_official impo
 from auto_circuit.metrics.official_circuits.circuits.tracr.xproportion_official import (
     tracr_xproportion_official_edges,
 )
-from auto_circuit.model_utils.tracr.tracr_models import TRACR_TASK_KEY, get_tracr_model
+from auto_circuit.model_utils.tracr_model_utils import TRACR_TASK_KEY, get_tracr_model
 from auto_circuit.prune import run_circuits
 from auto_circuit.prune_algos.ground_truth import ground_truth_prune_scores
 from auto_circuit.tasks import Task

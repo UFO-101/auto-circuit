@@ -29,6 +29,16 @@ from auto_circuit.utils.patchable_model import PatchableModel
 
 @dataclass(frozen=True)
 class PruneAlgo:
+    """
+    An algorithm that finds the importance of each edge in a model for a given task.
+
+    Args:
+        key: A unique identifier for the algorithm.
+        name: The name of the algorithm.
+        func: The function that computes the importance of each edge.
+        _short_name: A short name for the algorithm. If not provided, `name` is used.
+    """
+
     key: AlgoKey
     name: str
     func: Callable[[PatchableModel, PromptDataLoader, Optional[Set[Edge]]], PruneScores]
@@ -45,6 +55,16 @@ class PruneAlgo:
 
 
 def run_prune_algos(tasks: List[Task], prune_algos: List[PruneAlgo]) -> TaskPruneScores:
+    """
+    Run a list of pruning algorithms on a list of tasks.
+
+    Args:
+        tasks: The tasks to run the algorithms on.
+        prune_algos: The algorithms to run on the tasks.
+
+    Returns:
+        A nested dictionary of the prune scores for each task and algorithm.
+    """
     task_prune_scores: TaskPruneScores = {}
     for task in (experiment_pbar := tqdm(tasks)):
         experiment_pbar.set_description_str(f"Task: {task.name}")

@@ -10,6 +10,18 @@ left, right, temp = -0.1, 1.1, 2 / 3
 
 
 def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
+    """
+    Sample from the hard concrete distribution
+    ([Louizos et al., 2017](https://arxiv.org/abs/1712.01312)).
+
+    Args:
+        mask: The mask whose values parameterize the distribution.
+        batch_size: The number of samples to draw.
+
+    Returns:
+        A sample for each element in the mask for each batch element. The returned
+        tensor has shape `(batch_size, *mask.shape)`.
+    """
     mask = mask.repeat(batch_size, *([1] * mask.ndim))
     u = t.zeros_like(mask).uniform_().clamp(0.0001, 0.9999)
     s = t.sigmoid((u.log() - (1 - u).log() + mask) / temp)
@@ -29,6 +41,19 @@ def vocab_avg_val(vals: t.Tensor, indices: t.Tensor) -> t.Tensor:
 def batch_avg_answer_val(
     vals: t.Tensor, batch: PromptPairBatch, wrong_answer: bool = False
 ) -> t.Tensor:
+    """
+    Get the average value of the logits (or some function of them) for the correct
+    answers in the batch.
+
+    Args:
+        vals: The logits values or some tensor of the same shape.
+        batch: The batch of prompts and answers.
+        wrong_answer: Whether to get the average value of the wrong answers instead of
+            the correct answers.
+
+    Returns:
+        The average value of the logits for the correct answers in the batch.
+    """
     answers = batch.answers if not wrong_answer else batch.wrong_answers
     if isinstance(answers, t.Tensor):
         return vocab_avg_val(vals, answers)
@@ -39,6 +64,21 @@ def batch_avg_answer_val(
 
 
 def batch_answer_diffs(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+    """
+    Find the difference between the average value of the correct answers and the average
+    value of the wrong answers for each prompt in the batch.
+
+    If the batch answers are a `List`, rather than a `Tensor`, the function will be much
+    slower.
+
+    Args:
+        vals: The logits values or some tensor of the same shape.
+        batch: The batch of prompts and answers.
+
+    Returns:
+        The difference between the average value of the correct answers and the average
+        value of the wrong answers for each prompt in the batch.
+    """
     answers = batch.answers
     wrong_answers = batch.wrong_answers
     if isinstance(answers, t.Tensor) and isinstance(wrong_answers, t.Tensor):
@@ -59,6 +99,10 @@ def batch_answer_diffs(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
 
 
 def batch_avg_answer_diff(vals: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
+    """
+    Wrapper of [`batch_answer_diffs`][auto_circuit.utils.tensor_ops.batch_answer_diffs]
+    that returns the mean of the differences.
+    """
     return batch_answer_diffs(vals, batch).mean()
 
 
@@ -68,6 +112,15 @@ def batch_answer_diff_percents(
     """
     Find the percentage difference between the predicted logit differences and the
     target logit differences.
+
+    Args:
+        pred_vals: The predicted logit values or some tensor of the same shape.
+        target_vals: The target logit values or some tensor of the same shape.
+        batch: The batch of prompts and answers.
+
+    Returns:
+        The percentage difference between the predicted logit differences and the target
+        logit differences.
     """
     target_answer_diff = batch_answer_diffs(target_vals, batch)
     pred_answer_diff = batch_answer_diffs(pred_vals, batch)
@@ -77,6 +130,13 @@ def batch_answer_diff_percents(
 def correct_answer_proportion(logits: t.Tensor, batch: PromptPairBatch) -> t.Tensor:
     """
     What proportion of the logits have the correct answer as the maximum?
+
+    Args:
+        logits: The logits values or some tensor of the same shape.
+        batch: The batch of prompts and answers.
+
+    Returns:
+        The proportion of the logits that have the correct answer as the maximum.
     """
     answers = batch.answers
     if isinstance(answers, t.Tensor):
@@ -99,6 +159,14 @@ def correct_answer_greater_than_incorrect_proportion(
     """
     What proportion of the logits have the correct answer with a greater value than all
     the wrong answers?
+
+    Args:
+        logits: The logits values or some tensor of the same shape.
+        batch: The batch of prompts and answers.
+
+    Returns:
+        The proportion of the logits that have the correct answer with a greater value
+        than all the wrong answers.
     """
     answers = batch.answers
     wrong_answers = batch.wrong_answers
@@ -125,8 +193,15 @@ def correct_answer_greater_than_incorrect_proportion(
 def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.Tensor:
     """
     Compute the average KL divergence between two sets of log probabilities.
-    Assumes the last dimension is the log probability of each class.
-    The other dimensions are batch dimensions.
+    Assumes the last dimension of `input_logprobs` and `target_logprobs` is the log
+    probability of each class. The other dimensions are batch dimensions.
+
+    Args:
+        input_logprobs: The input log probabilities.
+        target_logprobs: The target log probabilities.
+
+    Returns:
+        The average KL divergence between the input and target log probabilities.
     """
     assert input_logprobs.shape == target_logprobs.shape
     kl_div_sum = t.nn.functional.kl_div(
@@ -140,10 +215,29 @@ def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.
 
 
 def flat_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+    """
+    Flatten the prune scores into a single, 1-dimensional tensor.
+
+    Args:
+        prune_scores: The prune scores to flatten.
+
+    Returns:
+        The flattened prune scores.
+    """
     return t.cat([ps.flatten() for _, ps in prune_scores.items()])
 
 
 def desc_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+    """
+    Flatten the prune scores into a single, 1-dimensional tensor and sort them in
+    descending order.
+
+    Args:
+        prune_scores: The prune scores to flatten and sort.
+
+    Returns:
+        The flattened and sorted prune scores.
+    """
     return flat_prune_scores(prune_scores).abs().sort(descending=True).values
 
 
@@ -153,6 +247,13 @@ def prune_scores_threshold(
     """
     Return the minimum absolute value of the top `edge_count` prune scores.
     Supports passing in a pre-sorted tensor of prune scores to avoid re-sorting.
+
+    Args:
+        prune_scores: The prune scores to threshold.
+        edge_count: The number of edges that should be above the threshold.
+
+    Returns:
+        The threshold value.
     """
     if edge_count == 0:
         return t.tensor(float("inf"))  # return the maximum value so no edges are pruned

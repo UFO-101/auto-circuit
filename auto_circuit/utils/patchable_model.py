@@ -8,6 +8,54 @@ from auto_circuit.utils.patch_wrapper import PatchWrapperImpl
 
 
 class PatchableModel(t.nn.Module):
+    """
+    A model that can be ablated along individual edges in its computation graph.
+
+    This class has many of the same methods and attributes as TransformerLens'
+    `HookedTransformer`s. These are simple wrappers which pass through to the
+    implementation in the wrapped model. These methods and attributes
+    are:
+    <ul>
+        <li><code>forward</code></li>
+        <li><code>run_with_cache</code></li>
+        <li><code>add_hook</code></li>
+        <li><code>reset_hooks</code></li>
+        <li><code>cfg</code></li>
+        <li><code>tokenizer</code></li>
+        <li><code>input_to_embed</code></li>
+        <li><code>blocks</code></li>
+        <li><code>to_tokens</code></li>
+        <li><code>to_str_tokens</code></li>
+        <li><code>to_string</code></li>
+    </ul>
+
+    Args:
+        nodes: The set of all nodes in the computation graph.
+        srcs: The set of all source nodes in the computation graph.
+        dests: The set of all destination nodes in the computation graph.
+        edge_dict: A dictionary mapping sequence positions to the edges at that
+            position.
+        edges: The set of all edges in the computation graph.
+        seq_dim: The sequence dimension of the model. This is the dimension on which new
+            inputs are concatenated. In transformers, this is `1` because the
+            activations are of shape `[batch_size, seq_len, hidden_dim]`.
+        seq_len: The sequence length of the model inputs. If `None`, all token positions
+            are simultaneously ablated.
+        wrappers: The set of all `PatchWrapper`s in the model.
+        src_wrappers: The set of all `PatchWrapper`s that are source nodes.
+        dest_wrappers: The set of all `PatchWrapper`s that are destination nodes.
+        out_slice: Specifies the index/slice of the output of the model to be
+            considered for the task.
+        is_factorized: Whether the model is factorized, for Edge Ablation. Otherwise,
+            only Node Ablation is possible.
+        is_transformer: Whether the model is a transformer.
+        separate_qkv: Whether the model has separate query, key, and value inputs. Only
+            used for transformers.
+        kv_caches: A dictionary mapping batch sizes to the past key-value caches of the
+            transformer. Only used for transformers.
+        wrapped_model: The model to wrap which is being made patchable.
+    """
+
     nodes: Set[Node]
     srcs: Set[SrcNode]
     dests: Set[DestNode]
@@ -78,6 +126,10 @@ class PatchableModel(t.nn.Module):
         self.wrapped_model = wrapped_model
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Wrapper around the forward method of the wrapped model. If `kv_caches` is not
+        `None`, the KV cache is passed to the wrapped model as a keyword argument.
+        """
         if self.kv_caches is None or "past_kv_cache" in kwargs:
             return self.wrapped_model(*args, **kwargs)
         else:
@@ -86,6 +138,11 @@ class PatchableModel(t.nn.Module):
             return self.wrapped_model(*args, past_kv_cache=kv, **kwargs)
 
     def run_with_cache(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Wrapper around the `run_with_cache` method of the wrapped TransformerLens
+        `HookedTransformer`. If `kv_caches` is not `None`, the KV cache is passed to the
+        wrapped model as a keyword argument.
+        """
         if self.kv_caches is None:
             return self.wrapped_model.run_with_cache(*args, **kwargs)
         else:
@@ -94,12 +151,33 @@ class PatchableModel(t.nn.Module):
             return self.wrapped_model.run_with_cache(*args, past_kv_cache=kv, **kwargs)
 
     def new_prune_scores(self, init_val: float = 0.0) -> PruneScores:
+        """
+        A new [`PruneScores`][auto_circuit.types.PruneScores] instance with the same
+        keys and shapes as the current patch masks, initialized to `init_val`.
+
+        Args:
+            init_val: The initial value to set all the prune scores to.
+
+        Returns:
+            A new [`PruneScores`][auto_circuit.types.PruneScores] instance.
+        """
         prune_scores: PruneScores = {}
         for (mod_name, mask) in self.patch_masks.items():
             prune_scores[mod_name] = t.full_like(mask.data, init_val)
         return prune_scores
 
     def circuit_prune_scores(self, edges: Set[Edge], bool: bool = False) -> PruneScores:
+        """
+        Convert a set of edges to a corresponding
+        [`PruneScores`][auto_circuit.types.PruneScores] object.
+
+        Args:
+            edges: The set of edges to convert to prune scores.
+            bool: Whether to return the prune scores as boolean type tensors.
+
+        Returns:
+            The prune scores corresponding to the set of edges.
+        """
         prune_scores = self.new_prune_scores()
         for edge in edges:
             prune_scores[edge.dest.module_name][edge.patch_idx] = 1.0
@@ -109,6 +187,13 @@ class PatchableModel(t.nn.Module):
             return prune_scores
 
     def current_patch_masks_as_prune_scores(self) -> PruneScores:
+        """
+        Convert the current patch masks to a corresponding
+        [`PruneScores`][auto_circuit.types.PruneScores] object.
+
+        Returns:
+            The prune scores corresponding to the current patch masks.
+        """
         return dict([(mod, mask.data) for (mod, mask) in self.patch_masks.items()])
 
     def add_hook(self, *args: Any, **kwargs: Any) -> Any:

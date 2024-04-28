@@ -1,3 +1,7 @@
+"""
+This was a weird idea I has where you learn a projection at each layer of a transformer
+that tries to remove as many directions as possible.
+"""
 from typing import Dict, List, Optional
 
 import torch as t

@@ -24,8 +24,10 @@ def measure_answer_diff_percent(
     diff_of_means: bool = True,
 ) -> Measurements:
     """
-    Measure the percentage change in [the difference between the answer and wrong answer
-    value] between the default model and the circuits.
+    Wrapper of
+    [`answer_diff_percent`][auto_circuit.metrics.prune_metrics.answer_diff_percent.answer_diff_percent]
+    that returns only the average answer difference
+    percentage (the first element of the tuple).
     """
     return answer_diff_percent(
         model, test_loader, circuit_outs, prob_func, diff_of_means
@@ -39,6 +41,43 @@ def answer_diff_percent(
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
     diff_of_means: bool = True,
 ) -> Tuple[Measurements, Measurements, List[Tuple[int, t.Tensor]]]:
+    """
+    The average percentage of the difference in the logits (or some function of them)
+    between the correct answers and the incorrect answers in the full model that is
+    recovered by the circuit.
+
+    Args:
+        model: The model on which `circuit_outs` was calculated.
+        test_loader: The dataloader on which the `circuit_outs` was calculated.
+        circuit_outs: The outputs of the ablated model for each circuit size.
+        prob_func: The function to apply to the logits before calculating the answer
+            difference.
+        diff_of_means: Whether to calculate the difference of means (`True`) or the mean
+            of differences (`False`). This is included because the IOI paper uses the
+            difference of means.
+
+    Returns:
+        A tuple of three elements:
+            <ol>
+                <li>
+                    A list of tuples, where the first element is the number of edges
+                    in the circuit and the second element is the average answer
+                    percent for that number of edges.
+                </li>
+                <li>
+                    A list of tuples, where the first element is the number of edges
+                    in the circuit and the second element is the standard deviation of
+                    the answer percents for that number of edges.
+                </li>
+                <li>
+                    A list of tuples, where the first element is the number of edges
+                    in the circuit and the second element is a tensor of the answer
+                    percents for each individual input.
+                </li>
+            </ol>
+
+
+    """
     means: Measurements = []
     standard_devs: Measurements = []
     points: List[Tuple[int, t.Tensor]] = []

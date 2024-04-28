@@ -3,7 +3,7 @@ import math
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import chain, product
-from typing import Dict, Iterator, List, Optional, Set, Tuple
+from typing import Collection, Dict, Iterator, List, Optional, Set, Tuple
 
 import torch as t
 from transformer_lens import HookedTransformer, HookedTransformerKeyValueCache
@@ -41,10 +41,30 @@ def patchable_model(
     kv_caches: Tuple[Optional[HookedTransformerKeyValueCache], ...] = (None,),
     device: t.device = t.device("cpu"),
 ) -> PatchableModel:
-    """Wrap a model and all of its node modules to enable patching.
+    """
+    Wrap a model and inject [`PatchWrapper`][auto_circuit.types.PatchWrapper]s into the
+    node modules to enable patching.
 
-    Warning: Unfactorized models have edges that shouldn't be patched. Tree patching in
-    prune.py won't work because it patch all edges not in the circuit.
+    Args:
+        model: The model to make patchable.
+        factorized: Whether the model is factorized, for Edge Ablation. Otherwise,
+            only Node Ablation is possible.
+        slice_output: Specifies the index/slice of the output of the model to be
+            considered for the task. For example, `"last_seq"` will consider the last
+            token's output in transformer models.
+        seq_len: The sequence length of the model inputs. If `None`, all token positions
+            are simultaneously ablated.
+        separate_qkv: Whether the model has separate query, key, and value inputs. Only
+            used for transformers.
+        kv_caches: The key and value caches for the transformer. Only used for
+            transformers.
+        device: The device that the model is on.
+
+    Returns:
+        The patchable model.
+
+    Warning:
+        This function modifies the model, it does not return a new model.
     """
     assert not isinstance(model, PatchableModel), "Model is already patchable"
     nodes, srcs, dests, edge_dict, edges, seq_dim, seq_len = graph_edges(
@@ -95,7 +115,34 @@ def graph_edges(
     int,
     Optional[int],
 ]:
-    """Get the edges of the computation graph of the model."""
+    """
+    Get the nodes and edges of the computation graph of the model used for ablation.
+
+    Args:
+        model: The model to get the edges for.
+        factorized: Whether the model is factorized, for Edge Ablation. Otherwise,
+            only Node Ablation is possible.
+        separate_qkv: Whether the model has separate query, key, and value inputs. Only
+            used for transformers.
+        seq_len: The sequence length of the model inputs. If `None`, all token positions
+            are simultaneously ablated.
+
+    Returns:
+        Tuple containing:
+            <ol>
+                <li>The set of all nodes in the model.</li>
+                <li>The set of all source nodes in the model.</li>
+                <li>The set of all destination nodes in the model.</li>
+                <li>A dictionary mapping sequence positions to the edges at that
+                    position.</li>
+                <li>The set of all edges in the model.</li>
+                <li>The sequence dimension of the model. This is the dimension on which
+                    new inputs are concatenated. For transformers, this is
+                    <code>1</code> because the activations are of shape
+                    <code>[batch_size, seq_len, hidden_dim]</code>.
+                <li>The sequence length of the model inputs.</li>
+            </ol>
+    """
     seq_dim = 1
     edge_dict: Dict[Optional[int], List[Edge]] = defaultdict(list)
     if not factorized:
@@ -140,7 +187,35 @@ def make_model_patchable(
     seq_len: Optional[int] = None,
     seq_dim: Optional[int] = None,
 ) -> Tuple[Set[PatchWrapperImpl], Set[PatchWrapperImpl], Set[PatchWrapperImpl]]:
-    """Injects PatchWrappers into the model to enable patching."""
+    """
+    Injects [`PatchWrapper`][auto_circuit.types.PatchWrapper]s into the model at the
+    node positions to enable patching.
+
+    Args:
+        model: The model to make patchable.
+        factorized: Whether the model is factorized, for Edge Ablation. Otherwise,
+            only Node Ablation is possible.
+        src_nodes: The source nodes in the model.
+        nodes: All the nodes in the model.
+        device: The device to put the patch masks on.
+        seq_len: The sequence length of the model inputs. If `None`, all token positions
+            are simultaneously ablated.
+        seq_dim: The sequence dimension of the model. This is the dimension on which new
+            inputs are concatenated. In transformers, this is `1` because the
+            activations are of shape `[batch_size, seq_len, hidden_dim]`.
+
+    Returns:
+        Tuple containing:
+            <ol>
+                <li>The set of all PatchWrapper modules in the model.</li>
+                <li>The set of all PatchWrapper modules that wrap source nodes.</li>
+                <li>The set of all PatchWrapper modules that wrap destination
+                    nodes.</li>
+            </ol>
+
+    Warning:
+        This function modifies the model in place.
+    """
     node_dict: Dict[str, Set[Node]] = defaultdict(set)
     [node_dict[node.module_name].add(node) for node in nodes]
     wrappers, src_wrappers, dest_wrappers = set(), set(), set()
@@ -196,19 +271,35 @@ def make_model_patchable(
 def patch_mode(
     model: PatchableModel,
     patch_src_outs: t.Tensor,
+    edges: Optional[Collection[str | Edge]] = None,
     curr_src_outs: Optional[t.Tensor] = None,
 ):
-    """Context manager to enable patching of the model.
+    """
+    Context manager to enable patching in the model.
 
     Args:
+        model: The patchable model to alter.
+        patch_src_outs: The activations with which to ablate the model. Mask values
+            interpolate the edge activations between the default activations (`0`) and
+            these activations (`1`).
         curr_src_outs (t.Tensor, optional): Stores the outputs of each src node during
             the current forward pass. The only time this need to be initialized is when
             you are starting the forward pass at a middle layer because the outputs of
-            previous src nodes won't be cached automatically (used in ACDC, as a
-            performance optimization). Defaults to None.
+            previous
+            [`SrcNode`][auto_circuit.types.SrcNode]s won't be cached automatically (used
+            in ACDC, as a performance optimization).
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
     """
     if curr_src_outs is None:
         curr_src_outs = t.zeros_like(patch_src_outs)
+
+    if edges is not None:
+        set_all_masks(model, val=0.0)
+        for edge in model.edges:
+            if edge in edges or edge.name in edges:
+                edge.patch_mask(model).data[edge.patch_idx] = 1.0
 
     for wrapper in model.wrappers:
         wrapper.patch_mode = True
@@ -227,6 +318,16 @@ def patch_mode(
 
 
 def set_all_masks(model: PatchableModel, val: float) -> None:
+    """
+    Set all the patch masks in the model to the specified value.
+
+    Args:
+        model: The patchable model to alter.
+        val: The value to set the patch masks to.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
     for wrapper in model.wrappers:
         if wrapper.is_dest:
             t.nn.init.constant_(wrapper.patch_mask, val)
@@ -236,6 +337,21 @@ def set_all_masks(model: PatchableModel, val: float) -> None:
 def train_mask_mode(
     model: PatchableModel, requires_grad: bool = True
 ) -> Iterator[Dict[str, t.nn.Parameter]]:
+    """
+    Context manager that sets the `requires_grad` attribute of the patch masks for the
+    duration of the context and yields the parameters.
+
+    Args:
+        model: The patchable model to alter.
+        requires_grad: Whether to enable gradient tracking on the patch masks.
+
+    Yields:
+        The patch mask `Parameter`s of the model as a dictionary with the module name as
+        the key.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
     model.eval()
     model.zero_grad()
     parameters: Dict[str, t.nn.Parameter] = {}
@@ -254,6 +370,19 @@ def train_mask_mode(
 
 @contextmanager
 def mask_fn_mode(model: PatchableModel, mask_fn: MaskFn, dropout_p: float = 0.0):
+    """
+    Context manager to enable the specified `mask_fn` and `dropout_p` for a patchable
+    model.
+
+    Args:
+        model: The patchable model to alter.
+        mask_fn: The function to apply to the mask values before they are used to
+            interpolate between the clean and ablated activations.
+        dropout_p: The dropout probability to apply to the mask values.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
     for wrapper in model.dest_wrappers:
         wrapper.mask_fn = mask_fn
         wrapper.dropout_layer.p = dropout_p  # type: ignore
@@ -273,6 +402,29 @@ def edge_counts_util(
     all_edges: Optional[bool] = None,  # None means default
     true_edge_count: Optional[int] = None,
 ) -> List[int]:
+    """
+    Calculate a set of [number of edges in the circuit] to test.
+
+    Args:
+        edges: The set of all edges in the model (just used to count the maximum circuit
+            size).
+        test_counts: The method to determine the set of edge counts. If None, the
+            function will try to infer the best method based on the number of edges and
+            the `prune_scores`. See [`TestEdges`][auto_circuit.types.TestEdges] and
+            [`EdgeCounts`][auto_circuit.types.EdgeCounts] for full details.
+        prune_scores: The scores to use to determine the edge counts. Used to make a
+            better inference of the best set to use when `test_counts` is None. Also
+            used when `test_counts` is `EdgeCounts.GROUPS` to group the edges by their
+            scores.
+        zero_edges: Whether to include `0` edges.
+        all_edges: Whether to include `n_edges` edges (where `n_edges` is the number of
+            edges in the model).
+        true_edge_count: Inserts an extra specified edge count into the list. Useful
+            when you want to test the number of edges in the candidate circuit.
+
+    Returns:
+        The list of edge counts to test.
+    """
     n_edges = len(edges)
 
     # Work out default setting for test_counts

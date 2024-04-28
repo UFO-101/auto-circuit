@@ -7,8 +7,16 @@ from auto_circuit.types import DestNode, SrcNode
 
 
 def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
-    """Get the source part of each edge in the factorized graph, grouped by layer.
-    Graph is factorized following the Mathematical Framework paper."""
+    """
+    Get the source part of each edge in the factorized graph, grouped by layer.
+
+    Factorization introduced by
+    [Elhage et al. (2021)](https://transformer-circuits.pub/2021/framework/index.html).
+    See also [Molina (2023)](https://arxiv.org/pdf/2309.07315.pdf) for a good
+    explanation.
+
+    ![](../../assets/Factorized_Transformer.png)
+    """
     assert model.cfg.use_attn_result  # Get attention head outputs separately
     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers, idxs = count(), count()
@@ -54,8 +62,15 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
 def factorized_dest_nodes(
     model: tl.HookedTransformer, separate_qkv: bool
 ) -> Set[DestNode]:
-    """Get the destination part of each edge in the factorized graph, grouped by layer.
-    Graph is factorized following the Mathematical Framework paper."""
+    """
+    Get the destination part of each edge in the factorized graph, grouped by layer.
+
+    Factorization introduced by
+    [Elhage et al. (2021)](https://transformer-circuits.pub/2021/framework/index.html).
+    See [Molina (2023)](https://arxiv.org/pdf/2309.07315.pdf) for a good explanation.
+
+    ![](../../assets/Factorized_Transformer.png)
+    """
     if separate_qkv:
         assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
     else:
@@ -115,9 +130,13 @@ def simple_graph_nodes(
     model: tl.HookedTransformer,
 ) -> Tuple[Set[SrcNode], Set[DestNode]]:
     """
-    Get the nodes in the unfactorized graph.
-    make_model_patchable requires that all input SrcNodes are in the previous layer to
-    the respective DestNode.
+    Get the nodes of the unfactorized graph.
+
+    [`graph_edges`][auto_circuit.utils.graph_utils.graph_edges] requires that all input
+    [`SrcNodes`][auto_circuit.types.SrcNode] are in the previous layer to the respective
+    [`DestNodes`][auto_circuit.types.DestNode].
+
+    ![](../../assets/Residual_Transformer.png)
     """
     assert not model.cfg.parallel_attn_mlp
     layers, src_idxs = count(), count()

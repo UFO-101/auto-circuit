@@ -25,10 +25,11 @@ def test_pruning(
     seq_len: Optional[int],
     show_graphs: bool = False,
 ):
-    """Check that pruning works by pruning a "MicroModel"
-    where the correct output can be worked out by hand.
+    """Check that pruning works by pruning a "MicroModel" where the correct output can
+    be worked out by hand.
 
-    To visualize, set render_graph=True in run_pruned."""
+    To visualize, set render_graph=True in run_pruned.
+    """
     model: PatchableModel = patchable_model(
         model=micro_model,
         factorized=True,

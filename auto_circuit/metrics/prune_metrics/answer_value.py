@@ -16,10 +16,26 @@ def identity(*args: Any, **kwargs: Any) -> Any:
 def measure_answer_val(
     model: PatchableModel,
     test_loader: PromptDataLoader,
-    pruned_outs: CircuitOutputs,
+    circuit_outs: CircuitOutputs,
     prob_func: Literal["log_softmax", "softmax", "logits"] = "logits",
     wrong_answer: bool = False,
 ) -> Measurements:
+    """
+    The average value of the logits (or some function of them) for the correct answers.
+
+    Args:
+        model: Not used.
+        test_loader: The dataloader on which the `circuit_outs` were calculated.
+        circuit_outs: The outputs of the ablated model for each circuit size.
+        prob_func: The function to apply to the logits before calculating the answer
+            value.
+        wrong_answer: Whether to calculate the value for the wrong answers instead of
+            the correct answers.
+
+    Returns:
+        A list of tuples, where the first element is the number of edges pruned and the
+            second element is the average answer value for that number of edges.
+    """
     measurements = []
     if prob_func == "softmax":
         apply_prob_func = t.nn.functional.softmax
@@ -29,7 +45,7 @@ def measure_answer_val(
         assert prob_func == "logits"
         apply_prob_func = identity
 
-    for edge_count, pruned_out in (pruned_out_pbar := tqdm(pruned_outs.items())):
+    for edge_count, pruned_out in (pruned_out_pbar := tqdm(circuit_outs.items())):
         pruned_out_pbar.set_description_str(f"Answer Value for {edge_count} edges")
         avg_ans_probs = []
         for batch in test_loader:

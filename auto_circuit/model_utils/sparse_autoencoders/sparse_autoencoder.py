@@ -16,7 +16,10 @@ CHUNK_SIZE = 1000 * 2**20  # 1000 MB
 
 class SparseAutoencoder(t.nn.Module):
     """
-    Sparse Autoencoder
+    A Sparse Autoencoder wrapper module.
+
+    Takes some input, passes it through the autoencoder and passes the reconstructed
+    input to the wrapped hook.
 
     Implements:
         latents = ReLU(encoder(x - bias) + latent_bias)

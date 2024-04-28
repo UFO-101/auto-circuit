@@ -32,6 +32,19 @@ def circuit_probing_prune_scores(
     faithfulness_target: SP_FAITHFULNESS_TARGET = "kl_div",
     validation_dataloader: Optional[PromptDataLoader] = None,
 ) -> PruneScores:
+    """
+    Wrapper of
+    [Subnetwork Probing][auto_circuit.prune_algos.subnetwork_probing.subnetwork_probing_prune_scores]
+    that searches for circuits of different sizes and assigns scores to the edges
+    according to the size of the smallest circuit that they are part of. Smaller
+    circuits have higher scores because they contain more important edges. Edges not in
+    any circuit are assigned a score of `0`.
+
+    Args:
+        circuit_sizes: List of circuit sizes to probe. If `"true_size"` is in the list,
+            then we include the size of `official_edges` in the list. If
+            `official_edges` is `None`, then we raise an error.
+    """  # noqa: W505, E501
 
     sizes = []
     for size in circuit_sizes:

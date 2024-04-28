@@ -34,12 +34,26 @@ def run_circuits(
     render_all_edges: bool = False,
     render_file_path: Optional[str] = None,
 ) -> CircuitOutputs:
-    """Run the model with the given pruned edges.
-    Tree Patching runs the clean input and patches corrupt activations into every edge
-    _not_ in the circuit.
-    Edge Patching runs the corrupt input and patches clean activations into every edge
-    _in_ the circuit.
-    Unless reverse_clean_corrupt is True, in which case clean and corrupt are swapped.
+    """Run the model, pruning edges based on the given `prune_scores`. Runs the model
+    over the given `dataloader` for each `test_edge_count`.
+
+    Args:
+        model: The model to run
+        dataloader: The dataloader to use for input and patches
+        test_edge_counts: The numbers of edges to prune.
+        prune_scores: The scores that determine the ordering of edges for pruning
+        patch_type: Whether to patch the circuit or the complement.
+        ablation_type: The type of ablation to use.
+        reverse_clean_corrupt: Reverse clean and corrupt (for input and patches).
+        render_graph: Whether to render the graph using `draw_seq_graph`.
+        render_all_edges: Whether to render all edges, if `render_graph` is `True`.
+        render_file_path: Path to save the rendered graph, if `render_graph` is `True`.
+
+    Returns:
+        A dictionary mapping from the number of pruned edges to a
+            [`BatchOutputs`][auto_circuit.types.BatchOutputs] object, which is a
+            dictionary mapping from [`BatchKey`s][auto_circuit.types.BatchKey] to output
+            tensors.
     """
     circ_outs: CircuitOutputs = defaultdict(dict)
     desc_ps: t.Tensor = desc_prune_scores(prune_scores)

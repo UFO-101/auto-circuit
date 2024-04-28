@@ -43,10 +43,36 @@ def net_viz(
     show_all_edges: bool = False,
 ) -> go.Sankey:
     """
-    Draw the sankey for a single token position.
-    If prune_scores is None, the diagram will show the current activations and edge
-    scores of the model. If prune_scores is provided, the diagram will use these edge
+    Draw the sankey diagram for a single token position.
+    If `prune_scores` is `None`, the diagram will show the current activations and edge
+    scores of the model. If `prune_scores` is provided, the diagram will use these edge
     scores and won't show activations.
+
+    Args:
+        model: The model to visualize.
+        seq_edges: The edges to visualize. This should be the edges at a single token
+            position if `model.seq_len` is not `None`. Otherwise, this should be all the
+            edges in the model.
+        prune_scores: The edge scores to use for the visualization. If `None`, the
+            current activations and mask values of the model will be visualized instead.
+        vert_interval: The vertical interval to place the diagram in the figure. Must
+            be in the range `(0, 1)`. This is used by
+            [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph] to place the
+            diagrams for each token position in the figure. If you are using this
+            function to create a standalone diagram, you can set this to `(0, 1)`.
+        seq_idx: The token position being visualized, this is used to get the correct
+            slice of activations (if `prune_scores` is `None`) to label the edges.
+        show_all_edges: If `True`, all edges will be shown, even if their edge score is
+            close to zero. If `False`, only edges with a non-zero edge score will be
+            shown.
+
+    Returns:
+        The sankey diagram for the given token position.
+
+    Note:
+        This is a lower level function, it is generally recommended to use
+        [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph] instead.
+
     """
     nodes: OrderedSet[Node] = OrderedSet(model.nodes)
 
@@ -142,10 +168,31 @@ def draw_seq_graph(
     file_path: Optional[str] = None,
 ) -> None:
     """
-    Draw the sankey for all token positions.
-    If prune_scores is None, the diagram will show the current activations and edge
-    scores of the model. If prune_scores is provided, the diagram will use these edge
+    Draw the sankey for all token positions in a
+    [`PatchableModel`][auto_circuit.utils.patchable_model.PatchableModel] (drawn
+    separately for each token position if the model has a `seq_len`).
+
+    If `prune_scores` is `None`, the diagram will show the current activations and mask
+    values of the model. If `prune_scores` is provided, the diagram will use these edge
     scores and won't show activations.
+
+    The mask values or `prune_scores` are used to set the width of each edge.
+
+    Args:
+        model: The model to visualize.
+        prune_scores: The edge scores to use for the visualization. If `None`, the
+            current activations and mask values of the model will be visualized instead.
+        show_all_edges: If `True`, all edges will be shown, even if their edge score is
+            close to zero. If `False`, only edges with a non-zero edge score will be
+            shown.
+        show_all_seq_pos: If `True`, the diagram will show all token positions, even if
+            they have no non-zero edge values. If `False`, only token positions with
+            non-zero edge values will be shown.
+        seq_labels: The labels for each token position.
+        display_ipython: If `True`, the diagram will be displayed in the current
+            ipython environment.
+        file_path: If provided, the diagram will be saved to this file path. The file
+            extension determines the format of the saved image.
     """
     n_layers = max([n.layer for n in model.nodes])
     seq_len = model.seq_len or 1

@@ -14,7 +14,32 @@ def sports_players_true_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The full circuit for sports players from input to input for the full prompt.
+    The full Sports Players circuit from input to output, as discovered by
+    [Rajamanoharan et al. (2023)](https://www.alignmentforum.org/posts/3tqJ65kuTkBh8wrRH/).
+
+    Read the source code comments for precise details on our interpretation of the
+    circuit. The focus of the paper was on probing for sports features, so the exact
+    set of edges that constitute the circuit is somewhat ambiguous.
+
+    Args:
+        model: A patchable TransformerLens Pythia 2.8B `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, the required tokens positions are:
+            <ul>
+                <li><code>first_name_tok</code></li>
+                <li><code>final_name_tok</code></li>
+                <li><code>end</code></li>
+            </ul>
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
     """
     assert model.cfg.model_name == "pythia-2.8b-deduped"
     assert model.separate_qkv is False, "Sports players doesn't support separate QKV"
@@ -90,8 +115,13 @@ def sports_players_probe_true_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The sports players circuit up to and including the lookup MLP stack extended to the
-    final layer of the model. Intended to be used with the extract_sport probe.
+    Wrapper for
+    [`sports_players_true_edges`][auto_circuit.metrics.official_circuits.circuits.sports_players_official.sports_players_true_edges]
+    that does not include the `extract_sport` section of the circuit. Instead, we extend
+    the `lookup` MLP stack to the final layer of the model.
+
+    This is included to make it easier to reproduce the probing results from the post
+    which just probe the MLP stack and ignore the `extract_sport` section.
     """
     assert model.cfg.model_name == "pythia-2.8b-deduped"
     assert model.separate_qkv is False, "Sports players doesn't support separate QKV"

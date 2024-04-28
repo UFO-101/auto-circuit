@@ -19,7 +19,19 @@ from auto_circuit.utils.tensor_ops import desc_prune_scores, prune_scores_thresh
 def prune_score_similarities(
     algo_prune_scores: AlgoPruneScores, edge_counts: List[int]
 ) -> Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]]:
-    """Measure the similarity between the prune scores of different algorithms."""
+    """
+    Measure the similarity between the prune scores of different algorithms. Similarity
+    is measured as the proportion of the top N prune scores that are common between two
+    algorithms.
+
+    Args:
+        algo_prune_scores: Prune scores for each algorithm.
+        edge_counts: The number of edges in the circuit to consider.
+
+    Returns:
+        A dictionary mapping from the number of edges considered to the overlap between
+            [`PruneScores`][auto_circuit.types.PruneScores] for each pair of algorithms.
+    """
     desc_ps: Dict[AlgoKey, t.Tensor] = {}
     for algo_key, prune_scores in algo_prune_scores.items():
         desc_ps[algo_key] = desc_prune_scores(prune_scores)
@@ -61,7 +73,15 @@ def task_prune_scores_similarities(
     edge_counts: List[int],
     true_edge_counts: bool = False,
 ) -> Dict[TaskKey, Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]]]:
-    """Measure the similarity between the prune scores of different tasks."""
+    """
+    Wrapper around
+    [`prune_score_similarities`][auto_circuit.metrics.prune_scores_similarity.prune_score_similarities]
+    for a set of tasks.
+
+    Args:
+        true_edge_counts: Whether to include the official circuit edge count in addition
+            to `edge_counts`.
+    """
     task_similarity: Dict[TaskKey, Dict[int, Dict[AlgoKey, Dict[AlgoKey, float]]]] = {}
 
     for task_key, algo_prune_scores in task_prune_scores.items():
@@ -82,6 +102,22 @@ def prune_score_similarities_plotly(
     edge_counts: List[int],
     ground_truths: bool = False,
 ) -> go.Figure:
+    """
+    Create a Plotly heatmap figure showing the similarity between the prune scores of
+    different algorithms.
+
+    See
+    [`prune_score_similarities`][auto_circuit.metrics.prune_scores_similarity.prune_score_similarities]
+
+    Args:
+        task_prune_scores: Prune scores for each algorithm for each task.
+        edge_counts: The number of edges in the circuit to consider.
+        ground_truths: Whether to include the official circuit edge counts in addition
+            to `edge_counts`.
+
+    Returns:
+        A Plotly figure.
+    """
     sims = task_prune_scores_similarities(task_prune_scores, edge_counts, ground_truths)
 
     row_count = len(sims)

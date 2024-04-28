@@ -14,9 +14,38 @@ def docstring_true_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The manual graph, from Stefan
-    !!! Note: !!!
-    The sequence positions assume prompts of length 40, as in docstring_prompts.json
+    The Docstring circuit, from the
+    [blog post](https://www.alignmentforum.org/posts/u6KXXmKFbXfWzoAXn) by Stefan
+    Heimersheim and Jett Janiak (2023).
+
+    The exact set of edges was defined by Stephan in the
+    [ACDC repo](https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/docstring/utils.py).
+    The token positions are based on my reading of the paper, but I have been over them
+    briefly with Stefan and he endorsed them as reasonable.
+
+    Args:
+        model: A patchable TransformerLens GPT-2 `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, the required tokens positions are:
+            <ul>
+                <li><code>A_def</code></li>
+                <li><code>B_def</code></li>
+                <li><code>,_B</code></li>
+                <li><code>C_def</code></li>
+                <li><code>A_doc</code></li>
+                <li><code>B_doc</code></li>
+                <li><code>param_3</code></li>
+            </ul>
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
     """
     assert model.cfg.model_name == "Attn_Only_4L512W_C4_Code"
     assert model.separate_qkv
@@ -80,8 +109,42 @@ def docstring_node_based_official_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The heads not ablated in the final check in the Docstring blog post:
-    https://www.alignmentforum.org/posts/u6KXXmKFbXfWzoAXn#Putting_it_all_together
+    The attention heads in the Docstring circuit, from the
+    [blog post](https://www.alignmentforum.org/posts/u6KXXmKFbXfWzoAXn) by Stefan
+    Heimersheim and Jett Janiak (2023).
+
+    In the blog post, to measure
+    [the overall performance](https://www.alignmentforum.org/posts/u6KXXmKFbXfWzoAXn#Putting_it_all_together)
+    of the circuit, the authors Node Patch the heads in the circuit, rather than Edge
+    Patching the specific edges they find. We include this variation to enable
+    replication of these results.
+
+    The token positions are based on my reading of the paper, but some were unspecified
+    so in those cases we include all token positions between `A_def` and `param_3`.
+
+    Args:
+        model: A patchable TransformerLens GPT-2 `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, the required tokens positions are:
+            <ul>
+                <li><code>A_def</code></li>
+                <li><code>B_def</code></li>
+                <li><code>,_B</code></li>
+                <li><code>C_def</code></li>
+                <li><code>A_doc</code></li>
+                <li><code>B_doc</code></li>
+                <li><code>param_3</code></li>
+            </ul>
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
     """
 
     word_idxs.get("A_def", 0)
@@ -92,6 +155,17 @@ def docstring_node_based_official_edges(
     # param_2_tok_idx = word_idxs.get("param_2", 0) A0.2 not included for some reason
     B_doc_tok_idx = word_idxs.get("B_doc", 0)
     param_3_tok_idx = word_idxs.get("param_3", 0)
+
+    all_tok_idxs = [
+        B_def_tok_idx,
+        B_comma_tok_idx,
+        C_def_tok_idx,
+        A_doc_tok_idx,
+        # param_2_tok_idx,
+        B_doc_tok_idx,
+        param_3_tok_idx,
+    ]
+    tok_idx_range: List[int] = list(range(min(all_tok_idxs), max(all_tok_idxs) + 1))
 
     if token_positions:
         assert param_3_tok_idx > 0, "Must provide word_idxs if token_positions is True"
@@ -106,9 +180,9 @@ def docstring_node_based_official_edges(
         "A0.2": [B_doc_tok_idx],
         "A0.4": [param_3_tok_idx],
         # Extras for improved performance. Post does not specify token positions.
-        "A1.0": [],
-        "A0.1": [],
-        "A2.3": [],
+        "A1.0": tok_idx_range,
+        "A0.1": tok_idx_range,
+        "A2.3": tok_idx_range,
     }
 
     heads_to_keep: Set[Tuple[str, Optional[int]]] = set()

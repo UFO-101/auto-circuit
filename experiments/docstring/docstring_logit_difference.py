@@ -109,7 +109,7 @@ for ablation_type in tqdm(ablation_types):
             measurements: Measurements = measure_answer_val(
                 model=patch_model,
                 test_loader=test_loader,
-                pruned_outs=circuit_outs,
+                circuit_outs=circuit_outs,
                 prob_func="softmax",
             )
 

@@ -23,7 +23,7 @@ repos:
     rev: v2.2.5
     hooks:
       - id: codespell
-        args: [-L, ans]  # Allow the word "ans" (short for "answer")
+        args: [-L, "ans,fpr"]  # Allow extra words
         additional_dependencies:
           - tomli
         exclude: ^(datasets/sports-players/.*\.(txt|json))$

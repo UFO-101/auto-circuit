@@ -13,7 +13,19 @@ def activation_magnitude_prune_scores(
     dataloader: PromptDataLoader,
     official_edges: Optional[Set[Edge]],
 ) -> PruneScores:
-    """Prune scores are the mean activation magnitude of each edge."""
+    """
+    Simple baseline circuit discovery algorithm. Prune scores are the mean activation
+    magnitude of each edge.
+
+    Args:
+        model: The model to find the circuit for.
+        dataloader: The dataloader to use for input.
+        official_edges: Not used.
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+    """
     prune_scores = model.new_prune_scores()
     n_batches = len(dataloader)
     with t.inference_mode():

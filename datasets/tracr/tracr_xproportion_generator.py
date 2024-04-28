@@ -4,7 +4,7 @@ import random
 from itertools import product
 from typing import Any, Dict, Set
 
-from auto_circuit.model_utils.tracr.tracr_models import (
+from auto_circuit.model_utils.tracr_model_utils import (
     BOS,
     MAX_SEQ_LEN,
     XPROPORTION_VOCAB,

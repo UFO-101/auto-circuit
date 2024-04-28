@@ -10,7 +10,18 @@ def ground_truth_prune_scores(
     dataloader: PromptDataLoader,
     official_edges: Optional[Set[Edge]],
 ) -> PruneScores:
-    """Return 1 for edges that are in the ground truth circuit, 0 otherwise."""
+    """
+    Assigns `1` for edges that are in the ground truth circuit, `0` otherwise.
+
+    Args:
+        model: The model on which this circuit was discovered.
+        dataloader: Not used.
+        official_edges: The edges of the circuit.
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+    """
     prune_scores: PruneScores = model.new_prune_scores()
 
     if official_edges is None:

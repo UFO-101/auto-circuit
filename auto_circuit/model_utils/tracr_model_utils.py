@@ -20,14 +20,32 @@ BOS = "BOS"
 REVERSE_VOCAB: Set[Any] = {1, 2, 3}
 XPROPORTION_VOCAB: Set[Any] = {"w", "x", "y", "z"}
 MAX_SEQ_LEN = 5
+
 TRACR_TASK_KEY = Literal["reverse", "xproportion"]
+"""
+Identifier of a Tracr model. Currently supported models:
+<ul>
+    <li><code>"reverse"</code></li>
+    <li><code>"xproportion"</code></li>
+</ul>
+"""
 
 
 def get_tracr_model(
     tracr_task_key: TRACR_TASK_KEY, device: str
 ) -> Tuple[HookedTransformer, AssembledTransformerModel]:
     """
-    This function adapts Neel's TransformerLens porting of tracr
+    Load the weights of a Tracr model and convert it to a HookedTransformer model.
+
+    Adapted from Neel Nanda's TransformerLens port of tracr.
+
+    Args:
+        tracr_task_key: Identifier of the Tracr model.
+        device: Device to load the model on.
+
+    Returns:
+        A tuple of the HookedTransformer model and the original
+            AssembledTransformerModel.
     """
 
     def make_length():

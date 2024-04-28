@@ -16,10 +16,35 @@ def edge_patching_plot(
     log_x: bool,
     log_y: bool,
     y_axes_match: bool,
-    token_circuit: bool,
     y_max: Optional[float],
     y_min: Optional[float],
 ) -> go.Figure:
+    """
+    A figure showing the performance of the circuits produced by different
+    [`PruneAlgos`][auto_circuit.prune_algos.prune_algos.PruneAlgo] on different tasks.
+    The x-axis is the number of edges in the circuit and the y-axis is the performance.
+
+    Args:
+        data: A list of dictionaries in the following format:
+                <pre><code>{
+                "Task": str,
+                "Algorithm": str,
+                "X": Number,
+                "Y": Number,
+            }</code></pre>
+        task_measurements: The measurements to plot
+            (the same as `data` but in a different format).
+        ablation_type: The type of ablation used to generate the data.
+        metric_name: The name of the metric which the data represents.
+        log_x: Whether to log the x-axis.
+        log_y: Whether to log the y-axis.
+        y_axes_match: Whether to use the same y-axis for all tasks.
+        y_max: The maximum value for the y-axis.
+        y_min: The minimum value for the y-axis.
+
+    Returns:
+        A plotly figure.
+    """
     if len(data) > 0:
         data = sorted(data, key=lambda x: (x["Algorithm"], x["Task"]))
         fig = px.line(

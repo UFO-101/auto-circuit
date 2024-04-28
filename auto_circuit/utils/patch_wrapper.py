@@ -8,6 +8,50 @@ from auto_circuit.utils.tensor_ops import sample_hard_concrete
 
 
 class PatchWrapperImpl(PatchWrapper):
+    """
+    PyTorch module that wraps another module, a [`Node`][auto_circuit.types.Node] in
+    the computation graph of the model. Implements the abstract
+    [`PatchWrapper`][auto_circuit.types.PatchWrapper] class, which exists to work around
+    circular import issues.
+
+    If the wrapped module is a [`SrcNode`][auto_circuit.types.SrcNode], the tensor
+    `self.curr_src_outs` (a single instance of which is shared by all PatchWrappers in
+    the model) is updated with the output of the wrapped module.
+
+    If the wrapped module is a [`DestNode`][auto_circuit.types.DestNode], the input to
+    the wrapped module is adjusted in order to interpolate the activations of the
+    incoming edges between the default activations (`self.curr_src_outs`) and the
+    ablated activations (`self.patch_src_outs`).
+
+    Note:
+        Most `PatchWrapper`s are both [`SrcNode`][auto_circuit.types.SrcNode]s and
+        [`DestNode`][auto_circuit.types.DestNode]s.
+
+    Args:
+        module_name: Name of the wrapped module.
+        module: The module to wrap.
+        head_dim: The dimension along which to split the heads. In TransformerLens
+            `HookedTransformer`s this is `2` because the activations have shape
+            `[batch, seq_len, n_heads, head_dim]`.
+        seq_dim: The sequence dimension of the model. This is the dimension on which new
+            inputs are concatenated. In transformers, this is `1` because the
+            activations are of shape `[batch_size, seq_len, hidden_dim]`.
+        is_src: Whether the wrapped module is a [`SrcNode`][auto_circuit.types.SrcNode].
+        src_idxs: The slice of the list of indices of
+            [`SrcNode`][auto_circuit.types.SrcNode]s which output from this
+            module. This is used to slice the shared `curr_src_outs` tensor when
+            updating the activations of the current forward pass.
+        is_dest (bool): Whether the wrapped module is a
+            [`DestNode`][auto_circuit.types.DestNode].
+        patch_mask: The mask that interpolates between the default activations
+            (`curr_src_outs`) and the ablation activations (`patch_src_outs`).
+        in_srcs: The slice of the list of indices of
+            [`SrcNode`][auto_circuit.types.SrcNode]s which input to this module. This is
+            used to slice the shared `curr_src_outs` tensor and the shared
+            `patch_src_outs` tensor, when interpolating the activations of the incoming
+            edges.
+    """
+
     def __init__(
         self,
         module_name: str,

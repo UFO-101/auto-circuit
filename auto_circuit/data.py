@@ -14,10 +14,13 @@ from torch.utils.data import (
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
 BatchKey = int
+"""A unique key for a [`PromptPairBatch`][auto_circuit.data.PromptPairBatch]."""
 
 
 @dataclass(frozen=True)
 class PromptPair:
+    """A pair of clean and corrupt prompts with correct and incorrect answers."""
+
     clean: t.Tensor
     corrupt: t.Tensor
     answers: t.Tensor
@@ -26,6 +29,8 @@ class PromptPair:
 
 @dataclass(frozen=True)
 class PromptPairBatch:
+    """A batch of prompt pairs."""
+
     key: BatchKey
     batch_diverge_idx: int
     clean: t.Tensor
@@ -53,6 +58,8 @@ def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
 
 
 class PromptDataset(Dataset):
+    """A dataset of clean/corrupt prompt pairs with correct/incorrect answers."""
+
     def __init__(
         self,
         clean_prompts: List[t.Tensor] | t.Tensor,
@@ -81,25 +88,77 @@ class PromptDataset(Dataset):
 class PromptDataLoader(DataLoader[PromptPairBatch]):
     def __init__(
         self,
-        *args: Any,
+        prompt_dataset: Any,
         seq_len: Optional[int],
         diverge_idx: int,
-        seq_labels: Optional[List[str]] = None,
         kv_cache: Optional[HookedTransformerKeyValueCache] = None,
+        seq_labels: Optional[List[str]] = None,
         word_idxs: Dict[str, int] = {},
         **kwargs: Any,
     ):
         """
-        A DataLoader for clean/corrupt prompt pairs with correct/incorrect answers.
-        drop_last is always True so that all batches are the same size.
+        A `DataLoader` for clean/corrupt prompt pairs with correct/incorrect answers.
+
+        Args:
+            prompt_dataset: A [`PromptDataset`][auto_circuit.data.PromptDataset] with
+                clean and corrupt prompts.
+            seq_len: The token length of the prompts (if fixed length). This prompt
+                length can be passed to `patchable_model` to enable patching specific
+                token positions.
+            diverge_idx: The index at which the clean and corrupt prompts diverge. (See
+                [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json]
+                for more information.)
+            kv_cache: A cache of past key-value pairs for the transformer. Only used if
+                `diverge_idx` is greater than 0. (See
+                [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json]
+                for more information.)
+            seq_labels: A list of strings that label each token for fixed length
+                prompts. Used by
+                [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph] to label the
+                circuit diagram.
+            word_idxs: A dictionary with the token indexes of specific words. Used by
+                official circuit functions.
+            kwargs: Additional arguments to pass to `DataLoader`.
+
+        Note:
+            `drop_last=True` is always passed to the parent `DataLoader` constructor. So
+            all batches are always the same size. This simplifies the implementation of
+            several functions. For example, the `kv_cache` only needs caches for a
+            single batch size.
         """
-        super().__init__(*args, **kwargs, drop_last=True, collate_fn=collate_fn)
+        super().__init__(
+            prompt_dataset, **kwargs, drop_last=True, collate_fn=collate_fn
+        )
         self.seq_len = seq_len
+        """
+        The token length of the prompts (if fixed length). This prompt length can be
+        passed to `patchable_model` to enable patching specific token positions.
+        """
         self.diverge_idx = diverge_idx
+        """
+        The index at which the clean and corrupt prompts diverge. (See
+        [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json] for more
+        information.)
+        """
         self.seq_labels = seq_labels
+        """
+        A list of strings that label each token for fixed length prompts. Used by
+        [`draw_seq_graph`][auto_circuit.visualize.draw_seq_graph] to label the circuit
+        diagram.
+        """
         assert kv_cache is None or diverge_idx > 0
         self.kv_cache = kv_cache
+        """
+        A cache of past key-value pairs for the transformer. Only used if `diverge_idx`
+        is greater than 0. (See
+        [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json] for more
+        information.)
+        """
         self.word_idxs = word_idxs
+        """
+        A dictionary with the token indexes of specific words. Used by official circuit
+        functions.
+        """
 
 
 def load_datasets_from_json(
@@ -115,12 +174,64 @@ def load_datasets_from_json(
     random_seed: int = 42,
     pad: bool = True,
 ) -> Tuple[PromptDataLoader, PromptDataLoader]:
-    """Load a dataset from a json file. The file should specify a list of
+    """
+    Load a dataset from a json file. The file should specify a list of
     dictionaries with keys "clean_prompt" and "corrupt_prompt".
 
+    JSON data format:
+    ```
+    {
+        // Optional: used to label circuit visualization
+        "seq_labels": [str, ...],
+
+        // Optional: used by official circuit functions
+        "word_idxs": {
+            str: int,
+            ...
+        },
+
+        // Required: the prompt pairs
+        "prompts": [
+            {
+                "clean": str | [[int, ...], ...],
+                "corrupt": str | [[int, ...], ...],
+                "answers": [str, ...] | [int, ...],
+                "wrong_answers": [str, ...] | [int, ...],
+            },
+            ...
+        ]
+    }
+    ```
+
     Args:
-        tail_divergence: bool, If all prompts share a common prefix, remove it and pass
-            a kv_cache for the prefix to the DataLoader.
+        model: Model to use for tokenization. If None, data must be pre-tokenized
+            (`"prompts"` is passed as `int`s).
+        path: Path to the json file with the dataset. If a list of paths is passed, the
+            first dataset is parsed in full and for the rest are the `prompts` are used.
+        device: Device to load the data on.
+        prepend_bos: If True, prepend the `BOS` token to each prompt. (The `prepend_bos`
+            flag on TransformerLens `HookedTransformer`s is ignored.)
+        batch_size: The batch size for training and testing. If a single int is passed,
+            the same batch size is used for both.
+        return_seq_length: If `True`, return the sequence length of the prompts. **Note:
+            If `True`, all the prompts must have the same length or an error will be
+            raised.** This is used by
+            [`patchable_model`][auto_circuit.utils.graph_utils.patchable_model] to
+            enable patching specific token positions.
+        tail_divergence: If all prompts share a common prefix, remove it and compute the
+            keys and values for each attention head on the prefix. A `kv_cache` for the
+            prefix is returned in the `train_loader` and `test_loader`.
+        shuffle: If `True`, shuffle the dataset before splitting into train and test
+            sets.
+        random_seed: Seed for the random number generator.
+        pad: If `True`, pad the prompts to the maximum length in the batch. Do not use
+            in conjunction with `return_seq_length`.
+
+    Note:
+        `shuffle` only shuffles the order of the prompts once at the beginning. The
+        order is preserved in the train and test loaders (`shuffle=False` is always
+        passed to the [`PromptDataLoader`][auto_circuit.data.PromptDataLoader]
+        constructor). This makes it easier to ensure experiments are deterministic.
     """
     assert not (prepend_bos and (model is None)), "Need model tokenizer to prepend bos"
 
@@ -224,8 +335,8 @@ def load_datasets_from_json(
         train_set,
         seq_len=seq_len,
         diverge_idx=diverge_idx,
-        seq_labels=seq_labels,
         kv_cache=kvs[0] if len(kvs) > 0 else None,
+        seq_labels=seq_labels,
         word_idxs=word_idxs,
         batch_size=batch_size[0] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,
@@ -234,8 +345,8 @@ def load_datasets_from_json(
         test_set,
         seq_len=seq_len,
         diverge_idx=diverge_idx,
-        seq_labels=seq_labels,
         kv_cache=kvs[-1] if len(kvs) > 0 else None,
+        seq_labels=seq_labels,
         word_idxs=word_idxs,
         batch_size=batch_size[1] if isinstance(batch_size, tuple) else batch_size,
         shuffle=False,

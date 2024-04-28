@@ -1,6 +1,3 @@
-# Based on:
-# https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/greaterthan/utils.py  # noqa: E501
-
 from typing import Dict, List, Optional, Set
 
 from auto_circuit.types import Edge
@@ -44,8 +41,34 @@ def greaterthan_true_edges(
     word_idxs: Dict[str, int] = {},
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
+    """
+    The Greaterthan circuit, discovered by
+    [Hanna et al. 2023](https://arxiv.org/abs/2305.00586).
+
+    Based on the [ACDC implementation](https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/greaterthan/utils.py).
+
+    Args:
+        model: A patchable TransformerLens GPT-2 `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, token positions are not specified, so
+            this parameter is not used.
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            For this circuit, token positions are not specified, so this parameter is
+            not used.
+
+    Returns:
+        The set of edges in the circuit.
+
+    Note:
+        The Greaterthan circuit does not specify token positions, so if
+        `token_positions` is `True`, all token positions are included for the edges in
+        the circuit.
+    """
     assert model.cfg.model_name == "gpt2"
-    assert token_positions is False, "Greaterthan does not specify token positions"
     assert model.separate_qkv
 
     edges_present: List[str] = []

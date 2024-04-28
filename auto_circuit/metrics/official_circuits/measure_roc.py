@@ -17,6 +17,11 @@ from auto_circuit.utils.tensor_ops import desc_prune_scores, prune_scores_thresh
 
 
 def measure_roc(task_prune_scores: TaskPruneScores) -> TaskMeasurements:
+    """
+    Wrapper of
+    [`measure_task_roc`][auto_circuit.metrics.official_circuits.measure_roc.measure_task_roc]
+    that measures the ROC curve for each task and algorithm.
+    """
     task_measurements: TaskMeasurements = {}
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
         task = TASK_DICT[task_key]
@@ -39,7 +44,29 @@ def measure_task_roc(
     prune_scores: PruneScores,
     all_edges: bool = False,
 ) -> Measurements:
-    """Measure ROC curve."""
+    """
+    Finds points for the Receiver Operating Characteristic (ROC) curve that
+    measures the performance of the given `prune_scores` at classifying which edges
+    are in or out of the circuit defined by `official_edges`.
+
+    Args:
+        model: The model to measure the ROC curve for.
+        official_edges: The edges that define the correct circuit.
+        prune_scores: The pruning scores to measure the ROC curve for. The scores
+            define an ordering of the edges in the model. We sweep through the scores
+            in descending order, including the top-k edges in the circuit.
+        all_edges: By default we calculate the True Positive Rate (TRP) and False
+            Positive Rate (FPR) for the set of [number of edges] determined by passing
+            `prune_scores` to
+            [`edge_counts_util`][auto_circuit.utils.graph_utils.edge_counts_util]. If
+            `all_edges` is `True`, we instead calculate the TRP and FPR for every number
+            `0, 1, 2, ..., model.n_edges` of edges.
+
+    Returns:
+        A list of points that define the ROC curve. Each point is a tuple of the form
+            `(FPR, TPR)`. The first point is always `(0, 0)` and the last point is
+            always `(1, 1)`.
+    """
     n_official = len(official_edges)
     n_complement = model.n_edges - n_official
     if all_edges:

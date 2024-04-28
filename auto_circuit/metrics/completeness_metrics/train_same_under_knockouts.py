@@ -40,6 +40,11 @@ def train_same_under_knockouts(
     regularize_lambda: float,
     faithfulness_target: Literal["kl_div", "logit_diff"] = "kl_div",
 ) -> TaskPruneScores:
+    """
+    Wrapper of
+    [`train_same_under_knockout_prune_scores`][auto_circuit.metrics.completeness_metrics.train_same_under_knockouts.train_same_under_knockout_prune_scores]
+    for multiple tasks and algorithms.
+    """
     task_completeness_scores: TaskPruneScores = {}
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
         task = TASK_DICT[task_key]
@@ -88,9 +93,32 @@ def train_same_under_knockout_prune_scores(
     faithfulness_target: Literal["kl_div", "logit_diff"] = "kl_div",
 ) -> PruneScores:
     """
-    Learn a subset of the circuit to knockout such that when the same edges are knocked
-    out of the full model, the KL divergence between the circuit and the full model is
+    Learn a subset of the circuit to ablate such that when the same edges are ablated
+    from the full model, the KL divergence between the circuit and the full model is
     maximized.
+
+    See:
+    [`same_under_knockouts`][auto_circuit.metrics.completeness_metrics.same_under_knockouts.same_under_knockout]
+
+    Args:
+        task: The task to train on.
+        algo: The pruning algorithm used to generate the circuit. This value is only
+            used for visualization purposes.
+        algo_ps: The pruning scores for the algorithm. The circuit is defined as the
+            top `circuit_size` edges according to these scores.
+        circuit_size: The size of the circuit to knockout.
+        learning_rate: The learning rate for the optimization.
+        epochs: The number of epochs to train for.
+        regularize_lambda: The regularization strength for the number of edges that are
+            knocked out. Can reasonably be set to 0.
+        mask_fn: The mask parameterization to use for the optimization. `hard_concrete`
+            is highly recommended.
+        faithfulness_target: The target for the faithfulness term in the loss. The
+            optimizer will try to maximize the difference in this target between the
+            knocked-out circuit and the knocked-out full model.
+
+    Returns:
+        The learned ordering of edges to knockout.
     """
     circuit_threshold = prune_scores_threshold(algo_ps, circuit_size)
     model = task.model

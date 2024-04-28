@@ -61,17 +61,45 @@ def ioi_true_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The edge-level circuit from the IOI paper.
+    The Indirect Object Identification (IOI) circuit, discovered by
+    [Wang et al. (2022)](https://arxiv.org/abs/2211.00593).
+
+    The exact set of edges was defined by Conmy et al. in the
+    [ACDC repo](https://github.com/ArthurConmy/Automatic-Circuit-Discovery/blob/main/acdc/ioi/utils.py).
+
+    The token positions are based on my reading of the paper.
+
+    Args:
+        model: A patchable TransformerLens GPT-2 `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, the required tokens positions are:
+            <ul>
+                <li><code>IO</code></li>
+                <li><code>S1</code></li>
+                <li><code>S1+1</code></li>
+                <li><code>S2</code></li>
+                <li><code>end</code></li>
+            </ul>
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
     """
     assert model.cfg.model_name == "gpt2"
     assert model.is_factorized, "IOI edge based circuit requires factorized model"
     assert model.separate_qkv
 
-    final_tok_idx = word_idxs.get("end", 0)
     io_tok_idx = word_idxs.get("IO", 0)
     s1_tok_idx = word_idxs.get("S1", 0)
-    s2_tok_idx = word_idxs.get("S2", 0)
     s1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
+    s2_tok_idx = word_idxs.get("S2", 0)
+    final_tok_idx = word_idxs.get("end", 0)
 
     if token_positions:
         assert final_tok_idx > 0, "Must provide word_idxs if token_positions is True"
@@ -167,6 +195,20 @@ def ioi_true_edges_mlp_0_only(
     word_idxs: Dict[str, int] = {},
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
+    """
+    Wrapper for
+    [`ioi_true_edges`][auto_circuit.metrics.official_circuits.circuits.ioi_official.ioi_true_edges]
+    that removes all edges to or from all MLPs except MLP 0.
+
+    [Wang et al. (2022)](https://arxiv.org/abs/2211.00593) consider MLPs to be part of
+    the direct path between attention heads, so they implicitly include a large number
+    of MLP edges in the circuit, but they did not study these interactions in detail and
+    most of them are probably not important.
+
+    Therefore we include this function as a very rough attempt at "the IOI circuit with
+    fewer unnecessary MLP edges". We include just MLP 0 because it has been widely
+    observed that MLP 0 tends to be the most important MLP layer in GPT-2.
+    """
     ioi_edges = ioi_true_edges(model, token_positions, word_idxs, seq_start_idx)
     minimal_ioi_edges = set()
     for edge in ioi_edges:
@@ -182,16 +224,39 @@ def ioi_head_based_official_edges(
     seq_start_idx: int = 0,
 ) -> Set[Edge]:
     """
-    The IOI heads (with token positions). The paper actually tests faithfulness by
-    mean-ablating every head not included (means calculated over ABC dataset).
-    Works for both factorized and unfactorized models.
+    Node-based circuit of the IOI attention heads.
+
+    To measure the performance of their circuit,
+    [Wang et al. (2022)](https://arxiv.org/abs/2211.00593) Mean Ablate the heads in the
+    circuit, rather than Edge Ablating the specific edges they find (means calculated
+    over ABC dataset). We include this variation to enable replication of these results.
+
+    Args:
+        model: A patchable TransformerLens GPT-2 `HookedTransformer` model.
+        token_positions: Whether to distinguish between token positions when returning
+            the set of circuit edges. If `True`, we require that the `model` has
+            `seq_len` not `None` (ie. separate edges for each token position) and that
+            `word_idxs` is provided.
+        word_idxs: A dictionary defining the index of specific named tokens in the
+            circuit definition. For this circuit, the required tokens positions are:
+            <ul>
+                <li><code>S1+1</code></li>
+                <li><code>S2</code></li>
+                <li><code>end</code></li>
+            </ul>
+        seq_start_idx: Offset to add to all of the token positions in `word_idxs`.
+            This is useful when using KV caching to skip the common prefix of the
+            prompt.
+
+    Returns:
+        The set of edges in the circuit.
     """
     assert model.cfg.model_name == "gpt2"
     assert (model.seq_len is not None) == token_positions
 
-    final_tok_idx = word_idxs.get("end", 0)
-    S2_tok_idx = word_idxs.get("S2", 0)
     S1_plus_1_tok_idx = word_idxs.get("S1+1", 0)
+    S2_tok_idx = word_idxs.get("S2", 0)
+    final_tok_idx = word_idxs.get("end", 0)
 
     if token_positions:
         assert final_tok_idx > 0, "Must provide word_idxs if token_positions is True"

@@ -29,7 +29,7 @@ from auto_circuit.model_utils.sparse_autoencoders.autoencoder_transformer import
     AutoencoderTransformer,
     sae_model,
 )
-from auto_circuit.model_utils.tracr.tracr_models import TRACR_TASK_KEY, get_tracr_model
+from auto_circuit.model_utils.tracr_model_utils import TRACR_TASK_KEY, get_tracr_model
 from auto_circuit.types import AutoencoderInput, Edge, OutputSlice, TaskKey
 from auto_circuit.utils.graph_utils import patchable_model
 from auto_circuit.utils.misc import repo_path_to_abs_path
@@ -41,6 +41,49 @@ DATASET_CACHE: Dict[Any, Tuple[PromptDataLoader, PromptDataLoader]] = {}
 
 @dataclass
 class Task:
+    """
+    A task to be used in the auto-circuit experiments.
+
+    Args:
+        key: A unique identifier for the task.
+        name: A human-readable name for the task, used in visualizations.
+        batch_size: The batch size to use for training and testing.
+        batch_count: The number of batches to use for training and testing.
+        token_circuit: Whether to patch different token positions separately (`True`) or
+            not (`False`).
+        _model_def: The model to use for the task. If a string, the model will be loaded
+            from the `transformer_lens` library with the correct config.
+        _dataset_name: The dataset name to use for the task. The file
+            `"datasets/{_dataset_name}.json"` with be loaded using
+            [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json].
+        factorized: Whether to use the factorized model and Edge Patching (`True`) or
+            the residual model and Node Patching (`False`).
+        separate_qkv: Whether to have separate Q, K, and V input nodes. Outputs from
+            attention heads are the same either way.
+        _true_edge_func: A function that returns the true edges for the task.
+        slice_output: Specifies the index/slice of the output of the model to be
+            considered for the task. For example, `"last_seq"` will consider the last
+            token's output in transformer models.
+        autoencoder_input: If not `None`, the model will patch in autoencoder
+            reconstructions at each layer of the model. This variable determines the
+            activations passed to the autoencoder (eg. MLP output or residual stream).
+        autoencoder_max_latents: When loading a model with autoencoders enabled (by
+            setting `autoencoder_input` to not `None`), this function uses
+            `_prune_latents_with_dataset` to first prune the autoencoder latents.
+            `_prune_latents_with_datasets` runs a batch of data through the model and
+            prunes any latents that are not activated.  This dramatically reduces the
+            number of latent in the autoencoder (and therefore edges in the model),
+            which is generally required to make circuit discovery feasible.  However,
+            there can still be too many feature remaining, so this parameter sets a cap
+            such that we only keep the top `autoencoder_max_latents` features by
+            activation.
+        autoencoder_pythia_size: The Pythia size to use for the autoencoder.
+        autoencoder_prune_with_corrupt: Whether to prune the autoencoder with corrupt
+            data.
+        dtype: Sets the data type with which to load `transformer_lens` models.
+        __init_complete__: Whether the task has been initialized.
+    """
+
     key: TaskKey
     name: str
     batch_size: int | Tuple[int, int]  # (train, test) if tuple

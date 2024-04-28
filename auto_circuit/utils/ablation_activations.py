@@ -67,9 +67,23 @@ def src_ablations(
     ablation_type: AblationType = AblationType.RESAMPLE,
 ) -> t.Tensor:
     """
-    Get the ablations of each for SrcNode in a model over a given data sample. Returns
-    a tensor of shape [SrcNode, ...] where ... is the shape of the activations of the
-    model. In a transformer this will be [SrcNode, batch, seq, d_model].
+    Get the activations used to ablate each [`Edge`][auto_circuit.types.Edge] in a
+    model, given a particular set of model inputs and an ablation type. See
+    [`AblationType`][auto_circuit.types.AblationType] for the different types of
+    ablations that can be computed.
+
+    Args:
+        model: The model to get the ablations for.
+        sample: The data sample to get the ablations for. This is not used for all
+            `ablation_type`s. Either a single batch of inputs or a DataLoader.
+        ablation_type: The type of ablation to perform.
+
+    Returns:
+        A tensor of activations used to ablated each [`Edge`][auto_circuit.types.Edge]
+            model on the given input.  Shape is `[Srcs, ...]` where `Srcs` is the number
+            of [`SrcNode`][auto_circuit.types.SrcNode]s in the model and `...` is the
+            shape of the activations of the model. In a transformer this will be
+            `[Srcs, batch, seq, d_model]`.
     """
     src_outs: Dict[SrcNode, t.Tensor] = {}
     src_modules: Dict[t.nn.Module, List[SrcNode]] = defaultdict(list)
@@ -116,7 +130,20 @@ def batch_src_ablations(
     clean_corrupt: Optional[Literal["clean", "corrupt"]] = None,
 ) -> Dict[BatchKey, t.Tensor]:
     """
-    Returns src_ablations for each batch in a dataloader.
+    Wrapper of [`src_ablations`][auto_circuit.utils.ablation_activations.src_ablations]
+    that returns ablations for each batch in a dataloader.
+
+    Args:
+        model: The model to get the ablations for.
+        dataloader: The input data to get the ablations for.
+        ablation_type: The type of ablation to perform.
+        clean_corrupt: Whether to use the clean or corrupt inputs to calculate the
+            ablations.
+
+    Returns:
+        A dictionary mapping [`BatchKey`][auto_circuit.data.BatchKey]s to the
+            activations used to ablate each [`Edge`][auto_circuit.types.Edge] in the
+            model on the corresponding batch.
     """
     batch_specific_ablation = [
         AblationType.RESAMPLE,

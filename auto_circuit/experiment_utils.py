@@ -26,6 +26,11 @@ from auto_circuit.utils.misc import repo_path_to_abs_path
 
 
 def load_tl_model(name: str, device: t.device) -> tl.HookedTransformer:
+    """
+    Load a `HookedTransformer` model with the necessary config to perform edge patching
+    (with separate edges to Q, K, and V). Sets `requires_grad` to `False` for all model
+    weights (this does not affect Mask gradients).
+    """
     tl_model = tl.HookedTransformer.from_pretrained(
         name,
         device=device,
@@ -44,9 +49,24 @@ def load_tl_model(name: str, device: t.device) -> tl.HookedTransformer:
 
 
 class IOI_CIRCUIT_TYPE(Enum):
+    """
+    Type of IOI circuit. The original IOI paper discovered important attention heads and
+    interactions between them.
+    """
+
     NODES = 1
+    """`NODES` ablates the outputs of the head in the circuit."""
     EDGES = 2
+    """
+    `EDGES` ablates the edges identified by the IOI paper. Note that the IOI paper
+    considered intermediate MLPs to be part of the direct path between two attention
+    heads, so this includes many edges to or from MLPs.
+    """
     EDGES_MLP_0_ONLY = 3
+    """
+    Therefore we also provide `EDGES_MLP_0_ONLY` which includes only the first MLP layer
+    (as this seems to retain most of the performance of the full `EDGES` circuit).
+    """
 
     def __str__(self) -> str:
         return self.name.split(".")[-1].title()
@@ -69,12 +89,39 @@ def ioi_circuit_single_template_logit_diff_percent(
     batch_size: Optional[int] = None,
 ) -> Tuple[int, float, float, t.Tensor, PruneScores]:
     """
-    Run a single template through the IOI circuit and return the logit diff percent.
+    Run a single template format through the IOI circuit and return the logit diff
+    recovered.
+
+    Args:
+        gpt2: A GPT2 `HookedTransformer`.
+        dataset_size: The size of the dataset to use.
+        prepend_bos: Whether to prepend the `BOS` token to the prompts.
+        template: The type of template to use. (This is the order of names).
+        template_idx: The index of the template to use (`0` to `14`).
+        factorized: Use a 'factorized' model (Edge Patching, not Node Patching).
+        circuit: The type of circuit to use (see `IOI_CIRCUIT_TYPE`).
+        ablation_type: The type of ablation to use.
+        tok_pos: Whether to ablate different token positions separately.
+        patch_type: The type of patch to use (ablate the circuit or the complement).
+        learned: Whether to learn a new circuit using `Subnetwork Probing` (in this case
+            `IOI_CIRCUIT_TYPE` is only used to determine the number of edges in the
+            learned circuit).
+        learned_faithfulness_target: The faithfulness target used to learn the circuit.
+        learned_faithfulness_target: The faithfulness metric to optimize the learned
+            circuit for.
+        diff_of_mean_logit_diff: If `true` we compute:
+            ```
+            (mean(circuit) / mean(model)) * 100
+            ```
+            like the IOI paper. If `false` we compute:
+            ```
+            (mean(circuit / model)) * 100
+            ```
+        batch_size: The batch size to use.
 
     Returns:
-        Tuple[int, float, float, PruneScores]: The number of edges in the circuit, the
-            mean logit diff percent, the standard deviation of the logit diff percent,
-            and the prune scores of the circuit.
+        The number of edges in the circuit, the mean logit diff percent, the standard
+            deviation of the logit diff percent, and the prune scores of the circuit.
     """
     assert gpt2.cfg.model_name == "gpt2"
     assert gpt2.cfg.device is not None

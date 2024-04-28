@@ -1,0 +1,104 @@
+site_name: AutoCircuit
+site_description: A library for efficient activation patching and circuit discovery.
+repo_url: https://github.com/UFO-101/auto-circuit
+repo_name: UFO-101/auto-circuit
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  font:
+    text: Rubik
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  features:
+    - content.action.edit
+    - content.action.view
+    - navigation.tabs
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.path
+    - search.suggest
+    - search.highlight
+    - navigation.top
+    - navigation.sections
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+# markdown_extensions:
+#   - pymdownx.tabbed:
+#       alternate_style: true
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+      # base_path: "."
+  - pymdownx.superfences
+
+watch:
+  - auto_circuit
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  # - javascripts/particles.min.js
+  - https://s3-us-west-2.amazonaws.com/s.cdpn.io/188512/codepen-utilities.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/stats.js/r11/Stats.js
+  - https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js
+  - javascripts/SmallPRNG.js
+
+  - javascripts/extra.js
+  - javascripts/dynamical.js
+
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+      - docs/gen_ref_pages.py
+  - mkdocstrings:
+      custom_templates: null
+      # default_handler: python
+      handlers:
+        python:
+          options:
+            show_submodules: true
+            show_root_heading: true
+            group_by_category: true
+            show_category_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_inheritance_diagram: true
+            merge_init_into_class: true
+            # show_if_no_docstring: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true

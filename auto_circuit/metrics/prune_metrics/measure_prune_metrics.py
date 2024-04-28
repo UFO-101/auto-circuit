@@ -40,6 +40,25 @@ def measure_prune_metrics(
     reverse_clean_corrupt: bool = False,
     test_edge_counts: Optional[List[int]] = None,
 ) -> AblationMeasurements:
+    """
+    Measure a set of circuit metrics for each
+    [`Task`s][auto_circuit.tasks.Task] and each
+    [`PruneAlgos`][auto_circuit.prune_algos.prune_algos.PruneAlgo] in the given
+    `task_prune_scores`.
+
+    Args:
+        ablation_types: The types of ablation to test.
+        metrics: The metrics to measure.
+        task_prune_scores: The edge scores for each task and each algorithm.
+        patch_type: Whether to ablate the circuit or the complement.
+        reverse_clean_corrupt: Reverse clean and corrupt (for input and patches).
+        test_edge_counts: The set of [number of edges to prune] for each task and
+            algorithm.
+
+    Returns:
+        A nested dictionary of measurements for each ablation type, metric, task, and
+            algorithm (in that order).
+    """
     measurements: AblationMeasurements = defaultdict(double_default_factory)
     for task_key, algo_prune_scores in (task_pbar := tqdm(task_prune_scores.items())):
         task = TASK_DICT[task_key]
@@ -81,6 +100,20 @@ def measure_prune_metrics(
 def measurement_figs(
     measurements: AblationMeasurements, auc_plots: bool = False
 ) -> Tuple[go.Figure, ...]:
+    """
+    Plot the measurements from
+    [`measure_prune_metrics`][auto_circuit.metrics.prune_metrics.measure_prune_metrics]
+    as a set of Plotly figures (one for each ablation type and metric).
+
+    Optionally include average Area Under the Curve (AUC) plots for each metric.
+
+    Args:
+        measurements: The measurements to plot.
+        auc_plots: Whether to include the average AUC plots.
+
+    Returns:
+        A tuple of Plotly figures.
+    """
     figs = []
     for ablation_type, metric_measurements in measurements.items():
         for metric_key, task_measurements in metric_measurements.items():
@@ -122,7 +155,6 @@ def measurement_figs(
                     log_x=metric.log_x,
                     log_y=metric.log_y,
                     y_axes_match=metric.y_axes_match,
-                    token_circuit=token_circuit,
                     y_max=y_max,
                     y_min=metric.y_min,
                 )

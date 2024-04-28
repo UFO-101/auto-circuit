@@ -1,3 +1,7 @@
+"""
+A transformer model that patches in sparse autoencoder reconstructions at each layer.
+Work in progress. Error nodes not implemented.
+"""
 from copy import deepcopy
 from itertools import count
 from typing import Any, List, Optional, Set
@@ -152,6 +156,11 @@ def sae_model(
     pythia_size: Optional[str] = None,
     new_instance: bool = True,
 ) -> AutoencoderTransformer:
+    """
+    Inject
+    [`SparseAutoencoder`][auto_circuit.model_utils.sparse_autoencoders.sparse_autoencoder.SparseAutoencoder]
+    wrappers into a transformer model.
+    """
     if new_instance:
         model = deepcopy(model)
     sparse_autoencoders: List[SparseAutoencoder] = []

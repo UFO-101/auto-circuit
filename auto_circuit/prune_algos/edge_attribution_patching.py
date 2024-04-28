@@ -21,19 +21,32 @@ def edge_attribution_patching_prune_scores(
     """
     Prune scores by Edge Attribution patching.
 
-    This is an exact replication of the technique introduced in Attribution Patching
-    Outperforms Automated Circuit Discovery (https://arxiv.org/abs/2310.10348), as
-    implemented here:
-    https://github.com/Aaquib111/edge-attribution-patching/utils/prune_utils.py
+    This is an exact replication of the technique introduced in "Attribution Patching
+    Outperforms Automated Circuit Discovery"
+    [(Syed et al. (2023))](https://arxiv.org/abs/2310.10348), as
+    implemented in
+    [their codebase](https://github.com/Aaquib111/edge-attribution-patching/utils/prune_utils.py).
 
-    It is equivalent to simple_gradient_prune_scores with grad_function="logit" and
-    mask_val=0.0 (which we verify in test_edge_attribution_patching.py). This
+    It is equivalent to
+    [`mask_gradient_prune_scores`][auto_circuit.prune_algos.mask_gradient.mask_gradient_prune_scores]
+    with `grad_function="logit"` and `mask_val=0.0`. We verify that the output is
+    exactly the same in `test_edge_attribution_patching.py`. This
     implementation is much slower, so we don't use it in practice, but it's useful for
-    validating the correctness of the simple_gradient_prune_scores implementation.
+    validating the correctness of the fast implementation.
 
-    Note: the implementation here uses clean_act - corrupt_act, as described in the
-    paper, rather than corrupt_act - clean_act, as in paper's implementation. It
-    doesn't matter either way as we only consider the magnitude of the scores.
+    Args:
+        model: The model to find the circuit for.
+        dataloader: The dataloader to use for input and ablation.
+        official_edges: Not used.
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+
+    Note:
+        The implementation here uses `clean_act - corrupt_act`, as described in the
+        paper, rather than `corrupt_act - clean_act`, as in author's implementation. It
+        doesn't matter either way as we only consider the magnitude of the scores.
     """
     model = model
     assert model.is_transformer

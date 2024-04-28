@@ -25,7 +25,35 @@ def mask_gradient_prune_scores(
     mask_val: Optional[float] = None,
     integrated_grad_samples: Optional[int] = None,
 ) -> PruneScores:
-    """Prune scores by attribution patching."""
+    """
+    Prune scores equal to the gradient of the mask values that interpolates the edges
+    between the clean activations and the ablated activations.
+
+    Args:
+        model: The model to find the circuit for.
+        dataloader: The dataloader to use for input.
+        official_edges: Not used.
+        grad_function: Function to apply to the logits before taking the gradient.
+        answer_function: Loss function of the model output which the gradient is taken
+            with respect to.
+        mask_val: Value of the mask to use for the forward pass. Cannot be used if
+            `integrated_grad_samples` is not `None`.
+        integrated_grad_samples: If not `None`, we compute an approximation of the
+            Integrated Gradients
+            [(Sundararajan et al., 2017)](https://arxiv.org/abs/1703.01365) of the model
+            output with respect to the mask values. This is computed by averaging the
+            mask gradients over `integrated_grad_samples` samples of the mask values
+            interpolated between 0 and 1. Cannot be used if `mask_val` is not `None`.
+
+    Returns:
+        An ordering of the edges by importance to the task. Importance is equal to the
+            absolute value of the score assigned to the edge.
+
+    Note:
+        When `grad_function="logit"` and `mask_val=0` this function is exactly
+        equivalent to
+        [`edge_attribution_patching_prune_scores`][auto_circuit.prune_algos.edge_attribution_patching.edge_attribution_patching_prune_scores].
+    """
     assert (mask_val is not None) ^ (integrated_grad_samples is not None)  # ^ means XOR
     model = model
     out_slice = model.out_slice

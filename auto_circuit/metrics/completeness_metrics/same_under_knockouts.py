@@ -22,13 +22,43 @@ from auto_circuit.utils.tensor_ops import multibatch_kl_div, prune_scores_thresh
 
 # circuit_size, n_knockouts, normal_kl, knockout_kl
 CompletenessScores = List[Tuple[int, int, float, float]]
+"""
+A list of tuples containing:
+<ol>
+    <li>The size of the circuit.</li>
+    <li>The number of knockouts.</li>
+    <li>The KL divergence between the circuit and the full model.</li>
+    <li>The KL divergence between the circuit with knockouts and the full model with
+    knockouts.</li>
+</ol>
+"""
+
 AlgoCompletenessScores = Dict[AlgoKey, CompletenessScores]
+"""
+[`CompletenessScores`][auto_circuit.metrics.completeness_metrics.same_under_knockouts.CompletenessScores]
+for each algorithm.
+"""
+
 TaskCompletenessScores = Dict[TaskKey, AlgoCompletenessScores]
+"""
+[`AlgoCompletenessScores`][auto_circuit.metrics.completeness_metrics.same_under_knockouts.AlgoCompletenessScores]
+for each task and algorithm.
+"""
 
 
 def same_under_knockouts_fig(
     task_completeness_scores: TaskCompletenessScores,
 ) -> go.Figure:
+    """
+    Create a plotly figure showing the difference in KL divergence between the circuit
+    and the full model with and without knockouts for each task and algorithm.
+
+    Args:
+        task_completeness_scores: The completeness scores for each task and algorithm.
+
+    Returns:
+        The plotly figure.
+    """
     n_cols = len(task_completeness_scores)
     titles = [TASK_DICT[task].name for task in task_completeness_scores.keys()]
     fig = subplots.make_subplots(rows=1, cols=n_cols, subplot_titles=titles)
@@ -70,6 +100,11 @@ def measure_same_under_knockouts(
     circuit_ps: TaskPruneScores,
     knockout_ps: TaskPruneScores,
 ) -> TaskCompletenessScores:
+    """
+    Wrapper of
+    [`same_under_knockout`][auto_circuit.metrics.completeness_metrics.same_under_knockouts.same_under_knockout]
+    for each task and algorithm in `circuit_ps` and `knockout_ps`.
+    """
     task_completeness_scores: TaskCompletenessScores = {}
     for task_key, algos_ko_ps in (task_pbar := tqdm(knockout_ps.items())):
         task = TASK_DICT[task_key]
@@ -100,6 +135,29 @@ def same_under_knockout(
     circuit_size: int,
     knockout_threshold: float = 0.0,
 ) -> CompletenessScores:
+    """
+    Given a circuit and a set of edges to ablate, measure the difference in KL
+    divergence between the circuit and the full model with and without the knockouts.
+
+    This is the measure of completeness introduced by [Wang et al.
+    (2022)](https://arxiv.org/abs/2211.00593) to test the IOI circuit.
+
+    The optimization process that attempts to find the knockouts that maximize the
+    difference is implemented separately in
+    [`train_same_under_knockout_prune_scores`][auto_circuit.metrics.completeness_metrics.train_same_under_knockouts.train_same_under_knockout_prune_scores].
+
+    Args:
+        task: The task to measure the completeness for.
+        circuit_ps: The circuit to test. The top `circuit_size` edges are taken to be
+            the circuit.
+        knockout_ps: The set of knockouts to test. All edges with scores greater than
+            `knockout_threshold` are knocked out.
+        circuit_size: The size of the circuit.
+        knockout_threshold: The threshold for knockout edges.
+
+    Returns:
+        Tuple of completeness information.
+    """
     model = task.model
     patch_masks: Dict[str, t.nn.Parameter] = model.patch_masks
     circuit_threshold = prune_scores_threshold(circuit_ps, circuit_size)

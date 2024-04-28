@@ -23,6 +23,21 @@ model's performance.
 
 @dataclass(frozen=True)
 class PruneMetric:
+    """
+    A metric of the output of a circuit on a task.
+
+    Args:
+        key: A unique identifier for the metric.
+        name: The name of the metric.
+        metric_func: A function that takes a model, a dataloader, and the outputs of
+            the ablated model on the dataloader and returns a list of measurements.
+        log_x: Whether to log the x-axis when plotting a graph of performance.
+        log_y: Whether to log the y-axis when plotting a graph of performance.
+        lower_better: Whether lower values are better on the y-axis.
+        y_axes_match: Whether to use the same y-axis when plotting multiple tasks.
+        y_min: The minimum value for the y-axis when plotting.
+    """
+
     key: PruneMetricKey
     name: str
     metric_func: Callable[

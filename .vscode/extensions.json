@@ -2,6 +2,7 @@
   "recommendations": [
     "ms-python.python",
     "ms-toolsai.jupyter",
-    "github.copilot"
+    "github.copilot",
+    "redhat.vscode-yaml"
   ]
 }

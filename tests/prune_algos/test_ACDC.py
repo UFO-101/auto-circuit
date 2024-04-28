@@ -40,7 +40,7 @@ def test_acdc(
         tao_exps=[-3],
         tao_bases=[1],
         test_mode=True,  # The actual test logic is embedded in the function
-        run_pruned_ref=run_circuits,
+        run_circuits_ref=run_circuits,
         show_graphs=show_graphs,
         draw_seq_graph_ref=draw_seq_graph,
     )

@@ -1,3 +1,6 @@
+"""
+This module defines a tiny toy model used mostly for testing purposes.
+"""
 from itertools import count
 from typing import Set, Tuple
 
@@ -46,7 +49,12 @@ class MicroModel(t.nn.Module):
 
 
 def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
-    """Get the source part of each edge in the factorized graph, grouped by layer."""
+    """
+    Get the source part of each edge in the factorized graph, grouped by layer.
+
+    Used by [`graph_edges`][auto_circuit.utils.graph_utils.graph_edges] in
+    [`patchable_model`][auto_circuit.utils.graph_utils.patchable_model].
+    """
     nodes = set()
     layers, idxs = count(), count()
     nodes.add(
@@ -76,6 +84,12 @@ def factorized_src_nodes(model: MicroModel) -> Set[SrcNode]:
 
 
 def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
+    """
+    Get the destination part of each edge in the factorized graph, grouped by layer.
+
+    Used by [`graph_edges`][auto_circuit.utils.graph_utils.graph_edges] in
+    [`patchable_model`][auto_circuit.utils.graph_utils.patchable_model].
+    """
     nodes = set()
     layers = count(1)
     for layer_idx in range(model.n_layers):
@@ -103,8 +117,10 @@ def factorized_dest_nodes(model: MicroModel) -> Set[DestNode]:
 def simple_graph_nodes(model: MicroModel) -> Tuple[Set[SrcNode], Set[DestNode]]:
     """
     Get the nodes of the unfactorized graph.
-    make_model_patchable requires that all input SrcNodes are in the previous layer to
-    the respective DestNode.
+
+    [`graph_edges`][auto_circuit.utils.graph_utils.graph_edges] requires that all input
+    [`SrcNodes`][auto_circuit.types.SrcNode] are in the previous layer to the respective
+    [`DestNodes`][auto_circuit.types.DestNode].
     """
     src_nodes, dest_nodes = set(), set()
     layers, src_idxs = count(), count()

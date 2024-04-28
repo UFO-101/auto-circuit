@@ -53,7 +53,7 @@ def test_answer_prob(
     answer_prob = measure_answer_val(
         task.model,
         task.test_loader,
-        pruned_outs={0: pruned_outs},
+        circuit_outs={0: pruned_outs},
         prob_func="logits",
     )
     for batch in task.test_loader:
@@ -89,7 +89,7 @@ def test_greaterthan_answer_prob(
     answer_prob = measure_answer_val(
         task.model,
         task.test_loader,
-        pruned_outs={0: pruned_outs},
+        circuit_outs={0: pruned_outs},
         prob_func="logits",
     )
     for batch in task.test_loader:
