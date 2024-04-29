@@ -9,4 +9,4 @@ figure*/
 .DS_Store
 .gitignore.swp
 *.interactive
-*.png
+/*.png
