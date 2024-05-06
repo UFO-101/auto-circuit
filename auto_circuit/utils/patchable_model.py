@@ -150,6 +150,19 @@ class PatchableModel(t.nn.Module):
             kv = self.kv_caches[batch_size]
             return self.wrapped_model.run_with_cache(*args, past_kv_cache=kv, **kwargs)
 
+    def input_to_embed(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Wrapper around the `input_to_embed` method of the wrapped TransformerLens
+        `HookedTransformer`. If `kv_caches` is not `None`, the KV cache is passed to the
+        wrapped model as a keyword argument.
+        """
+        if self.kv_caches is None:
+            return self.wrapped_model.input_to_embed(*args, **kwargs)
+        else:
+            batch_size = args[0].shape[0]
+            kv = self.kv_caches[batch_size]
+            return self.wrapped_model.input_to_embed(*args, past_kv_cache=kv, **kwargs)
+
     def new_prune_scores(self, init_val: float = 0.0) -> PruneScores:
         """
         A new [`PruneScores`][auto_circuit.types.PruneScores] instance with the same
@@ -209,10 +222,6 @@ class PatchableModel(t.nn.Module):
     @property
     def tokenizer(self) -> Any:
         return self.wrapped_model.tokenizer
-
-    @property
-    def input_to_embed(self) -> Any:
-        return self.wrapped_model.input_to_embed
 
     @property
     def blocks(self) -> Any:
