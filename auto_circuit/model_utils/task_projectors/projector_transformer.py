@@ -147,7 +147,8 @@ def get_projector_model(
 #         model.cfg.use_attn_in
 #     )  # Get attention head inputs separately (but Q, K, V are still combined)
 #     assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
-#     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+#     if not model.cfg.attn_only:
+#         assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
 #     layers, idxs = count(), count()
 #     nodes = set()
 #     nodes.add(
@@ -200,7 +201,8 @@ def get_projector_model(
 #         model.cfg.use_attn_in
 #     )  # Get attention head inputs separately (but Q, K, V are still combined)
 #     # assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
-#     assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+#     if not model.cfg.attn_only:
+#         assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
 #     layers, idxs = count(1), count()
 #     nodes = set()
 #     for block_idx in range(model.cfg.n_layers):

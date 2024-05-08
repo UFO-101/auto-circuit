@@ -192,7 +192,8 @@ def factorized_src_nodes(model: AutoencoderTransformer) -> Set[SrcNode]:
     assert model.cfg.use_attn_result  # Get attention head outputs separately
     assert model.cfg.use_attn_in  # Get attention head inputs separately
     assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
-    assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+    if not model.cfg.attn_only:
+        assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     assert not model.cfg.attn_only
 
     layers, idxs = count(), count()
@@ -248,7 +249,8 @@ def factorized_dest_nodes(
         assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
     else:
         assert model.cfg.use_attn_in
-    assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+    if not model.cfg.attn_only:
+        assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers = count(1)
     nodes = set()
     for block_idx in range(model.cfg.n_layers):

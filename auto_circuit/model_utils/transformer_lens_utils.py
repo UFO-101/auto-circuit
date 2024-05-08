@@ -18,7 +18,8 @@ def factorized_src_nodes(model: tl.HookedTransformer) -> Set[SrcNode]:
     ![](../../assets/Factorized_Transformer.png)
     """
     assert model.cfg.use_attn_result  # Get attention head outputs separately
-    assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+    if not model.cfg.attn_only:
+        assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers, idxs = count(), count()
     nodes = set()
     nodes.add(
@@ -75,7 +76,8 @@ def factorized_dest_nodes(
         assert model.cfg.use_split_qkv_input  # Separate Q, K, V input for each head
     else:
         assert model.cfg.use_attn_in
-    assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
+    if not model.cfg.attn_only:
+        assert model.cfg.use_hook_mlp_in  # Get MLP input BEFORE layernorm
     layers = count(1)
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
