@@ -31,7 +31,7 @@ def run_circuits(
     ablation_type: AblationType = AblationType.RESAMPLE,
     reverse_clean_corrupt: bool = False,
     render_graph: bool = False,
-    render_all_edges: bool = False,
+    render_score_threshold: bool = False,
     render_file_path: Optional[str] = None,
 ) -> CircuitOutputs:
     """Run the model, pruning edges based on the given `prune_scores`. Runs the model
@@ -46,7 +46,7 @@ def run_circuits(
         ablation_type: The type of ablation to use.
         reverse_clean_corrupt: Reverse clean and corrupt (for input and patches).
         render_graph: Whether to render the graph using `draw_seq_graph`.
-        render_all_edges: Whether to render all edges, if `render_graph` is `True`.
+        render_score_threshold: Edge score threshold, if `render_graph` is `True`.
         render_file_path: Path to save the rendered graph, if `render_graph` is `True`.
 
     Returns:
@@ -103,7 +103,7 @@ def run_circuits(
             if render_graph:
                 draw_seq_graph(
                     model=model,
-                    show_all_edges=render_all_edges,
+                    score_threshold=render_score_threshold,
                     show_all_seq_pos=False,
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,

@@ -16,11 +16,15 @@ A library for efficient patching and automatic circuit discovery.
 pip install auto-circuit
 ```
 
-## Easy and Efficient Edge Patching
+### Easy and Efficient Edge Patching
 https://github.com/UFO-101/auto-circuit/blob/03ce552ccdea98fc6fed3b05cfb2df9b0eb4e323/experiments/demos/zero_ablate_an_edge.py#L20-L26
 
-## Different Ablation Methods
+### Different Ablation Methods
 https://github.com/UFO-101/auto-circuit/blob/03ce552ccdea98fc6fed3b05cfb2df9b0eb4e323/experiments/demos/patch_an_edge.py#L37
 
-## Automatic Circuit Discovery
+### Automatic Circuit Discovery
 https://github.com/UFO-101/auto-circuit/blob/03ce552ccdea98fc6fed3b05cfb2df9b0eb4e323/experiments/demos/patch_an_edge.py#L49-L55
+
+### Visualization
+https://github.com/UFO-101/auto-circuit/blob/5777057b445d55b7d4695eed8aface9d6bcefbe3/experiments/demos/patch_some_edges.py#L49
+![](docs/assets/Small_Circuit_Viz.png)
