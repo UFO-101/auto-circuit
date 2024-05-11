@@ -1,0 +1,5034 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A library for efficient activation patching and circuit discovery.">
+      
+      
+      
+      
+        <link rel="prev" href="../tasks/">
+      
+      
+        <link rel="next" href="../visualize/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Types - AutoCircuit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Rubik";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#auto_circuit.types" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AutoCircuit" class="md-header__button md-logo" aria-label="AutoCircuit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AutoCircuit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9h-1.9M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69m-9.15 3.96h2.3L12 9l-1.15 3.65Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="purple"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/UFO-101/auto-circuit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    UFO-101/auto-circuit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  AutoCircuit
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/1%29_Getting_Started/" class="md-tabs__link">
+          
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../data/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AutoCircuit" class="md-nav__button md-logo" aria-label="AutoCircuit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    AutoCircuit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/UFO-101/auto-circuit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    UFO-101/auto-circuit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AutoCircuit
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/1%29_Getting_Started/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    1) Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/2%29_Circuit_Discovery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    2) Circuit Discovery
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/3%29_Other_Features/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    3) Other Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/4%29_How_it_Works/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    4) How it Works
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../experiment_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Experiment utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prune
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tasks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Types
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Types
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#auto_circuit.types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AblationMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoPruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoPruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AutoencoderInput" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AutoencoderInput
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.BatchOutputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BatchOutputs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.CircuitOutputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;CircuitOutputs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.MaskFn" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;MaskFn
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Measurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Measurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.OutputSlice" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;OutputSlice
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneMetricKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneMetricKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneMetricMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneMetricMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskPruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskPruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TestEdges" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TestEdges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AblationType
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AblationType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.BATCH_ALL_TOK_MEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BATCH_ALL_TOK_MEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.BATCH_TOKENWISE_MEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BATCH_TOKENWISE_MEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.RESAMPLE" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;RESAMPLE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CLEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CLEAN_AND_CORRUPT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CORRUPT" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CORRUPT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.ZERO" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;ZERO
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.DestNode" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;DestNode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Edge
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Edge">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.dest" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;dest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.patch_idx" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;patch_idx
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.seq_idx" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;seq_idx
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.src" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;src
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.patch_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;patch_mask
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.prune_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;prune_score
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;EdgeCounts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" EdgeCounts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.ALL" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;ALL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.GROUPS" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;GROUPS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.LOGARITHMIC" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;LOGARITHMIC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Node
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Node">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node.module" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;module
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PatchType
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" PatchType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType.EDGE_PATCH" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;EDGE_PATCH
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType.TREE_PATCH" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TREE_PATCH
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchWrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PatchWrapper
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.SrcNode" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;SrcNode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualize/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Visualize
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Metrics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            Metrics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/area_under_curve/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Area under curve
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/avoid_edges/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Avoid edges
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_scores_similarity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prune scores similarity
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7_4" id="__nav_3_7_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Completeness metrics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_7_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7_4">
+            <span class="md-nav__icon md-icon"></span>
+            Completeness metrics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/completeness_metrics/same_under_knockouts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Same under knockouts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/completeness_metrics/train_same_under_knockouts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Train same under knockouts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7_5" id="__nav_3_7_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Official circuits
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_7_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7_5">
+            <span class="md-nav__icon md-icon"></span>
+            Official circuits
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/measure_roc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Measure roc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/roc_plot/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Roc plot
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7_5_3" id="__nav_3_7_5_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Circuits
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_3_7_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Circuits
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/docstring_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docstring official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/greaterthan_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Greaterthan official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/ioi_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ioi official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/sports_players_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sports players official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7_5_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7_5_3_5" id="__nav_3_7_5_3_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tracr
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_3_7_5_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7_5_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            Tracr
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/tracr/reverse_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Reverse official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/official_circuits/circuits/tracr/xproportion_official/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Xproportion official
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7_6" id="__nav_3_7_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Prune metrics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_7_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7_6">
+            <span class="md-nav__icon md-icon"></span>
+            Prune metrics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/answer_diff/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Answer diff
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/answer_diff_percent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Answer diff percent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/answer_value/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Answer value
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/correct_answer_percent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correct answer percent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/kl_div/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kl div
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/measure_prune_metrics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Measure prune metrics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/prune_metrics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prune metrics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/prune_metrics/prune_metrics_plot/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prune metrics plot
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Model utils
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8">
+            <span class="md-nav__icon md-icon"></span>
+            Model utils
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/micro_model_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Micro model utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/tracr_model_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tracr model utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/transformer_lens_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transformer lens utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_8_4" id="__nav_3_8_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Sparse autoencoders
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_8_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8_4">
+            <span class="md-nav__icon md-icon"></span>
+            Sparse autoencoders
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/sparse_autoencoders/autoencoder_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Autoencoder training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/sparse_autoencoders/autoencoder_transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Autoencoder transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/sparse_autoencoders/sparse_autoencoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse autoencoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_8_5" id="__nav_3_8_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Task projectors
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_8_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8_5">
+            <span class="md-nav__icon md-icon"></span>
+            Task projectors
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/task_projectors/projector_transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Projector transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/task_projectors/task_projector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Task projector
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_utils/task_projectors/task_projector_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Task projector training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Prune algos
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
+            <span class="md-nav__icon md-icon"></span>
+            Prune algos
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/ACDC/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACDC
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/activation_magnitude/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Activation magnitude
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/circuit_probing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Circuit probing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/edge_attribution_patching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Edge attribution patching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/ground_truth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ground truth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/mask_gradient/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mask gradient
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/parameter_integrated_gradients/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter integrated gradients
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/prune_algos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prune algos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/random_edges/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Random edges
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prune_algos/subnetwork_probing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Subnetwork probing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_10">
+            <span class="md-nav__icon md-icon"></span>
+            Utils
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/ablation_activations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ablation activations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/custom_tqdm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom tqdm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/graph_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Graph utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/misc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/patch_wrapper/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Patch wrapper
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/patchable_model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Patchable model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/tensor_ops/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tensor ops
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#auto_circuit.types" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AblationMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AlgoPruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AlgoPruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AutoencoderInput" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AutoencoderInput
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.BatchOutputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BatchOutputs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.CircuitOutputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;CircuitOutputs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.MaskFn" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;MaskFn
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Measurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Measurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.OutputSlice" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;OutputSlice
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneMetricKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneMetricKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneMetricMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneMetricMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskKey" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskKey
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskMeasurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskMeasurements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TaskPruneScores" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TaskPruneScores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.TestEdges" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TestEdges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;AblationType
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AblationType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.BATCH_ALL_TOK_MEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BATCH_ALL_TOK_MEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.BATCH_TOKENWISE_MEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;BATCH_TOKENWISE_MEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.RESAMPLE" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;RESAMPLE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CLEAN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CLEAN_AND_CORRUPT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.TOKENWISE_MEAN_CORRUPT" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TOKENWISE_MEAN_CORRUPT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.AblationType.ZERO" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;ZERO
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.DestNode" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;DestNode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Edge
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Edge">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.dest" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;dest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.patch_idx" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;patch_idx
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.seq_idx" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;seq_idx
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.src" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;src
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.patch_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;patch_mask
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Edge.prune_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;prune_score
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;EdgeCounts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" EdgeCounts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.ALL" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;ALL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.GROUPS" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;GROUPS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.EdgeCounts.LOGARITHMIC" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;LOGARITHMIC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;Node
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Node">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.Node.module" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;module
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PatchType
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" PatchType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType.EDGE_PATCH" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;EDGE_PATCH
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchType.TREE_PATCH" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;TREE_PATCH
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.PatchWrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;PatchWrapper
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types.SrcNode" class="md-nav__link">
+    <span class="md-ellipsis">
+      &nbsp;SrcNode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_circuit.types-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/UFO-101/auto-circuit/edit/main/docs/auto_circuit/types.py" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/UFO-101/auto-circuit/raw/main/docs/auto_circuit/types.py" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5Z"/></svg>
+    </a>
+  
+
+
+  <h1>Types</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="auto_circuit.types" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>          <span class="doc doc-object-name doc-module-name">auto_circuit.types</span>
+
+
+</h2>
+
+  <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h3 id="auto_circuit.types-attributes">Attributes</h3>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.AblationMeasurements" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">AblationMeasurements</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AblationMeasurements</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.AblationType" href="#auto_circuit.types.AblationType">AblationType</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.PruneMetricMeasurements" href="#auto_circuit.types.PruneMetricMeasurements">PruneMetricMeasurements</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.AblationType"><code>AblationType</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneMetricMeasurements"><code>PruneMetricMeasurements</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.AlgoKey" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">AlgoKey</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AlgoKey</span> <span class="o">=</span> <span class="n">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A string that uniquely identifies a
+<a class="autorefs autorefs-internal" href="../prune_algos/prune_algos/#auto_circuit.prune_algos.prune_algos.PruneAlgo"><code>PruneAlgo</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.AlgoMeasurements" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">AlgoMeasurements</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AlgoMeasurements</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.AlgoKey" href="#auto_circuit.types.AlgoKey">AlgoKey</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.Measurements" href="#auto_circuit.types.Measurements">Measurements</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.AlgoKey"><code>AlgoKey</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.Measurements"><code>Measurements</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.AlgoPruneScores" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">AlgoPruneScores</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AlgoPruneScores</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.AlgoKey" href="#auto_circuit.types.AlgoKey">AlgoKey</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.PruneScores" href="#auto_circuit.types.PruneScores">PruneScores</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.AlgoKey"><code>AlgoKey</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneScores"><code>PruneScores</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.AutoencoderInput" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">AutoencoderInput</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">AutoencoderInput</span> <span class="o">=</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;mlp_post_act&#39;</span><span class="p">,</span> <span class="s1">&#39;resid_delta_mlp&#39;</span><span class="p">,</span> <span class="s1">&#39;resid&#39;</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The activation in each layer that is replaced by an autoencoder reconstruction.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.BatchOutputs" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">BatchOutputs</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BatchOutputs</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.data.BatchKey" href="../data/#auto_circuit.data.BatchKey">BatchKey</a></span><span class="p">,</span> <span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="../data/#auto_circuit.data.BatchKey"><code>BatchKey</code>s</a> to output
+tensors.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.CircuitOutputs" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">CircuitOutputs</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">CircuitOutputs</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">int</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.BatchOutputs" href="#auto_circuit.types.BatchOutputs">BatchOutputs</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from the number of pruned edges to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.BatchOutputs"><code>BatchOutputs</code></a></p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.MaskFn" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">MaskFn</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">MaskFn</span> <span class="o">=</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;hard_concrete&#39;</span><span class="p">,</span> <span class="s1">&#39;sigmoid&#39;</span><span class="p">]]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Determines how mask values are used to ablate edges.</p>
+<p>If <code>None</code>, the mask value is used directly to interpolate between the original and
+ablated values. ie. <code>0.0</code> means the original value, <code>1.0</code> means the ablated value.</p>
+<p>If <code>"hard_concrete"</code>, the mask value parameterizes a "HardConcrete" distribution
+(<a href="https://arxiv.org/abs/1712.01312">Louizos et al., 2017</a>,
+<a href="https://arxiv.org/abs/2104.03514">Cao et at., 2021</a>)
+which is sampled to interpolate between the original and ablated values. The
+HardConcrete distribution allows us to optimize a continuous variable while still
+allowing the mask to take values equal to <code>0.0</code> or <code>1.0</code>. And the stochasticity helps to
+reduce problems from vanishing gradients.</p>
+<p>If <code>"sigmoid"</code>, the mask value is passed through a sigmoid function and then used to
+interpolate between the original and ablated values.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.Measurements" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">Measurements</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Measurements</span> <span class="o">=</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n">int</span> <span class="o">|</span> <span class="n">float</span><span class="p">,</span> <span class="n">int</span> <span class="o">|</span> <span class="n">float</span><span class="p">]]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>List of X and Y measurements. X is often the number of edges in the circuit and Y is
+often some measure of faithfulness.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.OutputSlice" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">OutputSlice</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">OutputSlice</span> <span class="o">=</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;last_seq&#39;</span><span class="p">,</span> <span class="s1">&#39;not_first_seq&#39;</span><span class="p">]]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The slice of the output that is considered for task evaluation. For example,
+<code>"last_seq"</code> will consider the last token's output in transformer models.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.PruneMetricKey" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">PruneMetricKey</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">PruneMetricKey</span> <span class="o">=</span> <span class="n">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A string the uniquely identifies a
+<a class="autorefs autorefs-internal" href="../metrics/prune_metrics/prune_metrics/#auto_circuit.metrics.prune_metrics.prune_metrics.PruneMetric"><code>PruneMetric</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.PruneMetricMeasurements" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">PruneMetricMeasurements</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">PruneMetricMeasurements</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.PruneMetricKey" href="#auto_circuit.types.PruneMetricKey">PruneMetricKey</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.TaskMeasurements" href="#auto_circuit.types.TaskMeasurements">TaskMeasurements</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneMetricKey"><code>PruneMetricKey</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.TaskMeasurements"><code>TaskMeasurements</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.PruneScores" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">PruneScores</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">PruneScores</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Dictionary from module names of <a class="autorefs autorefs-internal" href="#auto_circuit.types.DestNode"><code>DestNode</code>s</a> to edge
+scores. The edge scores are stored as a tensor where each value corresponds to the score
+of an incoming <a class="autorefs autorefs-internal" href="#auto_circuit.types.Edge"><code>Edge</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.TaskKey" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TaskKey</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TaskKey</span> <span class="o">=</span> <span class="n">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A string that uniquely identifies a <a class="autorefs autorefs-internal" href="../tasks/#auto_circuit.tasks.Task"><code>Task</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.TaskMeasurements" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TaskMeasurements</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TaskMeasurements</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.TaskKey" href="#auto_circuit.types.TaskKey">TaskKey</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.AlgoMeasurements" href="#auto_circuit.types.AlgoMeasurements">AlgoMeasurements</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.TaskKey"><code>TaskKey</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.AlgoMeasurements"><code>AlgoMeasurements</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.TaskPruneScores" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TaskPruneScores</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TaskPruneScores</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.TaskKey" href="#auto_circuit.types.TaskKey">TaskKey</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.AlgoPruneScores" href="#auto_circuit.types.AlgoPruneScores">AlgoPruneScores</a></span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A dictionary mapping from <a class="autorefs autorefs-internal" href="#auto_circuit.types.TaskKey"><code>TaskKey</code>s</a> to
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.AlgoPruneScores"><code>AlgoPruneScores</code></a>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="auto_circuit.types.TestEdges" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TestEdges</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TestEdges</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.EdgeCounts" href="#auto_circuit.types.EdgeCounts">EdgeCounts</a></span> <span class="o">|</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n">int</span> <span class="o">|</span> <span class="n">float</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Determines the set of [number of edges to prune] to test. This value is used as a
+parameter to <a class="autorefs autorefs-internal" href="../utils/graph_utils/#auto_circuit.utils.graph_utils.edge_counts_util"><code>edge_counts_util</code></a>.</p>
+<p>If a list of integers, then these are the edge counts that will be used. If a list of
+floats, then these proportions of the total number of edges will be used.</p>
+  </div>
+
+</div>
+<h3 id="auto_circuit.types-classes">Classes</h3>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.AblationType" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">AblationType</span>
+
+
+</h4>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>Type of activation with which replace an original activation during a forward pass.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h5 id="auto_circuit.types.AblationType-attributes">Attributes</h5>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.BATCH_ALL_TOK_MEAN" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">BATCH_ALL_TOK_MEAN</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BATCH_ALL_TOK_MEAN</span> <span class="o">=</span> <span class="mi">7</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the mean over all tokens in the current batch.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.BATCH_TOKENWISE_MEAN" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">BATCH_TOKENWISE_MEAN</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BATCH_TOKENWISE_MEAN</span> <span class="o">=</span> <span class="mi">6</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the token-wise mean over the current input batch.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.RESAMPLE" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">RESAMPLE</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">RESAMPLE</span> <span class="o">=</span> <span class="mi">1</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Use the corresponding activation from the forward pass of the corrupt input.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TOKENWISE_MEAN_CLEAN</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TOKENWISE_MEAN_CLEAN</span> <span class="o">=</span> <span class="mi">3</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the token-wise mean of the clean input over the entire dataset.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.TOKENWISE_MEAN_CLEAN_AND_CORRUPT" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TOKENWISE_MEAN_CLEAN_AND_CORRUPT</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TOKENWISE_MEAN_CLEAN_AND_CORRUPT</span> <span class="o">=</span> <span class="mi">5</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the token-wise mean of the clean and corrupt inputs over the entire dataset.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.TOKENWISE_MEAN_CORRUPT" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TOKENWISE_MEAN_CORRUPT</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TOKENWISE_MEAN_CORRUPT</span> <span class="o">=</span> <span class="mi">4</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the token-wise mean of the corrupt input over the entire dataset.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.AblationType.ZERO" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">ZERO</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ZERO</span> <span class="o">=</span> <span class="mi">2</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Use a vector of zeros.</p>
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.DestNode" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">DestNode</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">DestNode</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">module_name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">head_idx</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight_head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">min_src_idx</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="auto_circuit.types.Node" href="#auto_circuit.types.Node">Node</a></code></p>
+
+  
+      <p>A node that is the destination of an edge.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.Edge" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Edge</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">Edge</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.SrcNode" href="#auto_circuit.types.SrcNode">SrcNode</a></span><span class="p">,</span> <span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.DestNode" href="#auto_circuit.types.DestNode">DestNode</a></span><span class="p">,</span> <span class="n">seq_idx</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A directed edge from a <a class="autorefs autorefs-internal" href="#auto_circuit.types.SrcNode"><code>SrcNode</code></a> to a
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.DestNode"><code>DestNode</code></a> in the computational graph of the model
+used for ablation.</p>
+<p>And an optional sequence index that specifies the token position when the
+<a class="autorefs autorefs-internal" href="../utils/patchable_model/#auto_circuit.utils.patchable_model.PatchableModel"><code>PatchableModel</code></a> has <code>seq_len</code>
+not <code>None</code>.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h5 id="auto_circuit.types.Edge-attributes">Attributes</h5>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.Edge.dest" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">dest</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dest</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.DestNode" href="#auto_circuit.types.DestNode">DestNode</a></span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The <a class="autorefs autorefs-internal" href="#auto_circuit.types.DestNode"><code>DestNode</code></a> of the edge.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.Edge.name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">name</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">name</span><span class="p">:</span> <span class="n">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The name of the edge. Equal to <code>{src.name}-&gt;{dest.name}</code>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.Edge.patch_idx" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">patch_idx</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">patch_idx</span><span class="p">:</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The index of the edge in the <code>patch_mask</code> or
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneScores"><code>PruneScores</code></a> tensor of the <code>dest</code> node.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.Edge.seq_idx" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">seq_idx</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">seq_idx</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The sequence index of the edge.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.Edge.src" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">src</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">src</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.SrcNode" href="#auto_circuit.types.SrcNode">SrcNode</a></span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The <a class="autorefs autorefs-internal" href="#auto_circuit.types.SrcNode"><code>SrcNode</code></a> of the edge.</p>
+  </div>
+
+</div>
+
+<h5 id="auto_circuit.types.Edge-functions">Functions</h5>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h6 id="auto_circuit.types.Edge.patch_mask" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">patch_mask</span>
+
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">patch_mask</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="torch.nn.Parameter">Parameter</span></span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The <code>patch_mask</code> tensor of the <code>dest</code> node.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>auto_circuit/types.py</code></summary>
+            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-277">277</a></span>
+<span class="normal"><a href="#__codelineno-0-278">278</a></span>
+<span class="normal"><a href="#__codelineno-0-279">279</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-277"><a id="__codelineno-0-277" name="__codelineno-0-277"></a><span class="k">def</span> <span class="nf">patch_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">t</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">:</span>
+</span><span id="__span-0-278"><a id="__codelineno-0-278" name="__codelineno-0-278"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The `patch_mask` tensor of the `dest` node.&quot;&quot;&quot;</span>
+</span><span id="__span-0-279"><a id="__codelineno-0-279" name="__codelineno-0-279"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">patch_mask</span>
+</span></code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h6 id="auto_circuit.types.Edge.prune_score" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">prune_score</span>
+
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">prune_score</span><span class="p">(</span><span class="n">prune_scores</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.PruneScores" href="#auto_circuit.types.PruneScores">PruneScores</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="torch.Tensor">Tensor</span></span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The score of the edge in the given
+<a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneScores"><code>PruneScores</code></a>.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>auto_circuit/types.py</code></summary>
+            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#__codelineno-0-282">282</a></span>
+<span class="normal"><a href="#__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-281"><a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="k">def</span> <span class="nf">prune_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prune_scores</span><span class="p">:</span> <span class="n">PruneScores</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">t</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span id="__span-0-282"><a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-283"><a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">    The score of the edge in the given</span>
+</span><span id="__span-0-284"><a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="sd">    [`PruneScores`][auto_circuit.types.PruneScores].</span>
+</span><span id="__span-0-285"><a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-286"><a id="__codelineno-0-286" name="__codelineno-0-286"></a>    <span class="k">return</span> <span class="n">prune_scores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">module_name</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_idx</span><span class="p">]</span>
+</span></code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.EdgeCounts" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">EdgeCounts</span>
+
+
+</h4>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>Special values for <a class="autorefs autorefs-internal" href="#auto_circuit.types.TestEdges"><code>TestEdges</code></a> that get computed
+at runtime.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h5 id="auto_circuit.types.EdgeCounts-attributes">Attributes</h5>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.EdgeCounts.ALL" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">ALL</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ALL</span> <span class="o">=</span> <span class="mi">1</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Test <code>0, 1, 2, ..., n_edges</code> edges.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.EdgeCounts.GROUPS" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">GROUPS</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">GROUPS</span> <span class="o">=</span> <span class="mi">3</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Group edges by <a class="autorefs autorefs-internal" href="#auto_circuit.types.PruneScores"><code>PruneScores</code></a> and cumulatively add
+the number of edges in each group in descending order by score.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.EdgeCounts.LOGARITHMIC" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">LOGARITHMIC</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">LOGARITHMIC</span> <span class="o">=</span> <span class="mi">2</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Test <code>0, 1, 2, ..., 10, 20, ..., 100, 200, ..., 1000, 2000, ...</code> edges.</p>
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.Node" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Node</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">Node</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">module_name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">head_idx</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight_head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A node in the computational graph of the model used for ablation.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the node.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>module_name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the PyTorch module in the model that the node is in.
+Modules can have multiple nodes, for example, the multi-head attention
+module in a transformer model has a node for each head.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>layer</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The layer of the model that the node is in. Transformer blocks count as 2
+layers (one for the attention layer and one for the MLP layer) because we
+want to connect nodes in the attention layer to nodes in the subsequent MLP
+layer.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>head_idx</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The index of the head in the multi-head attention module that the node
+is in.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>head_dim</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The dimension of the head in the multi-head attention layer that the
+node is in.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>weight</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the weight in the module that corresponds to the node. Not
+currently used, but could be used by a circuit finding algorithm.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>weight_head_dim</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The dimension of the head in the weight tensor that corresponds
+to the node. Not currently used, but could be used by a circuit finding
+algorithm.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<h5 id="auto_circuit.types.Node-functions">Functions</h5>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h6 id="auto_circuit.types.Node.module" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">module</span>
+
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">module</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="auto_circuit.types.PatchWrapper" href="#auto_circuit.types.PatchWrapper">PatchWrapper</a></span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the <a class="autorefs autorefs-internal" href="#auto_circuit.types.PatchWrapper"><code>PatchWrapper</code></a> for this
+node.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>model</code></td>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The model that the node is in.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="auto_circuit.types.PatchWrapper" href="#auto_circuit.types.PatchWrapper">PatchWrapper</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The <code>PatchWrapper</code> for this node.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>auto_circuit/types.py</code></summary>
+            <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#__codelineno-0-214">214</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-201"><a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="k">def</span> <span class="nf">module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PatchWrapper</span><span class="p">:</span>
+</span><span id="__span-0-202"><a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-203"><a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    Get the [`PatchWrapper`][auto_circuit.utils.patch_wrapper.PatchWrapper] for this</span>
+</span><span id="__span-0-204"><a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    node.</span>
+</span><span id="__span-0-205"><a id="__codelineno-0-205" name="__codelineno-0-205"></a>
+</span><span id="__span-0-206"><a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-207"><a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">        model: The model that the node is in.</span>
+</span><span id="__span-0-208"><a id="__codelineno-0-208" name="__codelineno-0-208"></a>
+</span><span id="__span-0-209"><a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-210"><a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">        The `PatchWrapper` for this node.</span>
+</span><span id="__span-0-211"><a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-212"><a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="n">patch_wrapper</span> <span class="o">=</span> <span class="n">module_by_name</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module_name</span><span class="p">)</span>
+</span><span id="__span-0-213"><a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patch_wrapper</span><span class="p">,</span> <span class="n">PatchWrapper</span><span class="p">)</span>
+</span><span id="__span-0-214"><a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="k">return</span> <span class="n">patch_wrapper</span>
+</span></code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.PatchType" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">PatchType</span>
+
+
+</h4>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>Whether to patch the edges in the circuit or the complement of the circuit.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h5 id="auto_circuit.types.PatchType-attributes">Attributes</h5>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.PatchType.EDGE_PATCH" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">EDGE_PATCH</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">EDGE_PATCH</span> <span class="o">=</span> <span class="mi">1</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Patch the edges in the circuit.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h6 id="auto_circuit.types.PatchType.TREE_PATCH" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">TREE_PATCH</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TREE_PATCH</span> <span class="o">=</span> <span class="mi">2</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Patch the edges <u>not</u> in the circuit.</p>
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.PatchWrapper" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">PatchWrapper</span>
+
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">PatchWrapper</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="torch.nn.Module">Module</span></code>, <code><span title="abc.ABC">ABC</span></code></p>
+
+  
+      <p>Abstract class for a wrapper around a module that can be patched.</p>
+
+                <details class="quote">
+                  <summary>Source code in <code>auto_circuit/types.py</code></summary>
+                  <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#__codelineno-0-17">17</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span></code></pre></div></td></tr></table></div>
+                </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="auto_circuit.types.SrcNode" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">SrcNode</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">SrcNode</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">module_name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">head_idx</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight_head_dim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">src_idx</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="auto_circuit.types.Node" href="#auto_circuit.types.Node">Node</a></code></p>
+
+  
+      <p>A node that is the source of an edge.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+<h3 id="auto_circuit.types-functions">Functions</h3>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.action.edit", "content.action.view", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.path", "search.suggest", "search.highlight", "navigation.top", "navigation.sections"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/188512/codepen-utilities.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r11/Stats.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js"></script>
+      
+        <script src="../../javascripts/SmallPRNG.js"></script>
+      
+        <script src="../../javascripts/extra.js"></script>
+      
+        <script src="../../javascripts/dynamical.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,91 @@
+/*
+Indentation.
+Source: https://mkdocstrings.github.io/python/usage/customization/#style-recommendations
+*/
+
+#particles-js {
+    /* position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; */
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index: 1;
+    /* background-color: var(--md-bg-color); */
+}
+
+#swarm {
+    /* position:absolute; */
+    /* width: 100%; */
+    /* height: 100%; */
+    /* top:0;
+    bottom:0;
+    left:0;
+    right:0; */
+    z-index: -5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* All top level nav bar headers */
+.md-nav__item--section>.md-nav__link {
+    font-size: large;
+}
+
+/* All top level nav bar headers, except the top one */
+.md-nav:not(.md-nav--primary)>.md-nav__list>.md-nav__item--section>.md-nav__link:not(.md-nav__container) {
+    border-top: .05rem solid var(--md-typeset-table-color);
+    padding-top: 10px;
+    color: var(--md-accent-fg-color);
+}
+
+/* All nav bar headers, including nested ones */
+.md-nav__item--nested>.md-nav__link:not(.md-nav__container) {
+    font-weight: bold;
+    color: var(--md-default-fg-color--light);
+}
+
+.doc-module-name {
+    word-wrap: anywhere;
+}
+
+/* .md-content, .md-sidebar__scrollwrap, .md-sidebar__scrollwrap { */
+.md-content {
+    background-color: var(--md-default-bg-color);
+    z-index: 1;
+}
+
+div.doc-contents:not(.first) {
+    padding-bottom: 25px;
+    border-bottom: .05rem solid var(--md-typeset-table-color);
+}
+
+/* Mark external links as such. */
+a.external::after,
+a.autorefs-external::after {
+    /* https://primer.style/octicons/arrow-up-right-24 */
+    mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.25 15.5a.75.75 0 00.75-.75v-9a.75.75 0 00-.75-.75h-9a.75.75 0 000 1.5h7.19L6.22 16.72a.75.75 0 101.06 1.06L17.5 7.56v7.19c0 .414.336.75.75.75z"></path></svg>');
+    -webkit-mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.25 15.5a.75.75 0 00.75-.75v-9a.75.75 0 00-.75-.75h-9a.75.75 0 000 1.5h7.19L6.22 16.72a.75.75 0 101.06 1.06L17.5 7.56v7.19c0 .414.336.75.75.75z"></path></svg>');
+    content: ' ';
+
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+
+    height: 1em;
+    width: 1em;
+    background-color: currentColor;
+}
+
+a.external:hover::after,
+a.autorefs-external:hover::after {
+    background-color: var(--md-accent-fg-color);
+}
