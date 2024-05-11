@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional, Set, Tuple
+from collections import defaultdict
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import torch as t
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
@@ -60,6 +61,7 @@ class PatchableModel(t.nn.Module):
     srcs: Set[SrcNode]
     dests: Set[DestNode]
     edge_dict: Dict[int | None, List[Edge]]  # Key is token position or None for all
+    edge_name_dict: Dict[int | None, Dict[str, Edge]]
     edges: Set[Edge]
     n_edges: int
     seq_dim: int
@@ -101,6 +103,9 @@ class PatchableModel(t.nn.Module):
         self.edge_dict = edge_dict
         self.edges = edges
         self.n_edges = len(edges)
+        self.edge_name_dict = defaultdict(dict)
+        for edge in edges:
+            self.edge_name_dict[edge.seq_idx][edge.name] = edge
         self.seq_dim = seq_dim
         self.seq_len = seq_len
         self.wrappers = wrappers
@@ -179,25 +184,42 @@ class PatchableModel(t.nn.Module):
             prune_scores[mod_name] = t.full_like(mask.data, init_val)
         return prune_scores
 
-    def circuit_prune_scores(self, edges: Set[Edge], bool: bool = False) -> PruneScores:
+    def circuit_prune_scores(
+        self,
+        edges: Optional[Collection[Edge | str]] = None,
+        edge_dict: Optional[Dict[Edge, float] | Dict[str, float]] = None,
+        bool: bool = False,
+    ) -> PruneScores:
         """
         Convert a set of edges to a corresponding
         [`PruneScores`][auto_circuit.types.PruneScores] object.
 
         Args:
-            edges: The set of edges to convert to prune scores.
+            edges: The set of edges or edge names to convert to prune scores.
             bool: Whether to return the prune scores as boolean type tensors.
 
         Returns:
             The prune scores corresponding to the set of edges.
         """
-        prune_scores = self.new_prune_scores()
-        for edge in edges:
-            prune_scores[edge.dest.module_name][edge.patch_idx] = 1.0
-        if bool:
-            return dict([(mod, mask.bool()) for (mod, mask) in prune_scores.items()])
+        ps = self.new_prune_scores()
+        assert not (edges is None and edge_dict is None), "Must specify edges"
+
+        # TODO: Raise an error if one of the edge names doesn't exist.
+        if edges is not None:
+            for edge in self.edges:
+                if edge in edges or edge.name in edges:
+                    ps[edge.dest.module_name][edge.patch_idx] = 1.0
         else:
-            return prune_scores
+            assert edge_dict is not None
+            for e in self.edges:
+                if e in edge_dict.keys():
+                    ps[e.dest.module_name][e.patch_idx] = edge_dict[e]  # type: ignore
+                if e.name in edge_dict.keys():
+                    ps[e.dest.module_name][e.patch_idx] = edge_dict[e]  # type: ignore
+        if bool:
+            return dict([(mod, mask.bool()) for (mod, mask) in ps.items()])
+        else:
+            return ps
 
     def current_patch_masks_as_prune_scores(self) -> PruneScores:
         """

@@ -200,7 +200,6 @@ def ioi_circuit_single_template_logit_diff_percent(
         patch_type=patch_type,
         ablation_type=ablation_type,
         render_graph=False,
-        render_all_edges=False,
     )
     (
         logit_diff_percent_mean,
