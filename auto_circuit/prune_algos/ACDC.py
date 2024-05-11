@@ -5,6 +5,7 @@ from typing import Callable, List, Literal, Optional, Set
 
 import torch as t
 from ordered_set import OrderedSet
+from plotly import graph_objects as go
 from torch.nn.functional import log_softmax, mse_loss
 
 from auto_circuit.data import PromptDataLoader
@@ -35,7 +36,7 @@ def acdc_prune_scores(
     test_mode: bool = False,
     run_circuits_ref: Optional[Callable[..., CircuitOutputs]] = None,
     show_graphs: bool = False,
-    draw_seq_graph_ref: Optional[Callable[..., None]] = None,
+    draw_seq_graph_ref: Optional[Callable[..., go.Figure]] = None,
 ) -> PruneScores:
     """
     Run the ACDC algorithm from the paper "Towards Automated Circuit Discovery for

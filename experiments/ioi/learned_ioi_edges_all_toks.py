@@ -152,7 +152,6 @@ for ps, name in [
         patch_type=PatchType.TREE_PATCH,
         ablation_type=AblationType.RESAMPLE,
         render_graph=False,
-        render_all_edges=False,
     )
     logit_diff_percent_means, logit_diff_percent_std, _ = answer_diff_percent(
         gpt2, test_loader, circ_outs

@@ -295,6 +295,7 @@ def patch_mode(
     if curr_src_outs is None:
         curr_src_outs = t.zeros_like(patch_src_outs)
 
+    # TODO: Raise an error if one of the edge names doesn't exist.
     if edges is not None:
         set_all_masks(model, val=0.0)
         for edge in model.edges:
