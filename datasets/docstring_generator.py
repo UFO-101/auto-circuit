@@ -1003,8 +1003,6 @@ def docstring_induction_prompt_generator(
 ) -> Prompt:
     assert style in ["rest", "goog"]
 
-    random.seed(seed)
-
     n_not_matching_args = n_matching_args - 1
     met_name, *all_args = random.sample(
         variable_names,
@@ -1155,17 +1153,72 @@ def docstring_induction_prompt_generator(
         wrong_answers=wrong_answers,
     )
 
-prompt = docstring_induction_prompt_generator("rest", n_matching_args=3, n_def_prefix_args=2, n_def_suffix_args=1, n_doc_prefix_args=0, met_desc_len=3, arg_desc_len=2)
-print("\n\n--------prompt------\n\n", prompt)
-print("\n\n-------clean_prompt------\n\n", prompt.clean_prompt)
-print("\n\n--------corrupt random_random------\n\n", prompt.corrupt_prompt["random_random"])
-print("\n\n--------correct_answers------\n\n", prompt.correct_answers)
-print("\n\n-------wrong_answers------\n\n", prompt.wrong_answers)
+# prompt = docstring_induction_prompt_generator("rest", n_matching_args=3, n_def_prefix_args=2, n_def_suffix_args=1, n_doc_prefix_args=0, met_desc_len=3, arg_desc_len=2)
+# print("\n\n--------prompt------\n\n", prompt)
+# print("\n\n-------clean_prompt------\n\n", prompt.clean_prompt)
+# print("\n\n--------corrupt random_random------\n\n", prompt.corrupt_prompt["random_random"])
+# print("\n\n--------correct_answers------\n\n", prompt.correct_answers)
+# print("\n\n-------wrong_answers------\n\n", prompt.wrong_answers)
+data_json = {
+    "seq_labels": [
+        "\n",
+        "def",
+        " model",
+        "(",
+        "self",
+        ",",
+        " fields",
+        ",",
+        " page",
+        ",",
+        "A_def",
+        ",_A",
+        "B_def",
+        ",_B",
+        "C_def",
+        ",_C",
+        " number",
+        "):",
+        "\n   ",
+        " \"\"\"",
+        "unit",
+        " bone",
+        " paper",
+        "\n\n   ",
+        " :",
+        "param_1",
+        "A_doc",
+        ":",
+        " selection",
+        " sky",
+        "\n   ",
+        " :",
+        "param_2",
+        "B_doc",
+        ":",
+        " host",
+        " action",
+        "\n   ",
+        " :",
+        "param_3"
+    ],
+    "word_idxs": {
+        "A_def": 10,
+        "B_def": 12,
+        ",_B": 13,
+        "C_def": 14,
+        "A_doc": 26,
+        "param_2": 32,
+        "B_doc": 33,
+        "param_3": 39
+    }
+}
 
 prompt_dicts = []
 N_PROMPTS = 1000
+random.seed(0)
 for i in range(N_PROMPTS):
-    prompt = docstring_induction_prompt_generator("rest", n_matching_args=3, n_def_prefix_args=2, n_def_suffix_args=1, n_doc_prefix_args=0, met_desc_len=3, arg_desc_len=2, seed=i)
+    prompt = docstring_induction_prompt_generator("rest", n_matching_args=3, n_def_prefix_args=2, n_def_suffix_args=1, n_doc_prefix_args=0, met_desc_len=3, arg_desc_len=2)
     prompt_dict = {
         "clean": prompt.clean_prompt,
         "corrupt": prompt.corrupt_prompt["random_random"],
@@ -1174,9 +1227,12 @@ for i in range(N_PROMPTS):
     }
     prompt_dicts.append(prompt_dict)
 
-data_json = {"prompts": prompt_dicts}
+print("prompt_dicts[0]", prompt_dicts[0]['clean'])
+print("prompt_dicts[1]", prompt_dicts[1]['clean'])
 
-with open("docstring_prompts.json", "w") as f:
+data_json["prompts"] = prompt_dicts
+
+with open("docstring_prompts2.json", "w") as f:
     json.dump(data_json, f)
 
 

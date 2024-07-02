@@ -45,8 +45,8 @@ _, test_loader = load_datasets_from_json(
     path=path,
     device=device,
     prepend_bos=True,
-    batch_size=128,
-    train_test_size=(0, 128),
+    batch_size=50,
+    train_test_size=(0, 50),
     shuffle=False,
     return_seq_length=True,
     tail_divergence=True,
@@ -212,8 +212,8 @@ fig.update_layout(width=700, height=600)
 fig.show()
 folder: Path = repo_path_to_abs_path("figures/figures-12")
 # Save figure as pdf in figures folder
-fig.write_image(str(folder / "docstring-probability.pdf"))
-fig.write_image(str(folder / "docstring-probability.svg"))
-fig.write_image(str(folder / "docstring-probability.png"), scale=4)
+# fig.write_image(str(folder / "docstring-probability.pdf"))
+# fig.write_image(str(folder / "docstring-probability.svg"))
+# fig.write_image(str(folder / "docstring-probability.png"), scale=4)
 
 #%%

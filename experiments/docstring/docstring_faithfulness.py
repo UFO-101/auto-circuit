@@ -45,10 +45,11 @@ _, test_loader = load_datasets_from_json(
     path=path,
     device=device,
     prepend_bos=True,
-    batch_size=128,
-    train_test_size=(0, 128),
+    batch_size=50,
+    train_test_size=(0, 50),
     shuffle=False,
     return_seq_length=True,
+    random_seed=22,
     tail_divergence=True,
 )
 
@@ -110,7 +111,7 @@ for ablation_type in tqdm(ablation_types):
                 model=patch_model,
                 dataloader=test_loader,
                 pruned_outs=circuit_outs,
-                out_of_correct_and_incorrect_answers=False,
+                out_of_correct_and_incorrect_answers=True,
             )
             assert len(measurements) == 2
             n_edge, avg_correct = measurements[0]
@@ -125,7 +126,15 @@ for ablation_type in tqdm(ablation_types):
 #%%
 
 
-def bar_name(tok_pos_circuit: bool, edge_circuit: bool) -> str:
+def bar_name(
+    tok_pos_circuit: bool, edge_circuit: bool, ablation_type: AblationType
+) -> str:
+    if (
+        ablation_type == AblationType.RESAMPLE
+        and not edge_circuit
+        and not tok_pos_circuit
+    ):
+        return "Nodes <b>[Reported]</b>"
     name = ""
     name += "Edges " if edge_circuit else "Nodes "
     name += "(tokens)" if tok_pos_circuit else ""
@@ -141,7 +150,7 @@ fig = subplots.make_subplots(
 for i, ablation_type in enumerate(ablation_types):
     fig.add_trace(
         go.Bar(
-            x=[bar_name(*key) for key in results[ablation_type].keys()],
+            x=[bar_name(*key, ablation_type) for key in results[ablation_type].keys()],
             y=list(results[ablation_type].values()),
             marker_color=COLOR_PALETTE,
             showlegend=False,
@@ -149,12 +158,13 @@ for i, ablation_type in enumerate(ablation_types):
         row=1,
         col=i + 1,
     )
+print("Default Avg Correct", default_avg_correct)
 fig.add_hline(
     y=default_avg_correct,
     line_dash="dot",
     line_color="black",
     annotation_text="Full Model",
-    annotation_position="top left",
+    annotation_position="bottom right",
     row=1,  # type: ignore
     col=1,  # type: ignore
 )
@@ -163,7 +173,7 @@ fig.add_hline(
     line_dash="dot",
     line_color="black",
     annotation_text="Reported Faithfulness",
-    annotation_position="bottom left",
+    annotation_position="top right",
     row=1,  # type: ignore
     col=1,  # type: ignore
 )
