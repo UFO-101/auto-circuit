@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Tuple
 import plotly.graph_objects as go
 import torch as t
 from plotly import subplots
+from scipy.stats import ttest_ind
 
 from auto_circuit.experiment_utils import (
     IOI_CIRCUIT_TYPE,
@@ -202,3 +203,18 @@ fig.write_image(str(folder / "ioi_edges_boxplot.png"), scale=4)
 fig.write_image(str(folder / "ioi_edges_boxplot.pdf"))
 
 #%%
+# Check statistical significance between Resample and Mean ablation using t-test
+
+for i, circ in enumerate(true_circs):
+    for j, tok_pos in enumerate(tok_positions):
+        print("circ", circ, "tok_pos", tok_pos)
+        resample = (
+            t.stack(points[circ][tok_pos][AblationType.RESAMPLE]).flatten().tolist()
+        )
+        mean = (
+            t.stack(points[circ][tok_pos][AblationType.TOKENWISE_MEAN_CORRUPT])
+            .flatten()
+            .tolist()
+        )
+        res = ttest_ind(resample, mean)
+        print(res)
