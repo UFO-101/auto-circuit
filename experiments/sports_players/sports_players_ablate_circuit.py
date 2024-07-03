@@ -30,6 +30,9 @@ from auto_circuit.utils.tensor_ops import (
     indices_vals,
 )
 
+# Ablate edges in the circuit (rather than the compliment)
+# This tests whether the model can recall the correct sport without the circuit
+
 #%%
 device = t.device("cuda") if t.cuda.is_available() else t.device("cpu")
 model = load_tl_model("pythia-2.8b-deduped", device)
@@ -84,8 +87,8 @@ for ablation_type in tqdm(ablation_types):
             model.edges, prune_scores=prune_scores, all_edges=True, zero_edges=True
         ),
         prune_scores=prune_scores,
-        patch_type=PatchType.TREE_PATCH,
-        reverse_clean_corrupt=False,
+        patch_type=PatchType.EDGE_PATCH,
+        reverse_clean_corrupt=True,
         ablation_type=ablation_type,
     )
     for out_of_correct_and_incorrect_answer in out_of_correct_and_incorrect_answers:
@@ -119,7 +122,7 @@ fig = subplots.make_subplots(
     # shared_yaxes=True,
     # y_title="Accuracy",
 )
-n_edge_names = ["Ablated Model", "Circuit", "Full Model"]
+n_edge_names = ["Ablated None", "Ablate Circuit", "Ablate All"]
 for i, ablation_type in enumerate(ablation_types):
     for j, out_of_correct_and_incorrect_answer in enumerate([True]):
         fig.add_trace(
@@ -145,8 +148,8 @@ fig.update_layout(
 )
 fig.show()
 folder: Path = repo_path_to_abs_path("figures/figures-12")
-fig.write_image(str(folder / "sports-players-accuracy.pdf"))
-fig.write_image(str(folder / "sports-players-accuracy.png"), scale=4)
+fig.write_image(str(folder / "sports-players-ablate-accuracy.pdf"))
+fig.write_image(str(folder / "sports-players-ablate-accuracy.png"), scale=4)
 
 fig = subplots.make_subplots(
     rows=1,
@@ -174,7 +177,7 @@ fig.update_layout(
     margin=dict(l=margin * 4, r=margin, b=margin * 3.5, t=margin * 2),
 )
 fig.show()
-fig.write_image(str(folder / "sports-players-probability.pdf"))
-fig.write_image(str(folder / "sports-players-probability.png"), scale=4)
+fig.write_image(str(folder / "sports-players-ablate-probability.pdf"))
+fig.write_image(str(folder / "sports-players-ablate-probability.png"), scale=4)
 
 # %%

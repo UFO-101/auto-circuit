@@ -42,6 +42,7 @@ def sports_players_true_edges(
         The set of edges in the circuit.
     """
     assert model.cfg.model_name == "pythia-2.8b-deduped"
+    assert model.is_factorized, "Sports Players circuit requires factorized model"
     assert model.separate_qkv is False, "Sports players doesn't support separate QKV"
 
     first_name_tok_idx = word_idxs.get("first_name_tok", 0)
@@ -124,6 +125,7 @@ def sports_players_probe_true_edges(
     which just probe the MLP stack and ignore the `extract_sport` section.
     """
     assert model.cfg.model_name == "pythia-2.8b-deduped"
+    assert model.is_factorized, "Sports Players circuit requires factorized model"
     assert model.separate_qkv is False, "Sports players doesn't support separate QKV"
 
     first_name_tok_idx = word_idxs.get("first_name_tok", 0)
