@@ -94,6 +94,7 @@ class PromptDataLoader(DataLoader[PromptPairBatch]):
         kv_cache: Optional[HookedTransformerKeyValueCache] = None,
         seq_labels: Optional[List[str]] = None,
         word_idxs: Dict[str, int] = {},
+        collate_fn = collate_fn,
         **kwargs: Any,
     ):
         """
