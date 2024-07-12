@@ -85,11 +85,18 @@ class PatchWrapperImpl(PatchWrapper):
             self.mask_fn: MaskFn = None
             self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
         self.patch_mode = False
+        self.patch_mask_batch = None # for logging input wise gradients
+        self.batch_size = None
 
         assert head_dim is None or seq_dim is None or head_dim > seq_dim
         dims = range(1, max(head_dim if head_dim else 2, seq_dim if seq_dim else 2))
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
-
+    
+    def set_patch_mask_size(self, batch_size: int):
+        if batch_size != self.batch_size:
+            self.patch_mask_batch = t.nn.Parameter(self.patch_mask.repeat(batch_size, *((1,) * self.patch_mask.ndim)))
+            self.batch_size = batch_size
+        
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         arg_0: t.Tensor = args[0].clone()
 
@@ -106,7 +113,11 @@ class PatchWrapperImpl(PatchWrapper):
                 mask = t.sigmoid(self.patch_mask)
             else:
                 assert self.mask_fn is None
-                mask = self.patch_mask
+                if self.patch_mask_batch is not None:
+                    batch_str = "batch"
+                    mask = self.patch_mask_batch
+                else: 
+                    mask = self.patch_mask
             mask = self.dropout_layer(mask)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
             ein_post = f"batch {self.dims} {head_str} ..."

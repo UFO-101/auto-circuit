@@ -273,6 +273,7 @@ def patch_mode(
     patch_src_outs: t.Tensor,
     edges: Optional[Collection[str | Edge]] = None,
     curr_src_outs: Optional[t.Tensor] = None,
+    batch_size: int=None,
 ):
     """
     Context manager to enable patching in the model.
@@ -307,6 +308,10 @@ def patch_mode(
         wrapper.curr_src_outs = curr_src_outs
         if wrapper.is_dest:
             wrapper.patch_src_outs = patch_src_outs
+            if batch_size is not None:
+                wrapper.set_patch_mask_size(batch_size)
+                wrapper.patch_mask_batch.detach_().requires_grad_(True)
+                assert wrapper.patch_mask_batch.grad is None
     try:
         yield
     finally:
@@ -315,6 +320,8 @@ def patch_mode(
             wrapper.curr_src_outs = None
             if wrapper.is_dest:
                 wrapper.patch_src_outs = None
+                if wrapper.patch_mask_batch is not None:
+                    wrapper.patch_mask_batch.detach_().requires_grad_(False)
         del curr_src_outs, patch_src_outs
 
 

@@ -129,6 +129,16 @@ class PatchableModel(t.nn.Module):
                     batch_size = kv_cache.previous_attention_mask.shape[0]
                     self.kv_caches[batch_size] = kv_cache
         self.wrapped_model = wrapped_model
+    
+    def set_patch_masks(self, batch_size: int):
+        self.batch_size = batch_size 
+        # update patch masks in modules
+        for dest_wrapper in self.dest_wrappers:
+            dest_wrapper.set_patch_mask_size(batch_size)
+        
+        # update patch masks in the model
+        for dest_wrapper in self.dest_wrappers:
+            self.patch_masks[dest_wrapper.module_name] = dest_wrapper.patch_mask_batch
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         """
