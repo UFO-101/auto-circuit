@@ -102,9 +102,9 @@ class PatchWrapperImpl(PatchWrapper):
             )
         elif self.batch_size != batch_size:  # modifying batch dim
             self.patch_mask = t.nn.Parameter(
-                self.patch_mask[0].clone().repeat(
-                    batch_size, *((1,) * self.patch_mask.ndim)
-                )
+                self.patch_mask[0]
+                .clone()
+                .repeat(batch_size, *((1,) * self.patch_mask.ndim))
             )
         self.batch_size = batch_size
 
@@ -127,7 +127,8 @@ class PatchWrapperImpl(PatchWrapper):
             else:
                 assert self.mask_fn is None
                 batch_str = "batch" if self.batch_size is not None else ""
-            mask = self.dropout_layer(self.patch_mask)
+                mask = self.patch_mask
+            mask = self.dropout_layer(mask)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
             ein_post = f"batch {self.dims} {head_str} ..."
             arg_0 += einsum(mask, d, f"{ein_pre} -> {ein_post}")  # Add mask times diff
