@@ -22,11 +22,8 @@ def mask_gradient_prune_scores(
     official_edges: Optional[Set[Edge]],
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
     answer_function: Literal["avg_diff", "avg_val", "mse"],
-    ablation_type: AblationType = AblationType.RESAMPLE,
-    clean_corrupt: Optional[Literal["clean", "corrupt"]] = "corrupt",
     mask_val: Optional[float] = None,
     integrated_grad_samples: Optional[int] = None,
-    return_src_outs: bool = False,
 ) -> PruneScores:
     """
     Prune scores equal to the gradient of the mask values that interpolates the edges
@@ -64,8 +61,8 @@ def mask_gradient_prune_scores(
     src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
         model,
         dataloader,
-        ablation_type=ablation_type,
-        clean_corrupt=clean_corrupt,
+        ablation_type=AblationType.RESAMPLE,
+        clean_corrupt="corrupt",
     )
 
     with train_mask_mode(model):
@@ -111,7 +108,4 @@ def mask_gradient_prune_scores(
         grad = dest_wrapper.patch_mask.grad
         assert grad is not None
         prune_scores[dest_wrapper.module_name] = grad.detach().clone()
-    
-    if return_src_outs:
-        return prune_scores, src_outs
     return prune_scores
