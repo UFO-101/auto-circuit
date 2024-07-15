@@ -85,18 +85,29 @@ class PatchWrapperImpl(PatchWrapper):
             self.mask_fn: MaskFn = None
             self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
         self.patch_mode = False
-        self.patch_mask_batch = None # for logging input wise gradients
         self.batch_size = None
 
         assert head_dim is None or seq_dim is None or head_dim > seq_dim
         dims = range(1, max(head_dim if head_dim else 2, seq_dim if seq_dim else 2))
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
-    
-    def set_patch_mask_size(self, batch_size: int):
-        if batch_size != self.batch_size:
-            self.patch_mask_batch = t.nn.Parameter(self.patch_mask.repeat(batch_size, *((1,) * self.patch_mask.ndim)))
-            self.batch_size = batch_size
-        
+
+    def set_mask_batch_size(self, batch_size: int | None):
+        if batch_size is None and self.batch_size is None:
+            return
+        if batch_size is None:  # removing batch dim
+            self.patch_mask = t.nn.Parameter(self.patch_mask[0].clone())
+        elif self.batch_size is None:  # adding batch_dim
+            self.patch_mask = t.nn.Parameter(
+                self.patch_mask.repeat(batch_size, *((1,) * self.patch_mask.ndim))
+            )
+        elif self.batch_size != batch_size:  # modifying batch dim
+            self.patch_mask = t.nn.Parameter(
+                self.patch_mask[0].clone().repeat(
+                    batch_size, *((1,) * self.patch_mask.ndim)
+                )
+            )
+        self.batch_size = batch_size
+
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         arg_0: t.Tensor = args[0].clone()
 
@@ -107,18 +118,16 @@ class PatchWrapperImpl(PatchWrapper):
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately
             if self.mask_fn == "hard_concrete":
-                mask = sample_hard_concrete(self.patch_mask, arg_0.size(0))
+                mask = sample_hard_concrete(
+                    self.patch_mask, arg_0.size(0), self.batch_size is not None
+                )
                 batch_str = "batch"  # Sample distribution for each batch element
             elif self.mask_fn == "sigmoid":
                 mask = t.sigmoid(self.patch_mask)
             else:
                 assert self.mask_fn is None
-                if self.patch_mask_batch is not None:
-                    batch_str = "batch"
-                    mask = self.patch_mask_batch
-                else: 
-                    mask = self.patch_mask
-            mask = self.dropout_layer(mask)
+                batch_str = "batch" if self.batch_size is not None else ""
+            mask = self.dropout_layer(self.patch_mask)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
             ein_post = f"batch {self.dims} {head_str} ..."
             arg_0 += einsum(mask, d, f"{ein_pre} -> {ein_post}")  # Add mask times diff

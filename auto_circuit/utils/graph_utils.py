@@ -273,7 +273,6 @@ def patch_mode(
     patch_src_outs: t.Tensor,
     edges: Optional[Collection[str | Edge]] = None,
     curr_src_outs: Optional[t.Tensor] = None,
-    batch_size: int=None,
 ):
     """
     Context manager to enable patching in the model.
@@ -308,10 +307,6 @@ def patch_mode(
         wrapper.curr_src_outs = curr_src_outs
         if wrapper.is_dest:
             wrapper.patch_src_outs = patch_src_outs
-            if batch_size is not None:
-                wrapper.set_patch_mask_size(batch_size)
-                wrapper.patch_mask_batch.detach_().requires_grad_(True)
-                assert wrapper.patch_mask_batch.grad is None
     try:
         yield
     finally:
@@ -320,8 +315,6 @@ def patch_mode(
             wrapper.curr_src_outs = None
             if wrapper.is_dest:
                 wrapper.patch_src_outs = None
-                if wrapper.patch_mask_batch is not None:
-                    wrapper.patch_mask_batch.detach_().requires_grad_(False)
         del curr_src_outs, patch_src_outs
 
 
@@ -400,6 +393,28 @@ def mask_fn_mode(model: PatchableModel, mask_fn: MaskFn, dropout_p: float = 0.0)
         for wrapper in model.dest_wrappers:
             wrapper.mask_fn = None
             wrapper.dropout_layer.p = 0.0  # type: ignore
+
+
+@contextmanager
+def set_mask_batch_size(model: PatchableModel, batch_size: int | None):
+    """
+    Context manager to set the batch size of the patch masks in the model.
+
+    Args:
+        model: The patchable model to alter.
+        batch_size: The batch size to set the patch masks to. If `None`, the batch size
+            is not modified.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
+    for wrapper in model.dest_wrappers:
+        wrapper.set_mask_batch_size(batch_size)
+    try:
+        yield
+    finally:
+        for wrapper in model.dest_wrappers:
+            wrapper.set_mask_batch_size(None)
 
 
 def edge_counts_util(
