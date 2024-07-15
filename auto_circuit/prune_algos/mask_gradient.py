@@ -24,6 +24,8 @@ def mask_gradient_prune_scores(
     answer_function: Literal["avg_diff", "avg_val", "mse"],
     mask_val: Optional[float] = None,
     integrated_grad_samples: Optional[int] = None,
+    ablation_type: AblationType = AblationType.RESAMPLE,
+    clean_corrupt: Optional[Literal["clean", "corrupt"]] = "corrupt",
 ) -> PruneScores:
     """
     Prune scores equal to the gradient of the mask values that interpolates the edges
@@ -44,6 +46,9 @@ def mask_gradient_prune_scores(
             output with respect to the mask values. This is computed by averaging the
             mask gradients over `integrated_grad_samples` samples of the mask values
             interpolated between 0 and 1. Cannot be used if `mask_val` is not `None`.
+        ablation_type: The type of ablation to perform.
+        clean_corrupt: Whether to use the clean or corrupt inputs to calculate the
+            ablations.
 
     Returns:
         An ordering of the edges by importance to the task. Importance is equal to the
@@ -61,8 +66,8 @@ def mask_gradient_prune_scores(
     src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
         model,
         dataloader,
-        ablation_type=AblationType.RESAMPLE,
-        clean_corrupt="corrupt",
+        ablation_type=ablation_type,
+        clean_corrupt=clean_corrupt,
     )
 
     with train_mask_mode(model):
