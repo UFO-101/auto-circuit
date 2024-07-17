@@ -282,6 +282,9 @@ def patch_mode(
         patch_src_outs: The activations with which to ablate the model. Mask values
             interpolate the edge activations between the default activations (`0`) and
             these activations (`1`).
+        edges: A collection of edges to patch. The corresponding patch mask elements
+            will be set to `1.0` and all other mask elements are set to `0.0`.
+            If `None`, masks are not modified.
         curr_src_outs (t.Tensor, optional): Stores the outputs of each src node during
             the current forward pass. The only time this need to be initialized is when
             you are starting the forward pass at a middle layer because the outputs of

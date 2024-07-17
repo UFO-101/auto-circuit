@@ -19,7 +19,17 @@ BatchKey = int
 
 @dataclass(frozen=True)
 class PromptPair:
-    """A pair of clean and corrupt prompts with correct and incorrect answers."""
+    """
+    A pair of clean and corrupt prompts with correct and incorrect answers.
+
+    Args:
+        clean: The 'clean' prompt. This is typically an example of the behavior we want
+            to isolate where the model performs well.
+        corrupt: The 'corrupt' prompt. This is typically similar to the 'clean' prompt,
+            but with some crucial difference that changes the model output.
+        answers: The correct completions for the clean prompt.
+        wrong_answers: The incorrect completions for the clean prompt.
+    """
 
     clean: t.Tensor
     corrupt: t.Tensor
@@ -29,7 +39,35 @@ class PromptPair:
 
 @dataclass(frozen=True)
 class PromptPairBatch:
-    """A batch of prompt pairs."""
+    """
+    A batch of prompt pairs.
+
+    Args:
+        key: A unique integer that identifies the batch.
+        batch_diverge_idx: The minimum index over all prompts at which the clean and
+            corrupt prompts diverge. This is used to automatically cache the key-value
+            activations for the common prefix of the prompts. See
+            [`load_datasets_from_json`][auto_circuit.data.load_datasets_from_json] for
+            more information.
+        clean: The 'clean' prompts in a 2D tensor. These are typically examples of the
+            behavior we want to isolate where the model performs well.
+        corrupt: The 'corrupt' prompts in a 2D tensor. These are typically similar to
+            the 'clean' prompts, but with some crucial difference that changes the model
+            output.
+        answers: The correct answers completions for the clean prompts.
+            If all prompts have the same number of answers, this is a 2D tensor.
+            If each prompt has a different number of answers, this is a list of 1D
+            tensors. This can make some methods such as
+            [`batch_answer_diffs`][auto_circuit.utils.tensor_ops.batch_answer_diffs]
+            much slower.
+        wrong_answers: The incorrect answers. If each prompt has a different number of
+            wrong answers, this is a list of tensors.
+            If all prompts have the same number of wrong answers, this is a 2D tensor.
+            If each prompt has a different number of wrong answers, this is a list of 1D
+            tensors. This can make some methods such as
+            [`batch_answer_diffs`][auto_circuit.utils.tensor_ops.batch_answer_diffs]
+            much slower.
+    """
 
     key: BatchKey
     batch_diverge_idx: int
@@ -58,8 +96,6 @@ def collate_fn(batch: List[PromptPair]) -> PromptPairBatch:
 
 
 class PromptDataset(Dataset):
-    """A dataset of clean/corrupt prompt pairs with correct/incorrect answers."""
-
     def __init__(
         self,
         clean_prompts: List[t.Tensor] | t.Tensor,
@@ -67,6 +103,25 @@ class PromptDataset(Dataset):
         answers: List[t.Tensor],
         wrong_answers: List[t.Tensor],
     ):
+        """
+        A dataset of clean/corrupt prompt pairs with correct/incorrect answers.
+
+        Args:
+            clean_prompts: The 'clean' prompts. These are typically examples of the
+                behavior we want to isolate where the model performs well.
+                If a list, each element is a 1D prompt tensor.
+                If a tensor, it should be 2D with shape (n_prompts, prompt_length).
+            corrupt_prompts: The 'corrupt' prompts. These are typically similar to the
+                'clean' prompts, but with some crucial difference that changes the model
+                output.
+                If a list, each element is a 1D prompt tensor.
+                If a tensor, it should be 2D with shape (n_prompts, prompt_length).
+            answers: A list of correct answers.
+                Each element is a 1D tensor with the answer tokens.
+            wrong_answers: A list of incorrect answers.
+                Each element is a 1D tensor with the wrong answer tokens.
+        """
+
         self.clean_prompts = clean_prompts
         self.corrupt_prompts = corrupt_prompts
         self.answers = answers
@@ -287,14 +342,14 @@ def load_datasets_from_json(
             assert t.all(clean_prompts["attention_mask"] == 1)
             assert t.all(corrupt_prompts["attention_mask"] == 1)
             seq_len = clean_prompts["input_ids"].shape[1]
-        ans_dict: List[Dict] = [tokenizer(a, return_tensors="pt") for a in answer_strs]
-        wrong_ans_dict: List[Dict] = [
+        ans_dicts: List[Dict] = [tokenizer(a, return_tensors="pt") for a in answer_strs]
+        wrong_ans_dicts: List[Dict] = [
             tokenizer(a, return_tensors="pt") for a in wrong_answer_strs
         ]
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
-        answers = [a["input_ids"].squeeze(-1).to(device) for a in ans_dict]
-        wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dict]
+        answers = [a["input_ids"].squeeze(-1).to(device) for a in ans_dicts]
+        wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dicts]
 
         if tail_divergence:
             diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
