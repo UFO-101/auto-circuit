@@ -406,6 +406,8 @@ def set_mask_batch_size(model: PatchableModel, batch_size: int | None):
             is not modified.
 
     Warning:
+        This function breaks other functions of the library while the context is active 
+        and should be considered an experimental feature. 
         This function modifies the state of the model! This is a likely source of bugs.
     """
     for wrapper in model.dest_wrappers:

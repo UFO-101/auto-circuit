@@ -92,6 +92,20 @@ class PatchWrapperImpl(PatchWrapper):
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
 
     def set_mask_batch_size(self, batch_size: int | None):
+        """
+        Set the batch size of the patch mask. Should only be used by context manager
+        [`set_mask_batch_size`][auto_circuit.utils.graph_utils.set_mask_batch_size]
+        
+        The current primary use case is to collect gradients on the patch mask for 
+        each input in the batch.
+        
+        Warning: 
+            This is an exmperimental feature that breaks some parts of the library and 
+            should be used with caution.
+
+        Args:
+            batch_size: The batch size of the patch mask.
+        """
         if batch_size is None and self.batch_size is None:
             return
         if batch_size is None:  # removing batch dim
