@@ -41,7 +41,7 @@ def test_instance_grads(mini_tl_transformer: HookedTransformer):
     )
     patch_outs = {batch.key: zero_out.clone() for batch in train_loader}
 
-    # compute prune scores in inputs
+    # collecting prune scores batches for each module, concatented after
     prune_scores_batches: Dict[str, List[t.Tensor]] = defaultdict(list)
     with set_mask_batch_size(model, batch_size), train_mask_mode(model):
         set_all_masks(model, val=0.0)
