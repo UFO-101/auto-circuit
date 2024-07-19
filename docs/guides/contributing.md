@@ -30,6 +30,18 @@ pytest --runslow
 ## Development
 The code is written in a functional style as far as possible. This means that there should be no global state and no side effects. This means not writing classes except frozen dataclasses (which are essentially just structs) and not using variables outside of functions. Functions should just take in data and return data. The major exception to this is the patching code which injects modules into the main models and patches based on patch_mask instance variables. We use context managers to ensure that state remains local to each function.
 
+### Documentation
+
+Documentation is built with
+[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+Source files are in the `docs/` directory. Reference documentation is automatically
+generated from docstrings using
+[MkDocs-Material-Docs](https://mkdocstrings.github.io/python/)
+To build the documentation locally run:
+```
+mkdocs serve
+```
+with the python environment activated.
 
 ## Running Experiments
 
