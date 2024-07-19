@@ -22,7 +22,7 @@ def test_instance_grads(mini_tl_transformer: HookedTransformer):
 
     # create task
     batch_size = 2
-    batch_count = 2
+    batch_count = 1
     task = Task(
         key="test_eap",
         name="test_eap",
@@ -35,36 +35,28 @@ def test_instance_grads(mini_tl_transformer: HookedTransformer):
     model = task.model
     train_loader = task.train_loader
 
-    # compute patch outs
-    zero_out = src_ablations(
+    # compute src patch out
+    src_patch_out = src_ablations(
         model, next(iter(train_loader)).clean, ablation_type=AblationType.ZERO
     )
-    patch_outs = {batch.key: zero_out.clone() for batch in train_loader}
 
     # collecting prune scores batches for each module, concatented after
-    prune_scores_batches: Dict[str, List[t.Tensor]] = defaultdict(list)
+    prune_scores_batch: PruneScores = {}
     with set_mask_batch_size(model, batch_size), train_mask_mode(model):
         set_all_masks(model, val=0.0)
         for batch in train_loader:
-            patch_src_outs = patch_outs[batch.key].clone().detach()
-            with patch_mode(model, patch_src_outs):
-                logits = model(batch.clean)[model.out_slice]
+            with patch_mode(model, src_patch_out.clone().detach()):
+                # combine clean and corrupt to get differet values for testing
+                logits = model(t.cat([batch.clean[0:1], batch.corrupt[0:1]]))[model.out_slice]
                 loss = -batch_avg_answer_diff(logits, batch)
-                loss.backward()
+                loss.backward(t.ones_like(loss))
             for dest_wrapper in model.dest_wrappers:
                 assert dest_wrapper.patch_mask.size(0) == batch_size
-                prune_scores_batches[dest_wrapper.module_name].append(
-                    dest_wrapper.patch_mask.grad.detach().clone()
-                )
+                grad = dest_wrapper.patch_mask.grad.detach().clone()
+                prune_scores_batch[dest_wrapper.module_name] = grad
             model.zero_grad()
-    prune_scores: PruneScores = {
-        k: t.cat(v, dim=0) for k, v in prune_scores_batches.items()
-    }
 
-    # check concatenated prune scores
-    assert next(iter(prune_scores.values())).size(0) == batch_size * batch_count
-
-    ex_prune_score = next(iter(prune_scores_batches.values()))
+    ex_prune_score = next(iter(prune_scores_batch.values()))
     # check expanded batch size
     assert ex_prune_score.size(0) == batch_size
     # check gradients are not the same
