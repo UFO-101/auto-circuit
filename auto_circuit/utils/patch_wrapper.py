@@ -85,10 +85,42 @@ class PatchWrapperImpl(PatchWrapper):
             self.mask_fn: MaskFn = None
             self.dropout_layer: t.nn.Module = t.nn.Dropout(p=0.0)
         self.patch_mode = False
+        self.batch_size = None
 
         assert head_dim is None or seq_dim is None or head_dim > seq_dim
         dims = range(1, max(head_dim if head_dim else 2, seq_dim if seq_dim else 2))
         self.dims = " ".join(["seq" if i == seq_dim else f"d{i}" for i in dims])
+
+    def set_mask_batch_size(self, batch_size: int | None):
+        """
+        Set the batch size of the patch mask. Should only be used by context manager
+        [`set_mask_batch_size`][auto_circuit.utils.graph_utils.set_mask_batch_size]
+        
+        The current primary use case is to collect gradients on the patch mask for 
+        each input in the batch.
+        
+        Warning: 
+            This is an exmperimental feature that breaks some parts of the library and 
+            should be used with caution.
+
+        Args:
+            batch_size: The batch size of the patch mask.
+        """
+        if batch_size is None and self.batch_size is None:
+            return
+        if batch_size is None:  # removing batch dim
+            self.patch_mask = t.nn.Parameter(self.patch_mask[0].clone())
+        elif self.batch_size is None:  # adding batch_dim
+            self.patch_mask = t.nn.Parameter(
+                self.patch_mask.repeat(batch_size, *((1,) * self.patch_mask.ndim))
+            )
+        elif self.batch_size != batch_size:  # modifying batch dim
+            self.patch_mask = t.nn.Parameter(
+                self.patch_mask[0]
+                .clone()
+                .repeat(batch_size, *((1,) * self.patch_mask.ndim))
+            )
+        self.batch_size = batch_size
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         arg_0: t.Tensor = args[0].clone()
@@ -100,12 +132,15 @@ class PatchWrapperImpl(PatchWrapper):
             head_str = "" if self.head_dim is None else "dest"  # Patch heads separately
             seq_str = "" if self.seq_dim is None else "seq"  # Patch tokens separately
             if self.mask_fn == "hard_concrete":
-                mask = sample_hard_concrete(self.patch_mask, arg_0.size(0))
+                mask = sample_hard_concrete(
+                    self.patch_mask, arg_0.size(0), self.batch_size is not None
+                )
                 batch_str = "batch"  # Sample distribution for each batch element
             elif self.mask_fn == "sigmoid":
                 mask = t.sigmoid(self.patch_mask)
             else:
                 assert self.mask_fn is None
+                batch_str = "batch" if self.batch_size is not None else ""
                 mask = self.patch_mask
             mask = self.dropout_layer(mask)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."

@@ -398,6 +398,30 @@ def mask_fn_mode(model: PatchableModel, mask_fn: MaskFn, dropout_p: float = 0.0)
             wrapper.dropout_layer.p = 0.0  # type: ignore
 
 
+@contextmanager
+def set_mask_batch_size(model: PatchableModel, batch_size: int | None):
+    """
+    Context manager to set the batch size of the patch masks in the model.
+
+    Args:
+        model: The patchable model to alter.
+        batch_size: The batch size to set the patch masks to. If `None`, the batch size
+            is not modified.
+
+    Warning:
+        This function breaks other functions of the library while the context is active 
+        and should be considered an experimental feature. 
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
+    for wrapper in model.dest_wrappers:
+        wrapper.set_mask_batch_size(batch_size)
+    try:
+        yield
+    finally:
+        for wrapper in model.dest_wrappers:
+            wrapper.set_mask_batch_size(None)
+
+
 def edge_counts_util(
     edges: Set[Edge],
     test_counts: Optional[TestEdges] = None,  # None means default

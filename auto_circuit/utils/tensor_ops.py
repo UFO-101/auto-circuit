@@ -9,7 +9,9 @@ from auto_circuit.types import PruneScores
 left, right, temp = -0.1, 1.1, 2 / 3
 
 
-def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
+def sample_hard_concrete(
+    mask: t.Tensor, batch_size: int, mask_expanded: bool
+) -> t.Tensor:
     """
     Sample from the hard concrete distribution
     ([Louizos et al., 2017](https://arxiv.org/abs/1712.01312)).
@@ -17,12 +19,16 @@ def sample_hard_concrete(mask: t.Tensor, batch_size: int) -> t.Tensor:
     Args:
         mask: The mask whose values parameterize the distribution.
         batch_size: The number of samples to draw.
+        mask_expanded: Whether the mask has a batch dimension at the start.
 
     Returns:
         A sample for each element in the mask for each batch element. The returned
         tensor has shape `(batch_size, *mask.shape)`.
     """
-    mask = mask.repeat(batch_size, *([1] * mask.ndim))
+    if not mask_expanded:
+        mask = mask.repeat(batch_size, *([1] * mask.ndim))
+    else:
+        assert mask.size(0) == batch_size
     u = t.zeros_like(mask).uniform_().clamp(0.0001, 0.9999)
     s = t.sigmoid((u.log() - (1 - u).log() + mask) / temp)
     s_bar = s * (right - left) + left
