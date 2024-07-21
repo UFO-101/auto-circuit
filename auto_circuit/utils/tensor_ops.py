@@ -10,7 +10,7 @@ left, right, temp = -0.1, 1.1, 2 / 3
 
 
 def sample_hard_concrete(
-    mask: t.Tensor, batch_size: int, mask_expanded: bool
+    mask: t.Tensor, batch_size: int, mask_expanded: bool = False
 ) -> t.Tensor:
     """
     Sample from the hard concrete distribution

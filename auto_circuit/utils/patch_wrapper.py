@@ -95,12 +95,12 @@ class PatchWrapperImpl(PatchWrapper):
         """
         Set the batch size of the patch mask. Should only be used by context manager
         [`set_mask_batch_size`][auto_circuit.utils.graph_utils.set_mask_batch_size]
-        
-        The current primary use case is to collect gradients on the patch mask for 
+
+        The current primary use case is to collect gradients on the patch mask for
         each input in the batch.
-        
-        Warning: 
-            This is an exmperimental feature that breaks some parts of the library and 
+
+        Warning:
+            This is an exmperimental feature that breaks some parts of the library and
             should be used with caution.
 
         Args:

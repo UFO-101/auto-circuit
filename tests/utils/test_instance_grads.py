@@ -1,7 +1,5 @@
 #%%
 
-from collections import defaultdict
-from typing import Dict, List
 
 import torch as t
 from transformer_lens import HookedTransformer
@@ -30,7 +28,7 @@ def test_instance_grads(mini_tl_transformer: HookedTransformer):
         batch_count=batch_count,
         token_circuit=False,
         _model_def=mini_tl_transformer,
-        _dataset_name="mini_prompts"
+        _dataset_name="mini_prompts",
     )
     model = task.model
     train_loader = task.train_loader
@@ -40,20 +38,23 @@ def test_instance_grads(mini_tl_transformer: HookedTransformer):
         model, next(iter(train_loader)).clean, ablation_type=AblationType.ZERO
     )
 
-    # collecting prune scores batches for each module, concatented after
+    # collecting prune scores batches for each module, concatenated after
     prune_scores_batch: PruneScores = {}
     with set_mask_batch_size(model, batch_size), train_mask_mode(model):
         set_all_masks(model, val=0.0)
         for batch in train_loader:
             with patch_mode(model, src_patch_out.clone().detach()):
-                # combine clean and corrupt to get differet values for testing
-                logits = model(t.cat([batch.clean[0:1], batch.corrupt[0:1]]))[model.out_slice]
+                # combine clean and corrupt to get different values for testing
+                logits = model(t.cat([batch.clean[0:1], batch.corrupt[0:1]]))[
+                    model.out_slice
+                ]
                 loss = -batch_avg_answer_diff(logits, batch)
                 loss.backward(t.ones_like(loss))
             for dest_wrapper in model.dest_wrappers:
                 assert dest_wrapper.patch_mask.size(0) == batch_size
-                grad = dest_wrapper.patch_mask.grad.detach().clone()
-                prune_scores_batch[dest_wrapper.module_name] = grad
+                grad = dest_wrapper.patch_mask.grad
+                assert grad is not None
+                prune_scores_batch[dest_wrapper.module_name] = grad.detach().clone()
             model.zero_grad()
 
     ex_prune_score = next(iter(prune_scores_batch.values()))
