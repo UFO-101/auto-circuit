@@ -100,7 +100,7 @@ class PatchWrapperImpl(PatchWrapper):
         each input in the batch.
 
         Warning:
-            This is an exmperimental feature that breaks some parts of the library and
+            This is an experimental feature that breaks some parts of the library and
             should be used with caution.
 
         Args:
