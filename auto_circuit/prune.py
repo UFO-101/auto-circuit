@@ -58,7 +58,7 @@ def run_circuits(
             tensors.
     """
     circ_outs: CircuitOutputs = defaultdict(dict)
-    desc_ps: t.Tensor = desc_prune_scores(prune_scores)
+    desc_ps: t.Tensor = desc_prune_scores(prune_scores, use_abs=use_abs)
 
     patch_src_outs: Optional[t.Tensor] = None
     if ablation_type.mean_over_dataset:
