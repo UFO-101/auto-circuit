@@ -337,6 +337,40 @@ def set_all_masks(model: PatchableModel, val: float) -> None:
             t.nn.init.constant_(wrapper.patch_mask, val)
 
 
+def set_masks_at_src_idxs(model: PatchableModel, val: float, src_idxs: Collection[int]) -> None:
+    """
+    Set all the patch masks with the specified src_idxs to the specified value.
+
+    Args:
+        model: The patchable model to alter.
+        val: The value to set the patch masks to.
+        src_idxs: The src_idxs to set the patch masks at.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
+    max_src_idx = max(src_idxs)
+    for wrapper in model.dest_wrappers:
+        if wrapper.in_srcs.stop >= max_src_idx:  # downstream of src
+            with t.no_grad():
+                wrapper.patch_mask.data[..., src_idxs] = val
+
+def set_masks_at_layer(model: PatchableModel, val: float, layer: int) -> None:
+    """
+    Set all the patch masks with srcs at layer to the specified value.
+
+    Args:
+        model: The patchable model to alter.
+        val: The value to set the patch masks to.
+        layer: The layer to set the patch masks at.
+
+    Warning:
+        This function modifies the state of the model! This is a likely source of bugs.
+    """
+    src_idxs_at_layer = [src.src_idx for src in model.srcs if src.layer == layer]
+    set_masks_at_src_idxs(model, val, src_idxs_at_layer)
+
+
 @contextmanager
 def train_mask_mode(
     model: PatchableModel, requires_grad: bool = True
