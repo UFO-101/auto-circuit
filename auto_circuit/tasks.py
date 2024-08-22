@@ -205,7 +205,7 @@ class Task:
             bs_2 = bs[1] if isinstance(bs, tuple) else bs
             count_2 = b_count[1] if isinstance(b_count, tuple) else b_count
             has_tokenizer = hasattr(model, "tokenizer") and model.tokenizer is not None
-            if has_tokenizer and hasattr(model.tokenizer, "add_bos_token"):
+            if has_tokenizer and hasattr(model.tokenizer, "add_bos_token"): # ensures bos token not added to answers/wrong answers for pythia models 
                 model.tokenizer.add_bos_token = False
             train_loader, test_loader = load_datasets_from_json(
                 model=model if has_tokenizer else None,
