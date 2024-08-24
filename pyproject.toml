@@ -8,16 +8,16 @@ packages = [{include = "auto_circuit"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-torch = "^2.1.1"
-transformer-lens = "^1.13.0"
-einops = "^0.6.1"
-ordered-set = "^4.1.0"
-plotly = "^5.18.0"
-kaleido = "0.2.1"  # Improved renderer for plotly
-blobfile = "2.0.2"
-word2word = "^1.0.0"
-vscode-tqdm = "4.66.2"  # My fork of tqdm that works in VSCode
-tracr-pypi = "1.0.0"  # My fork of tracr that is exactly the same (but on PyPI)
+torch = ">=2.1.1"
+transformer-lens = ">=1.13.0"
+einops = ">=0.6.1"
+ordered-set = ">=4.1.0"
+plotly = ">=5.18.0"
+kaleido = "==0.2.1"  # Improved renderer for plotly
+blobfile = ">=2.0.2"
+word2word = ">=1.0.0"
+vscode-tqdm = ">=4.66.2"  # My fork of tqdm that works in VSCode
+tracr-pypi = ">=1.0.0"  # My fork of tracr that is exactly the same (but on PyPI)
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.3"

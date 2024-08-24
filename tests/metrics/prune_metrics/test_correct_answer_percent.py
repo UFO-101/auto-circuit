@@ -1,4 +1,4 @@
-#%%
+# %%
 import pytest
 
 from auto_circuit.metrics.prune_metrics.measure_prune_metrics import (
@@ -72,4 +72,4 @@ def test_sports_players_ground_truth_correct_answer_greater_than_incorrect_perce
 
 
 # test_docstring_ground_truth_correct_answer_percent()
-test_sports_players_ground_truth_correct_answer_greater_than_incorrect_percent()
+# test_sports_players_ground_truth_correct_answer_greater_than_incorrect_percent()

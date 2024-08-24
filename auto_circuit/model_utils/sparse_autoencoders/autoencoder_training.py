@@ -1,4 +1,4 @@
-#%%
+# %%
 from typing import Any, Dict, Tuple
 
 import plotly.express as px
@@ -73,7 +73,7 @@ def train_model(
             for param in module.parameters():
                 param.requires_grad = False
 
-    optim = t.optim.Adam(train_params, lr=learning_rate)
+    optim = t.optim.adam.Adam(train_params, lr=learning_rate)
 
     loss_history, cross_entropy_loss_history, l1_loss_history = [], [], []
     for epoch in (epoch_pbar := tqdm(range(n_epochs))):

@@ -1,4 +1,4 @@
-#%%
+# %%
 import math
 from datetime import datetime
 from math import pi
@@ -93,7 +93,7 @@ def train_model(
                 param.requires_grad = True
                 train_params.append(param)
 
-    optim = t.optim.Adam(train_params, lr=learning_rate)
+    optim = t.optim.adam.Adam(train_params, lr=learning_rate)
 
     loss_history, kl_loss_history, regularize_loss_history = [], [], []
     for epoch in (epoch_pbar := tqdm(range(n_epochs))):
@@ -239,7 +239,7 @@ print("avg_kl_div", avg_kl_div.item())
 # print("avg sqr eigvals", t.stack(eigvals).pow(2).mean().item())
 # print("avg_abs_eigvals", t.stack(eigvals).abs().mean().item())
 # print(eigvals[0])
-#%%
+# %%
 eigvals = []
 for projector in projector_model.projectors:
     eigvals.append(t.linalg.eigvalsh(projector.linear))
@@ -267,7 +267,7 @@ for row, title in enumerate(row_titles):
     fig.update_yaxes(title_text=title, row=row_count - row, col=1)
 fig.show()
 
-#%%
+# %%
 eigvals, eigvectors = [], []
 for projector in projector_model.projectors:
     vals, vecs = t.linalg.eigh(projector.linear)
@@ -331,4 +331,4 @@ for row, title in enumerate(row_titles):
     fig.update_yaxes(title_text=title, row=row_count - row, col=1)
 fig.show()
 
-#%%
+# %%

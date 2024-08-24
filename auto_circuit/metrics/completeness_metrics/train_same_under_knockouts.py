@@ -143,7 +143,7 @@ def train_same_under_knockout_prune_scores(
         # assert actual_circuit_size == circuit_size
 
         set_all_masks(model, val=-init_mask_val)
-        optim = t.optim.Adam(mask_params, lr=learning_rate)
+        optim = t.optim.adam.Adam(mask_params, lr=learning_rate)
         for epoch in (epoch_pbar := tqdm(range(epochs))):
             kl_str = faith_history[-1] if len(faith_history) > 0 else None
             epoch_pbar.set_description_str(f"Epoch: {epoch}, KL Div: {kl_str}")
