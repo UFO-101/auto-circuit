@@ -220,32 +220,36 @@ def multibatch_kl_div(input_logprobs: t.Tensor, target_logprobs: t.Tensor) -> t.
     return kl_div_sum / n_batch
 
 
-def flat_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+def flat_prune_scores(prune_scores: PruneScores, per_inst: bool=False) -> t.Tensor:
     """
     Flatten the prune scores into a single, 1-dimensional tensor.
 
     Args:
         prune_scores: The prune scores to flatten.
+        per_inst: Whether the prune scores are per instance.
 
     Returns:
         The flattened prune scores.
     """
-    return t.cat([ps.flatten() for _, ps in prune_scores.items()])
+    start_dim = 1 if per_inst else 0
+    cat_dim = 1 if per_inst else 0
+    return t.cat([ps.flatten(start_dim) for _, ps in prune_scores.items()], cat_dim)
 
 
-def desc_prune_scores(prune_scores: PruneScores, use_abs: bool = True) -> t.Tensor:
+def desc_prune_scores(prune_scores: PruneScores, per_inst: bool=False, use_abs=True) -> t.Tensor:
     """
     Flatten the prune scores into a single, 1-dimensional tensor and sort them in
     descending order.
 
     Args:
         prune_scores: The prune scores to flatten and sort.
+        per_inst: Whether the prune scores are per instance.
         use_abs: Whether to sort the absolute values of the prune scores.
 
     Returns:
         The flattened and sorted prune scores.
     """
-    flat_ps = flat_prune_scores(prune_scores)
+    flat_ps = flat_prune_scores(prune_scores, per_inst=per_inst)
     if use_abs:
         flat_ps = flat_ps.abs()
     return flat_ps.sort(descending=True).values
