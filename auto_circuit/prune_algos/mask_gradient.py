@@ -66,8 +66,8 @@ def mask_gradient_prune_scores(
     """
     assert (mask_val is not None) ^ (integrated_grad_samples is not None)  # ^ means XOR
     assert (layers is None) or (integrated_grad_samples is not None)
-    model = model
     out_slice = model.out_slice
+    device = next(model.parameters()).device
 
     src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
         model,
@@ -80,8 +80,11 @@ def mask_gradient_prune_scores(
         layers_iter = layers if isinstance(layers, list) else range((layers or 0)+1)
         for layer in (layer_bar := tqdm(layers_iter)):
             layer_bar.set_description_str(f"Layer: {layer}")
-            src_idxs = [src.src_idx for src in model.srcs if src.layer == layer]
-            max_src_idx = max(src_idxs) if layers else 0
+            src_idxs = t.tensor(
+                [src.src_idx for src in model.srcs if src.layer == layer],
+                device=device
+            )
+            max_src_idx = t.max(src_idxs).item() if layers else 0
             score_slice = src_idxs if layers else slice(None)
             for sample in (ig_pbar := tqdm(range((integrated_grad_samples or 0)+1))):
                 ig_pbar.set_description_str(f"Sample: {sample}")
@@ -124,7 +127,7 @@ def mask_gradient_prune_scores(
                         loss.backward()
             # set scores from layer (or all scores if layers is None)
             for dest_wrapper in model.dest_wrappers: 
-                if dest_wrapper.in_srcs.stop >= max_src_idx:
+                if dest_wrapper.in_srcs.stop > max_src_idx:
                     grad = dest_wrapper.patch_mask.grad
                     assert grad is not None
                     scores = grad.detach().clone()[..., score_slice]

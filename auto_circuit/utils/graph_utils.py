@@ -337,7 +337,7 @@ def set_all_masks(model: PatchableModel, val: float) -> None:
             t.nn.init.constant_(wrapper.patch_mask, val)
 
 
-def set_masks_at_src_idxs(model: PatchableModel, val: float, src_idxs: Collection[int]) -> None:
+def set_masks_at_src_idxs(model: PatchableModel, val: float, src_idxs: t.Tensor) -> None:
     """
     Set all the patch masks with the specified src_idxs to the specified value.
 
@@ -351,9 +351,9 @@ def set_masks_at_src_idxs(model: PatchableModel, val: float, src_idxs: Collectio
     """
     max_src_idx = max(src_idxs)
     for wrapper in model.dest_wrappers:
-        if wrapper.in_srcs.stop >= max_src_idx:  # downstream of src
+        if wrapper.in_srcs.stop > max_src_idx:  # downstream of src
             with t.no_grad():
-                wrapper.patch_mask.data[..., src_idxs] = val
+                wrapper.patch_mask.index_fill_(dim=-1, index=src_idxs, value=val)
 
 def set_masks_at_layer(model: PatchableModel, val: float, layer: int) -> None:
     """
