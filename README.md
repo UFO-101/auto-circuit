@@ -8,7 +8,7 @@ A library for efficient patching and automatic circuit discovery.
 [![Static Badge](https://img.shields.io/badge/Read%20the%20Docs-414A82?style=for-the-badge&logo=Google%20Docs&logoColor=white&labelColor=CB5AD9)](https://UFO-101.github.io/auto-circuit)
 
 ## Read the paper
-[Transformer Circuit Metrics are not Robust](https://arxiv.org/abs/2407.08734)
+[Transformer Circuit Metrics are not Robust](https://arxiv.org/abs/2407.08734) (Oral spotlight, [COLM 2024](https://colmweb.org/AcceptedPapers.html))
 
 ## Getting Started
 
