@@ -33,11 +33,11 @@ https://github.com/UFO-101/auto-circuit/blob/5777057b445d55b7d4695eed8aface9d6bc
 ## Cite this repo
 ```
 @inproceedings{
-miller2024transformer,
-title={Transformer Circuit Evaluation Metrics Are Not Robust},
-author={Joseph Miller and Bilal Chughtai and William Saunders},
-booktitle={First Conference on Language Modeling},
-year={2024},
-url={https://openreview.net/forum?id=zSf8PJyQb2}
+  miller2024transformer,
+  title={Transformer Circuit Evaluation Metrics Are Not Robust},
+  author={Joseph Miller and Bilal Chughtai and William Saunders},
+  booktitle={First Conference on Language Modeling},
+  year={2024},
+  url={https://openreview.net/forum?id=zSf8PJyQb2}
 }
 ```
