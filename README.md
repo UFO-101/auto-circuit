@@ -28,3 +28,16 @@ https://github.com/UFO-101/auto-circuit/blob/03ce552ccdea98fc6fed3b05cfb2df9b0eb
 ### Visualization
 https://github.com/UFO-101/auto-circuit/blob/5777057b445d55b7d4695eed8aface9d6bcefbe3/experiments/demos/patch_some_edges.py#L49
 ![](docs/assets/Small_Circuit_Viz.png)
+
+
+## Cite this repo
+```
+@inproceedings{
+miller2024transformer,
+title={Transformer Circuit Evaluation Metrics Are Not Robust},
+author={Joseph Miller and Bilal Chughtai and William Saunders},
+booktitle={First Conference on Language Modeling},
+year={2024},
+url={https://openreview.net/forum?id=zSf8PJyQb2}
+}
+```
