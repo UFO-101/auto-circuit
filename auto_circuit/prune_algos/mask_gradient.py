@@ -5,7 +5,7 @@ from torch.nn.functional import log_softmax
 
 from auto_circuit.data import PromptDataLoader
 from auto_circuit.types import AblationType, BatchKey, Edge, PruneScores
-from auto_circuit.utils.ablation_activations import batch_src_ablations
+from auto_circuit.utils.ablation_activations import src_ablations
 from auto_circuit.utils.custom_tqdm import tqdm
 from auto_circuit.utils.graph_utils import (
     patch_mode,
@@ -63,13 +63,6 @@ def mask_gradient_prune_scores(
     model = model
     out_slice = model.out_slice
 
-    src_outs: Dict[BatchKey, t.Tensor] = batch_src_ablations(
-        model,
-        dataloader,
-        ablation_type=ablation_type,
-        clean_corrupt=clean_corrupt,
-    )
-
     with train_mask_mode(model):
         for sample in (ig_pbar := tqdm(range((integrated_grad_samples or 0) + 1))):
             ig_pbar.set_description_str(f"Sample: {sample}")
@@ -80,8 +73,16 @@ def mask_gradient_prune_scores(
                 assert mask_val is not None and integrated_grad_samples is None
                 set_all_masks(model, val=mask_val)
 
-            for batch in dataloader:
-                patch_src_outs = src_outs[batch.key].clone().detach()
+            for batch in tqdm(dataloader, desc="Batch", leave=False):
+
+                input_batch = batch.clean if clean_corrupt == "clean" else batch.corrupt
+                src_outs: t.Tensor = src_ablations(
+                    model,
+                    input_batch,
+                    ablation_type=ablation_type,
+                ) 
+                patch_src_outs = src_outs.clone().detach()
+
                 with patch_mode(model, patch_src_outs):
                     logits = model(batch.clean)[out_slice]
                     if grad_function == "logit":
