@@ -297,14 +297,14 @@ def draw_seq_graph(
     else:
         h = max(50 * n_layers, 600)
         w = max(700 * len(sankeys), 800)
-    layout = go.Layout(height=h, width=w, plot_bgcolor="blue")
+    layout = go.Layout(height=h, width=w, plot_bgcolor="blue", margin=dict(l=150, r=50, t=50, b=50))  # Increase left margin for labels
     fig = go.Figure(data=sankeys, layout=layout)
     for fig_idx, seq_idx in enumerate(intervals.keys()) if seq_labels else []:
         assert seq_labels is not None
         seq_label = "All tokens" if seq_idx is None else seq_labels[seq_idx]
         y_range: Tuple[float, float] = fig.data[fig_idx].domain["y"]  # type: ignore
         fig.add_annotation(
-            x=-0.17,
+            x=-0.01, # Modified
             y=(y_range[0] + y_range[1]) / 2,
             text=f"<b>{seq_label}</b>",
             showarrow=False,
