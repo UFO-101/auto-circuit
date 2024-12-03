@@ -142,7 +142,7 @@ class PatchWrapperImpl(PatchWrapper):
                 assert self.mask_fn is None
                 batch_str = "batch" if self.batch_size is not None else ""
                 mask = self.patch_mask
-            mask = self.dropout_layer(mask)
+            mask = self.dropout_layer(mask).to(dtype=arg_0.dtype)
             ein_pre = f"{batch_str} {seq_str} {head_str} src, src batch {self.dims} ..."
             ein_post = f"batch {self.dims} {head_str} ..."
             arg_0 += einsum(mask, d, f"{ein_pre} -> {ein_post}")  # Add mask times diff

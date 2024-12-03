@@ -82,41 +82,80 @@ def factorized_dest_nodes(
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
-        for head_idx in range(model.cfg.n_heads):
-            if separate_qkv:
-                for letter in ["Q", "K", "V"]:
+        n_query_heads = model.cfg.n_heads
+        n_key_value_heads = getattr(model.cfg, "n_key_value_heads", n_query_heads)
+        
+        if separate_qkv:
+            # Grouped Query Attention case
+            if n_key_value_heads:
+                for q_head_idx in range(n_query_heads):
                     nodes.add(
                         DestNode(
-                            name=f"A{block_idx}.{head_idx}.{letter}",
-                            module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                            name=f"A{block_idx}.{q_head_idx}.Q",
+                            module_name=f"blocks.{block_idx}.hook_q_input",
                             layer=layer,
                             head_dim=2,
-                            head_idx=head_idx,
-                            weight=f"blocks.{block_idx}.attn.W_{letter}",
+                            head_idx=q_head_idx,
+                            weight=f"blocks.{block_idx}.attn.W_Q",
                             weight_head_dim=0,
                         )
                     )
+                for kv_head_idx in range(n_key_value_heads):
+                    for letter in ["K", "V"]:
+                        nodes.add(
+                            DestNode(
+                                name=f"A{block_idx}.{kv_head_idx}.{letter}",
+                                module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                                layer=layer,
+                                head_dim=2,
+                                head_idx=kv_head_idx,
+                                weight=f"blocks.{block_idx}.attn.W_{letter}",
+                                weight_head_dim=0,
+                            )
+                        )
+            # Standard attention case
             else:
+                for q_head_idx in range(n_query_heads):
+                    for letter in ["Q", "K", "V"]:
+                        nodes.add(
+                            DestNode(
+                                name=f"A{block_idx}.{q_head_idx}.{letter}",
+                                module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
+                                layer=layer,
+                                head_dim=2,
+                                head_idx=q_head_idx,
+                                weight=f"blocks.{block_idx}.attn.W_{letter}",
+                                weight_head_dim=0,
+                            )
+                        )
+
+        else:
+            # Non-separate QKV case
+            for q_head_idx in range(n_query_heads):
                 nodes.add(
                     DestNode(
-                        name=f"A{block_idx}.{head_idx}",
+                        name=f"A{block_idx}.{q_head_idx}",
                         module_name=f"blocks.{block_idx}.hook_attn_in",
                         layer=layer,
                         head_dim=2,
-                        head_idx=head_idx,
+                        head_idx=q_head_idx,
                         weight=f"blocks.{block_idx}.attn.W_QKV",
                         weight_head_dim=0,
                     )
                 )
+
         if not model.cfg.attn_only:
+            mlp_layer = layer if model.cfg.parallel_attn_mlp else next(layers)
             nodes.add(
                 DestNode(
                     name=f"MLP {block_idx}",
                     module_name=f"blocks.{block_idx}.hook_mlp_in",
-                    layer=layer if model.cfg.parallel_attn_mlp else next(layers),
+                    layer=mlp_layer,
                     weight=f"blocks.{block_idx}.mlp.W_in",
                 )
             )
+
+    # Add the final residual node
     nodes.add(
         DestNode(
             name="Resid End",
@@ -125,6 +164,7 @@ def factorized_dest_nodes(
             weight="unembed.W_U",
         )
     )
+
     return nodes
 
 
