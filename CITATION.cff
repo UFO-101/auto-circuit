@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Miller"
+    given-names: "Joseph"
+  - family-names: "Chughtai"
+    given-names: "Bilal"
+  - family-names: "Saunders"
+    given-names: "William"
+title: "Transformer Circuit Evaluation Metrics Are Not Robust"
+date-released: 2024
+url: "https://openreview.net/forum?id=zSf8PJyQb2"
+preferred-citation:
+  type: conference-paper
+  authors:
+    - family-names: "Miller"
+      given-names: "Joseph"
+    - family-names: "Chughtai"
+      given-names: "Bilal"
+    - family-names: "Saunders"
+      given-names: "William"
+  title: "Transformer Circuit Evaluation Metrics Are Not Robust"
+  collection-title: "First Conference on Language Modeling"
+  year: 2024
+  url: "https://openreview.net/forum?id=zSf8PJyQb2"
