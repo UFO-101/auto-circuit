@@ -342,9 +342,9 @@ def load_datasets_from_json(
             assert t.all(clean_prompts["attention_mask"] == 1)
             assert t.all(corrupt_prompts["attention_mask"] == 1)
             seq_len = clean_prompts["input_ids"].shape[1]
-        ans_dicts: List[Dict] = [tokenizer(a, return_tensors="pt") for a in answer_strs]
+        ans_dicts: List[Dict] = [tokenizer(a, return_tensors="pt", add_special_tokens=False) for a in answer_strs]
         wrong_ans_dicts: List[Dict] = [
-            tokenizer(a, return_tensors="pt") for a in wrong_answer_strs
+            tokenizer(a, return_tensors="pt", add_special_tokens=False) for a in wrong_answer_strs
         ]
         clean_prompts = clean_prompts["input_ids"].to(device)
         corrupt_prompts = corrupt_prompts["input_ids"].to(device)
