@@ -30,7 +30,7 @@ https://github.com/UFO-101/auto-circuit/blob/5777057b445d55b7d4695eed8aface9d6bc
 ![](docs/assets/Small_Circuit_Viz.png)
 
 
-## Cite this repo
+## Cite this library
 ```
 @inproceedings{
   miller2024transformer,
