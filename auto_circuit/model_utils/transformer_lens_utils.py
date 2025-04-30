@@ -82,32 +82,49 @@ def factorized_dest_nodes(
     nodes = set()
     for block_idx in range(model.cfg.n_layers):
         layer = next(layers)
-        for head_idx in range(model.cfg.n_heads):
-            if separate_qkv:
-                for letter in ["Q", "K", "V"]:
+        n_query_heads = model.cfg.n_heads
+        n_key_value_heads = getattr(model.cfg, "n_key_value_heads", n_query_heads)
+
+        if separate_qkv:
+            for q_head_idx in range(n_query_heads):
+                nodes.add(
+                    DestNode(
+                        name=f"A{block_idx}.{q_head_idx}.Q",
+                        module_name=f"blocks.{block_idx}.hook_q_input",
+                        layer=layer,
+                        head_dim=2,
+                        head_idx=q_head_idx,
+                        weight=f"blocks.{block_idx}.attn.W_Q",
+                        weight_head_dim=0,
+                    )
+                )
+            for kv_head_idx in range(n_key_value_heads):
+                for letter in ["K", "V"]:
                     nodes.add(
                         DestNode(
-                            name=f"A{block_idx}.{head_idx}.{letter}",
+                            name=f"A{block_idx}.{kv_head_idx}.{letter}",
                             module_name=f"blocks.{block_idx}.hook_{letter.lower()}_input",
                             layer=layer,
                             head_dim=2,
-                            head_idx=head_idx,
+                            head_idx=kv_head_idx,
                             weight=f"blocks.{block_idx}.attn.W_{letter}",
                             weight_head_dim=0,
                         )
                     )
-            else:
+        else:
+            for q_head_idx in range(n_query_heads):
                 nodes.add(
                     DestNode(
-                        name=f"A{block_idx}.{head_idx}",
+                        name=f"A{block_idx}.{q_head_idx}",
                         module_name=f"blocks.{block_idx}.hook_attn_in",
                         layer=layer,
                         head_dim=2,
-                        head_idx=head_idx,
+                        head_idx=q_head_idx,
                         weight=f"blocks.{block_idx}.attn.W_QKV",
                         weight_head_dim=0,
                     )
                 )
+        
         if not model.cfg.attn_only:
             nodes.add(
                 DestNode(
