@@ -43,6 +43,7 @@ def net_viz(
     seq_idx: Optional[int] = None,
     score_threshold: float = 1e-2,
     layer_spacing: bool = False,
+    use_abs: bool = True,
     orientation: Literal["h", "v"] = "h",
 ) -> Tuple[go.Sankey, int]:
     """
@@ -71,6 +72,8 @@ def net_viz(
         layer_spacing: If `True`, all nodes are spaced according to the layer they in.
             Otherwise, the Plotly automatic spacing is used and nodes in later layers
             may appear to the left of nodes in earlier layers.
+        use_abs: If `True`, the absolute value of the edge scores will be used to threshold
+            the edges. If `False`, the raw edge scores will be used.
         orientation: The orientation of the sankey diagram. Can be either `"h"` for
             horizontal or `"v"` for vertical.
 
@@ -113,7 +116,7 @@ def net_viz(
             edge_score = prune_scores[e.dest.module_name][e.patch_idx].item()
             lbl = None
 
-        if abs(edge_score) < score_threshold:
+        if (abs(edge_score) if use_abs else edge_score) < score_threshold:
             continue
 
         color_idx = len(sources) % len(COLOR_PALETTE)
@@ -202,6 +205,7 @@ def draw_seq_graph(
     show_all_seq_pos: bool = False,
     seq_labels: Optional[List[str]] = None,
     layer_spacing: bool = False,
+    use_abs: bool = True,
     orientation: Literal["h", "v"] = "h",
     display_ipython: bool = True,
     file_path: Optional[str] = None,
@@ -222,6 +226,8 @@ def draw_seq_graph(
         prune_scores: The edge scores to use for the visualization. If `None`, the
             current activations and mask values of the model will be visualized instead.
         score_threshold: The minimum _absolute_ edge score to show in the diagram.
+        use_abs: If `True`, the absolute value of the edge scores will be used to threshold 
+            the edges. If `False`, the raw edge scores will be used.
         show_all_seq_pos: If `True`, the diagram will show all token positions, even if
             they have no non-zero edge values. If `False`, only token positions with
             non-zero edge values will be shown.
@@ -244,12 +250,13 @@ def draw_seq_graph(
         edge_scores = model.current_patch_masks_as_prune_scores().values()
     else:
         edge_scores = prune_scores.values()
-    ps = [t.clamp(v.abs() - score_threshold, min=0).sum().item() for v in edge_scores]
+    ps = [t.clamp((v.abs() if use_abs else v) - score_threshold, min=0).sum().item() for v in edge_scores]
     total_ps = max(sum(ps), 1e-2)
     if seq_len > 1:
         sankey_heights: Dict[Optional[int], float] = {}
         for patch_mask in edge_scores:
-            ps_seq_tots = t.clamp(patch_mask.abs() - score_threshold, min=0.0)
+            patch_mask = patch_mask.abs() if use_abs else patch_mask
+            ps_seq_tots = t.clamp(patch_mask  - score_threshold, min=0.0)
             ps_seq_tots = ps_seq_tots.sum(dim=list(range(1, patch_mask.ndim)))
             for seq_idx, ps_seq_tot in enumerate(ps_seq_tots):
                 if ps_seq_tot > 0 or show_all_seq_pos:
@@ -288,6 +295,7 @@ def draw_seq_graph(
             score_threshold=score_threshold,
             layer_spacing=layer_spacing,
             orientation=orientation,
+            use_abs=use_abs,
         )
         sankeys.append(viz)
 
