@@ -352,8 +352,17 @@ def load_datasets_from_json(
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dicts]
 
         if tail_divergence:
-            diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
-            diverge_idx = int(diverge_idxs.min().item())
+            # The prefix cache is built once and reused for every batch, so the
+            # stripped prefix must be common to all prompts, not just to each pair.
+            if clean_prompts.shape[1] == corrupt_prompts.shape[1]:
+                all_prompts = t.cat([clean_prompts, corrupt_prompts], dim=0)
+                same_everywhere = (all_prompts == all_prompts[0]).all(dim=0)
+                pad_id = getattr(model.tokenizer, "pad_token_id", None)
+                if pad_id is not None:
+                    # A padded position is a real token for some rows only.
+                    same_everywhere &= (all_prompts != pad_id).all(dim=0)
+                same_everywhere[-1] = False  # always run at least one token
+                diverge_idx = int((~same_everywhere).int().argmax().item())
         if diverge_idx > 0:
             seq_labels = seq_labels[diverge_idx:] if seq_labels is not None else None
             prefixs, cfg, device = [], model.cfg, model.cfg.device

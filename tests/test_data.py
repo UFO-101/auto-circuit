@@ -1,4 +1,6 @@
 #%%
+import json
+
 import torch as t
 import transformer_lens as tl
 
@@ -44,6 +46,52 @@ def test_tail_divergence(gpt2: tl.HookedTransformer):
         assert kv_out.shape[0] == no_cache_out.shape[0]
         assert kv_out.shape[1] + diverge_idx == no_cache_out.shape[1]
         assert t.allclose(kv_out, no_cache_out[:, diverge_idx:], atol=1e-4)
+
+
+def test_tail_divergence_prefix_is_common_to_every_prompt(gpt2: tl.HookedTransformer):
+    """Whatever is stripped must be identical for every prompt, not just per pair.
+
+    The KV cache is built once, from the first `batch_size` rows, and reused for
+    every batch, so it is only valid if all prompts share the stripped prefix.
+    `diverge_idx` is computed by comparing each clean prompt against its own
+    corrupt partner, which does not establish that.
+
+    `test_tail_divergence` above does not catch this because
+    `ioi_vanilla_template_prompts` happens to have uniform length and a genuinely
+    common prefix. `ioi_prompts`, used by `IOI_COMPONENT_CIRCUIT_TASK`, does not.
+    """
+    dataset_path = repo_path_to_abs_path("datasets/ioi/ioi_prompts.json")
+    n_train, n_test = 64, 8
+    train_loader, _ = load_datasets_from_json(
+        model=gpt2,
+        path=dataset_path,
+        device=DEVICE,
+        batch_size=8,
+        train_test_size=(n_train, n_test),
+        tail_divergence=True,
+        shuffle=False,
+    )
+    diverge_idx = train_loader.diverge_idx
+    if diverge_idx == 0:
+        return  # nothing stripped, so there is no shared prefix to violate
+
+    # The loaders return prompts with the prefix already removed, so re-tokenize
+    # the same slice the loader used to recover what was stripped.
+    with open(dataset_path, "r") as f:
+        prompts = json.load(f)["prompts"][: n_train + n_test]
+    tokenizer = gpt2.tokenizer
+    assert tokenizer is not None
+    tokenizer.padding_side = "left"
+    texts = [tokenizer.bos_token + p["clean"] for p in prompts]
+    texts += [tokenizer.bos_token + p["corrupt"] for p in prompts]
+    ids = tokenizer(texts, padding=True, return_tensors="pt")["input_ids"]
+
+    prefix = ids[:, :diverge_idx]
+    n_distinct = len(set(tuple(row) for row in prefix.tolist()))
+    assert n_distinct == 1, (
+        f"{n_distinct} distinct prefixes are being stripped, but a single KV "
+        f"cache is built from the first rows and reused for all of them"
+    )
 
 
 def test_determinism_same_seed(gpt2: tl.HookedTransformer):
