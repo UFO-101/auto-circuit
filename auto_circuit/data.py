@@ -359,6 +359,8 @@ def load_datasets_from_json(
                 all_prompts = t.cat([clean_prompts, corrupt_prompts], dim=0)
                 cacheable = (all_prompts == all_prompts[0]).all(dim=0)
                 if tokenizer.pad_token_id is not None:
+                    # Padding may share an id with the BOS token, so remove
+                    # positions that are padding for any prompt from cacheable.
                     attn_mask = get_attention_mask(
                         tokenizer, all_prompts, prepend_bos
                     )
