@@ -12,6 +12,7 @@ from torch.utils.data import (
     Subset,
 )
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
+from transformer_lens.utils import get_attention_mask
 
 BatchKey = int
 """A unique key for a [`PromptPairBatch`][auto_circuit.data.PromptPairBatch]."""
@@ -352,8 +353,20 @@ def load_datasets_from_json(
         wrong_answers = [a["input_ids"].squeeze(-1).to(device) for a in wrong_ans_dicts]
 
         if tail_divergence:
-            diverge_idxs = (~(clean_prompts == corrupt_prompts)).int().argmax(dim=1)
-            diverge_idx = int(diverge_idxs.min().item())
+            # One cache serves every batch, so every prompt must share the
+            # token at a cached position and attend to it.
+            if clean_prompts.shape[1] == corrupt_prompts.shape[1]:
+                all_prompts = t.cat([clean_prompts, corrupt_prompts], dim=0)
+                cacheable = (all_prompts == all_prompts[0]).all(dim=0)
+                if tokenizer.pad_token_id is not None:
+                    # Padding may share an id with the BOS token, so remove
+                    # positions that are padding for any prompt from cacheable.
+                    attn_mask = get_attention_mask(
+                        tokenizer, all_prompts, prepend_bos
+                    )
+                    cacheable &= attn_mask.bool().all(dim=0)
+                cacheable[-1] = False  # always run at least one token
+                diverge_idx = int((~cacheable).int().argmax().item())
         if diverge_idx > 0:
             seq_labels = seq_labels[diverge_idx:] if seq_labels is not None else None
             prefixs, cfg, device = [], model.cfg, model.cfg.device
