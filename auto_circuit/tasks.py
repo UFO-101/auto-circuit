@@ -205,6 +205,8 @@ class Task:
             bs_2 = bs[1] if isinstance(bs, tuple) else bs
             count_2 = b_count[1] if isinstance(b_count, tuple) else b_count
             has_tokenizer = hasattr(model, "tokenizer") and model.tokenizer is not None
+            if has_tokenizer and hasattr(model.tokenizer, "add_bos_token"): # ensures bos token not added to answers/wrong answers for pythia models 
+                model.tokenizer.add_bos_token = False
             train_loader, test_loader = load_datasets_from_json(
                 model=model if has_tokenizer else None,
                 path=repo_path_to_abs_path(f"datasets/{self._dataset_name}.json"),
@@ -296,7 +298,7 @@ IOI_COMPONENT_CIRCUIT_TASK: Task = Task(
     key="Indirect Object Identification Component Circuit",
     name="Indirect Object Identification",
     _model_def="gpt2-small",
-    _dataset_name="ioi_prompts",
+    _dataset_name="ioi/ioi_prompts",
     batch_size=64,
     batch_count=2,
     _true_edge_func=ioi_true_edges,
@@ -306,7 +308,7 @@ IOI_GPT2_AUTOENCODER_COMPONENT_CIRCUIT_TASK: Task = Task(
     key="Indirect Object Identification GPT2 Autoencoder Component Circuit",
     name="Indirect Object Identification",
     _model_def="gpt2-small",
-    _dataset_name="ioi_prompts",
+    _dataset_name="ioi/ioi_prompts",
     batch_size=1,
     batch_count=2,
     _true_edge_func=None,
