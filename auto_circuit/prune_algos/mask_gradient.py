@@ -13,15 +13,14 @@ from auto_circuit.utils.graph_utils import (
     train_mask_mode,
 )
 from auto_circuit.utils.patchable_model import PatchableModel
-from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val
-
+from auto_circuit.utils.tensor_ops import batch_avg_answer_diff, batch_avg_answer_val, batch_avg_answer_max_diff
 
 def mask_gradient_prune_scores(
     model: PatchableModel,
     dataloader: PromptDataLoader,
     official_edges: Optional[Set[Edge]],
     grad_function: Literal["logit", "prob", "logprob", "logit_exp"],
-    answer_function: Literal["avg_diff", "avg_val", "mse"],
+    answer_function: Literal["avg_diff", "max_diff", "avg_val", "mse"],
     mask_val: Optional[float] = None,
     integrated_grad_samples: Optional[int] = None,
     ablation_type: AblationType = AblationType.RESAMPLE,
@@ -99,6 +98,8 @@ def mask_gradient_prune_scores(
 
                     if answer_function == "avg_diff":
                         loss = -batch_avg_answer_diff(token_vals, batch)
+                    elif answer_function == "max_diff":
+                        loss = -batch_avg_answer_max_diff(token_vals, batch)
                     elif answer_function == "avg_val":
                         loss = -batch_avg_answer_val(token_vals, batch)
                     elif answer_function == "mse":
