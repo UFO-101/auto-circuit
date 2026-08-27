@@ -233,22 +233,26 @@ def flat_prune_scores(prune_scores: PruneScores) -> t.Tensor:
     return t.cat([ps.flatten() for _, ps in prune_scores.items()])
 
 
-def desc_prune_scores(prune_scores: PruneScores) -> t.Tensor:
+def desc_prune_scores(prune_scores: PruneScores, use_abs: bool = True) -> t.Tensor:
     """
     Flatten the prune scores into a single, 1-dimensional tensor and sort them in
     descending order.
 
     Args:
         prune_scores: The prune scores to flatten and sort.
+        use_abs: Whether to sort the absolute values of the prune scores.
 
     Returns:
         The flattened and sorted prune scores.
     """
-    return flat_prune_scores(prune_scores).abs().sort(descending=True).values
+    flat_ps = flat_prune_scores(prune_scores)
+    if use_abs:
+        flat_ps = flat_ps.abs()
+    return flat_ps.sort(descending=True).values
 
 
 def prune_scores_threshold(
-    prune_scores: PruneScores | t.Tensor, edge_count: int
+    prune_scores: PruneScores | t.Tensor, edge_count: int, use_abs: bool = True
 ) -> t.Tensor:
     """
     Return the minimum absolute value of the top `edge_count` prune scores.
@@ -257,6 +261,7 @@ def prune_scores_threshold(
     Args:
         prune_scores: The prune scores to threshold.
         edge_count: The number of edges that should be above the threshold.
+        use_abs: Whether to use the absolute values of the prune scores.
 
     Returns:
         The threshold value.
@@ -268,4 +273,4 @@ def prune_scores_threshold(
         assert prune_scores.ndim == 1
         return prune_scores[edge_count - 1]
     else:
-        return desc_prune_scores(prune_scores)[edge_count - 1]
+        return desc_prune_scores(prune_scores, use_abs=use_abs)[edge_count - 1]

@@ -30,6 +30,7 @@ def run_circuits(
     patch_type: PatchType = PatchType.EDGE_PATCH,
     ablation_type: AblationType = AblationType.RESAMPLE,
     reverse_clean_corrupt: bool = False,
+    use_abs: bool = True,
     render_graph: bool = False,
     render_score_threshold: bool = False,
     render_file_path: Optional[str] = None,
@@ -45,6 +46,7 @@ def run_circuits(
         patch_type: Whether to patch the circuit or the complement.
         ablation_type: The type of ablation to use.
         reverse_clean_corrupt: Reverse clean and corrupt (for input and patches).
+        use_abs: Whether to use the absolute value of the scores.
         render_graph: Whether to render the graph using `draw_seq_graph`.
         render_score_threshold: Edge score threshold, if `render_graph` is `True`.
         render_file_path: Path to save the rendered graph, if `render_graph` is `True`.
@@ -56,7 +58,7 @@ def run_circuits(
             tensors.
     """
     circ_outs: CircuitOutputs = defaultdict(dict)
-    desc_ps: t.Tensor = desc_prune_scores(prune_scores)
+    desc_ps: t.Tensor = desc_prune_scores(prune_scores, use_abs=use_abs)
 
     patch_src_outs: Optional[t.Tensor] = None
     if ablation_type.mean_over_dataset:
@@ -83,19 +85,20 @@ def run_circuits(
         with patch_mode(model, patch_src_outs):
             for edge_count in (edge_pbar := tqdm(test_edge_counts)):
                 edge_pbar.set_description_str(f"Running Circuit: {edge_count} Edges")
-                threshold = prune_scores_threshold(desc_ps, edge_count)
+                threshold = prune_scores_threshold(desc_ps, edge_count, use_abs)
                 # When prune_scores are tied we can't prune exactly edge_count edges
                 patch_edge_count = 0
                 for mod_name, patch_mask in prune_scores.items():
                     dest = module_by_name(model, mod_name)
                     assert isinstance(dest, PatchWrapper)
                     assert dest.is_dest and dest.patch_mask is not None
+                    patch_mask = patch_mask.abs() if use_abs else patch_mask
                     if patch_type == PatchType.EDGE_PATCH:
-                        dest.patch_mask.data = (patch_mask.abs() >= threshold).float()
+                        dest.patch_mask.data = (patch_mask >= threshold).float()
                         patch_edge_count += dest.patch_mask.int().sum().item()
                     else:
                         assert patch_type == PatchType.TREE_PATCH
-                        dest.patch_mask.data = (patch_mask.abs() < threshold).float()
+                        dest.patch_mask.data = (patch_mask < threshold).float()
                         patch_edge_count += (1 - dest.patch_mask.int()).sum().item()
                 with t.inference_mode():
                     model_output = model(batch_input)[model.out_slice]
@@ -107,6 +110,7 @@ def run_circuits(
                     show_all_seq_pos=False,
                     seq_labels=dataloader.seq_labels,
                     file_path=render_file_path,
+                    use_abs=use_abs,
                 )
     del patch_src_outs
     return circ_outs
